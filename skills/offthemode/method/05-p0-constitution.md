@@ -55,7 +55,7 @@ Global constitution. Kit mode applies only if .offthemode/PRODUCT.md exists at t
 - Security is not a phase: authorization at the data layer, no secrets in client code or logs, input parsed at every boundary.
 
 ### Uncertainty
-- Reversible and local: decide, log it as "assumed" in DECISIONS.md, continue.
+- Never build on an assumption: write the doubt as a hypothesis ("I think X, because Y") and confirm it, in the code, the docs, or by asking, before building on it.
 - Heavy-lane items and anything against a Refusal: stop and ask.
 - Questions: batched and numbered, max 5 per round, each with your recommended default, so I can reply "1 ok, 2 b, 3 yours".
 
@@ -201,7 +201,7 @@ STATE · updated {{YYYY-MM-DD}} · branch {{BRANCH}} · phase {{P#}} · session 
 ```file path=".offthemode/DECISIONS.md"
 DECISIONS · append-only, newest at the bottom; superseded entries stay, marked.
 
-### D-{{NNN}} · {{Title}} · {{YYYY-MM-DD}} · {{decided | assumed | superseded by D-###}}
+### D-{{NNN}} · {{Title}} · {{YYYY-MM-DD}} · {{decided | hypothesis, to confirm (nothing built on it yet) | superseded by D-###}}
 Context: {{what forced a decision}} · Decision: {{what we do}}
 Rejected: {{OPTION_A}} ({{why not}}); {{OPTION_B}} ({{why not}})
 Because: {{the reason, tied to PRODUCT.md, an NFR or a spike result}} · Revisit if: {{condition}}
@@ -301,7 +301,7 @@ Set up the constitution for {{PROJECT_NAME}}: the standing rules every future se
 Inputs: {{@.offthemode/PRODUCT.md and @.offthemode/SKELETON.md if they exist, otherwise RAW_NOTES}}
 Interview me first, in rounds of at most 5 numbered questions, each with your recommended answer and a one-line reason. Cover in order: mission and moment of value; non-negotiables; platforms, stack pack and versions; boundaries and where the core engine sits; stack-specific bans; the exact check, lint-one-file, dev, screenshot, audit, eval, env and log commands, and the viewports; project-specific Heavy-lane paths. Stop when you could predict my answer to a new question in each area.
 Then write: AGENTS.md from the template (80-120 lines; every standard with its reason, every ban with its replacement; delete any line that could appear in any repo); CLAUDE.md; one directory AGENTS.md plus a one-line CLAUDE.md per domain pack; GLOSSARY.md seeded with 10-20 domain terms (names only; definitions into SKELETON.md §Domain model); STATE.md; DECISIONS.md with a D-### per stack choice including rejected alternatives; empty LESSONS.md, LESSONS.index.md and LOG.md; settings.json and hooks with placeholders filled.
-Tag anything I did not confirm [assumed]. Show every file before committing.
+Tag anything I did not confirm [hypothesis], and confirm it with me before relying on it. Show every file before committing.
 ```
 
 ```prompt title="Session Start"
@@ -313,7 +313,7 @@ Trivial or Standard: proceed unless I object. Heavy: wait for "go".
 ```prompt title="Session End Handoff"
 End the session, in this order:
 1. Rewrite .offthemode/STATE.md from scratch: present tense, no history. A fresh agent with zero chat context must be able to start item 1 of Next, so name files, commands, the lane and the done-check.
-2. Append a DECISIONS.md entry for every decision made this session, including silent ones (mark those "assumed").
+2. Append a DECISIONS.md entry for every decision made this session. There should be no silent ones; if you find one, list it as a hypothesis for me to confirm.
 3. Classify every correction I made. First time: add it to STATE.md §Corrections seen once. Second time: write the LESSONS entry and its index line (or put it in the matching directory AGENTS.md if it only applies there). Personal taste or a universal standard: propose an exact ~/.claude/ line with its reason. Prompt defect: propose a diff to prompts/. A lesson violated again: propose a lint rule, test or hook.
 4. List everything claimed but not verified under Known broken / unverified. The next session trusts this file.
 5. Propose (do not apply) edits for any AGENTS.md rule that proved wrong, stale or conflicting.

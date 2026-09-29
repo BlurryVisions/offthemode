@@ -7,13 +7,13 @@ An agent can't build your vision. It can only build what the text makes unambigu
 
 ```file path=".offthemode/PRODUCT.md"
 PRODUCT: {{PRODUCT_NAME}} · {{draft | locked}} · tier {{weekend | product | complex}} · {{web | iOS | Android}} · reviewed {{DATE}}
-Lines 1-30 are injected every session: keep the north star here. Whole file under 150 lines. Evidence per claim: observed | heard | assumed; every assumed Person, Job or Moment line is also a RISKS.md row.
+Lines 1-30 are injected every session: keep the north star here. Whole file under 150 lines. Evidence per claim: observed | heard | hypothesis; every hypothesis Person, Job or Moment line is also a RISKS.md row until it is confirmed.
 
 ### Thesis
 For {{PERSON}} who {{STRUGGLE}}, {{PRODUCT_NAME}} is the {{FRAME}} that {{THE_ONE_THING}}, unlike {{STATUS_QUO}}, which {{WHY_IT_FAILS_THEM}}.
 
 ### Person, job, moment
-- Person: {{a specific person in a specific situation, with what they already have open}} · evidence {{observed | heard | assumed}}. Skill {{novice | practitioner | expert}} (sets default density). Uses today: {{TOOLS_AND_WORKAROUNDS}}.
+- Person: {{a specific person in a specific situation, with what they already have open}} · evidence {{observed | heard | hypothesis}}. Skill {{novice | practitioner | expert}} (sets default density). Uses today: {{TOOLS_AND_WORKAROUNDS}}.
 - Jobs (max 3, ranked): 1. When {{SITUATION}}, I want to {{MOTIVATION}}, so I can {{OUTCOME}} · evidence {{}}.
 - Moment of value: {{what they see or feel}}, within {{TIME}} of first open, at most {{N}} steps and {{N}} decisions before it; account required: {{no | yes, because}} · evidence {{}}.
 - Signature moment (outsized polish): {{the one interaction people would screen-record}}.
@@ -60,7 +60,7 @@ The skeleton is artifacts, not prose. A prose spec lets the agent pattern-match 
 > **Pro move:** Derive surfaces from the domain model and the journeys, never from "what apps have". The statistical-average app has Dashboard, Settings, Profile and Notifications. Yours might be one canvas and a command bar.
 
 ```file path=".offthemode/SKELETON.md"
-SKELETON: {{PROJECT_NAME}} · tag every item [decided], [assumed] or [open]
+SKELETON: {{PROJECT_NAME}} · tag every item [decided], [hypothesis] or [open]; nothing is built on a [hypothesis] or [open] item until it is confirmed
 
 ### Domain model
 ~~~mermaid
@@ -112,8 +112,8 @@ Assets {{}} · actors {{anon, user, admin, other tenant, compromised client}} ·
 ### Core contract (written by P2)
 Inputs {{}} · outputs {{}} · latency and cost envelope {{}} · failure modes {{}} · streaming or partial {{}} · quality baseline (eval pass rate) {{}}
 
-### Riskiest assumptions -> .offthemode/RISKS.md
-- {{R-##}}: {{assumption}}
+### Riskiest hypotheses -> .offthemode/RISKS.md
+- {{R-##}}: {{hypothesis}}
 ```
 
 **Becoming sound.** (1) Dump the raw vision, messy is fine. (2) Run Interrogate My Vision, answer its rounds, then edit the PRODUCT.md draft by hand, because the document is yours. (3) Run the **predict-my-call test**: give a fresh session nothing but PRODUCT.md and ask it three things you never discussed ("first launch with no data?", "is there a settings page?", "what does an error look like?"). If it answers the way you would, the vision transfers; if it doesn't, the gap is in the document. The test proves the document carries *your* intent, not that the Person exists: that's what the Evidence column and the two human gates are for. (4) Run Generate the Skeleton, then Pre-Mortem, and the top risks feed P2.
@@ -131,10 +131,10 @@ Round 1, in order:
 4. Framings: 2-3 alternative theses (different person, core object or moment of value), with what each gains and loses. Do not pick one; the choice is mine.
 5. Complexity: the hard things inside, and how the system absorbs each so the user never sees it.
 6. The strongest case that this should not exist, or should be a feature of something else.
-7. Evidence: for person, job and moment, what I have observed, what I have heard, and what I am assuming.
+7. Evidence: for person, job and moment, what I have observed, what I have heard, and what is still a hypothesis to confirm.
 
 Then interview me in rounds of at most 5 numbered questions, each with your recommended answer. Each round attacks the weakest of person, job, moment, the one thing, refusals; say which. Reject vague answers ("users", "easy", "powerful", "all-in-one", "seamless") and re-ask sharper. Never suggest features; if I do, ask which job it serves and what it displaces. Stop when you can state the product in one sentence and predict what I would cut.
-Finally draft .offthemode/PRODUCT.md from its template with an evidence tag on every Person, Job and Moment line. Tag anything unconfirmed [assumed]; unsettled items go to open questions, never invented. End with the 3 assumptions most likely to be wrong and the cheapest one-day test for each, each written as a RISKS.md row.
+Finally draft .offthemode/PRODUCT.md from its template with an evidence tag on every Person, Job and Moment line. Tag anything unconfirmed [hypothesis]; unsettled items go to open questions, never invented. End with the 3 hypotheses most likely to be wrong and the cheapest one-day test for each, each written as a RISKS.md row.
 ```
 
 ```prompt title="Generate the Skeleton"
@@ -144,7 +144,7 @@ Read @.offthemode/PRODUCT.md and @.offthemode/GLOSSARY.md. Produce .offthemode/S
 - Tag capabilities Core, Supporting or Generic; spend creativity only on Core.
 - Stack per layer: choice + version + why + rejected; must meet BUDGETS.md and the PRODUCT.md UX contract and reach {{TARGET_HOSTING}} cleanly; draft each as a D-### entry. If the UX contract trips the sync rule, mark the data layer [open] pending a P2 sync spike.
 - Threat sketch: assets, actors, trust boundaries, top 5 abuse cases with day-one mitigations.
-- Tag every item [decided], [assumed] or [open]. End with the 3-5 riskiest assumptions, weighted toward the core, as RISKS.md rows with proposed spikes.
+- Tag every item [decided], [hypothesis] or [open]. End with the 3-5 riskiest hypotheses, weighted toward the core, as RISKS.md rows with proposed spikes.
 - Flag anything in PRODUCT.md this skeleton cannot satisfy instead of quietly bending it.
 ```
 

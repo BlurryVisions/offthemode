@@ -133,7 +133,7 @@ Never provision paid resources without asking.
 ```
 
 ```prompt title="Hosting Decision"
-Choose hosting for {{?PRODUCT_NAME}} from workload facts, not popularity. Every assumption is a named, editable number; mark results estimate or measured.
+Choose hosting for {{?PRODUCT_NAME}} from workload facts, not popularity. Every input is a named, editable number; mark results estimate or measured.
 Facts: clients {{CLIENTS}}; users at launch / 12 months {{N_LAUNCH}} / {{N_12MO}}; peak RPS = DAU x sessions x requests per core journey (ROUTES.md) x peak ratio; longest job {{LONGEST_JOB}}; realtime or sync {{REALTIME_OR_SYNC}}; regions {{REGIONS}}; budget {{BUDGET}}; ops appetite {{OPS_APPETITE}}; core envelope from P2 {{?CORE_CONTRACT}}.
 1. Score serverless, edge, managed containers and VPS on monthly cost at launch, 10x, 100x (egress, storage, seats, per-call APIs {{PAID_APIS}}); cold starts on the core journey; long-running work; WebSockets and sync servers; compute-to-DB latency; lock-in; ops burden.
 2. What breaks first at 10x (connections, a lock, a seq scan, a vendor rate limit); DB size at 12 months; cost per active user and per core action.

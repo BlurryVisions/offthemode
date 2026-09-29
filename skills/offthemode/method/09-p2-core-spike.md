@@ -5,7 +5,7 @@
 
 > **Output:** a PASS / FAIL / PASS WITH CONSTRAINTS verdict with measured numbers, the core contract in `.offthemode/SKELETON.md`, a feel prototype tested by 3 target people with the winning waiting strategy written into `.offthemode/DESIGN.md`, an eval set v0 if the core is model-driven, and updated `.offthemode/RISKS.md` and `DECISIONS.md`.
 
-The core is "plug and play" only once the socket's shape is known, and in a complex product the core is exactly where the unknowns live. Can it hit the latency, quality, cost and device limits? Does the moment of value actually feel like a wow? Those are two different questions, so P2 builds two throwaway artifacts, each timeboxed: a **feasibility spike** on the single riskiest core assumption, then a **feel prototype** built on the spike's real numbers. The real core build stays in P6, as you planned.
+The core is "plug and play" only once the socket's shape is known, and in a complex product the core is exactly where the unknowns live. Can it hit the latency, quality, cost and device limits? Does the moment of value actually feel like a wow? Those are two different questions, so P2 builds two throwaway artifacts, each timeboxed: a **feasibility spike** on the single riskiest core hypothesis, then a **feel prototype** built on the spike's real numbers. The real core build stays in P6, as you planned.
 
 > **Why:** Spike results feed design as much as engineering. A 6-second generation means the signature moment has to be designed around streaming. Frequent sync conflicts make recovery UX a first-class surface. An expensive core call means queues, caching, and defaults that respect usage. Learning this after visuals are locked means redoing them. Feel is timing, sequencing and feedback, not styling, so it can't be judged on a page that dumps JSON after six seconds, and it doesn't need a brand to be judged.
 
@@ -35,7 +35,7 @@ After I paste the notes: the winning bridge as one DESIGN.md constraint line, GL
 > **Rule:** The feel gate passes when at least 2 of the 3 people describe what happened in their own words and say they'd wait. If it fails, redesign the moment (what streams, what's inferred, what happens first), never the pixels.
 
 ```file path=".offthemode/RISKS.md"
-RISKS · score = likelihood x impact (1-5 each). Any core risk scoring 12+ gets a spike before P3 starts. Assumed Person, Job or Moment lines from PRODUCT.md land here as ux risks.
+RISKS · score = likelihood x impact (1-5 each). Any core risk scoring 12+ gets a spike before P3 starts. Hypothesis Person, Job or Moment lines from PRODUCT.md land here as ux risks until they are confirmed.
 
 | ID | Risk (falsifiable) | Area | L | I | Score | Test or spike | Kill or pivot criterion | Status |
 |---|---|---|---|---|---|---|---|---|

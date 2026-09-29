@@ -1,5 +1,5 @@
 PRODUCT · {{?PROJECT_NAME}} · {{draft | confirmed}} · reviewed {{DATE}}
-The vision and the core concept. Read it before any product or UX decision. Every claim carries its evidence: observed (seen people do it), heard (people said it), or assumed (a guess to test).
+The vision and the core concept. Read it before any product or UX decision. Every claim carries its evidence: observed (seen people do it), heard (people said it), or hypothesis (a guess, written down for clarity and confirmed before anything is built on it).
 
 ## Thesis
 For {{PERSON}} who {{STRUGGLE}}, {{?PROJECT_NAME}} is the {{FRAME}} that {{THE_ONE_THING}}, unlike {{STATUS_QUO}}, which {{WHY_IT_FAILS_THEM}}.
@@ -8,7 +8,7 @@ For {{PERSON}} who {{STRUGGLE}}, {{?PROJECT_NAME}} is the {{FRAME}} that {{THE_O
 {{One paragraph: the idea at the heart of the product, the thing everything else serves. The checklist splits it into fragments.}}
 
 ## Person, job, moment
-- Person: {{a specific person in a specific situation}} · evidence {{observed | heard | assumed}}
+- Person: {{a specific person in a specific situation}} · evidence {{observed | heard | hypothesis}}
 - Jobs (at most 3, ranked): 1. When {{SITUATION}}, I want to {{MOTIVATION}}, so I can {{OUTCOME}} · evidence {{}}
 - Moment of value: {{what they see or feel}}, within {{TIME}} of first use, after at most {{N}} steps · evidence {{}}
 - Signature moment: {{the one interaction or result people would show someone else | none yet}}

@@ -91,7 +91,7 @@ This is not a phase. It's the lens applied before the rules are final and again 
 | The one thing (10x better than anything else) | Six strengths | One sentence; everything else is parity or absent |
 | Refusals (what it won't do, even when asked) | Nothing | "No multitrack mixing. No collaboration in v1." |
 
-Every decision carries its evidence: **observed** (you watched someone do it), **heard** (someone told you), or **assumed**. Each assumed Person, Job or Moment row is copied into RISKS.md, because every downstream template treats PRODUCT.md as fact, and a fictional person makes every later gate pass for the wrong reason.
+Every decision carries its evidence: **observed** (you watched someone do it), **heard** (someone told you), or **hypothesis**: a guess written down for clarity. Nothing is built on a hypothesis until it is confirmed. Each hypothesis Person, Job or Moment row is copied into RISKS.md, because every downstream template treats PRODUCT.md as fact, and a fictional person makes every later gate pass for the wrong reason.
 
 Each decision also becomes a technical constraint. "40 s, no signup" means anonymous sessions, resumable uploads and streamed results, written into PRODUCT.md §Tech consequences so P4 inherits them. Agents help by adding, and the global rules (P0) push back: no feature without a job, ideas arrive as ranked bets, the design that asks fewer questions wins, and any conflicting PRODUCT.md line gets quoted before acting. That quoting rule turns a vague value into a lookup, which models do reliably.
 
@@ -177,7 +177,7 @@ Global constitution. Kit mode applies only if .offthemode/PRODUCT.md exists at t
 - Security is not a phase: authorization at the data layer, no secrets in client code or logs, input parsed at every boundary.
 
 ### Uncertainty
-- Reversible and local: decide, log it as "assumed" in DECISIONS.md, continue.
+- Never build on an assumption: write the doubt as a hypothesis ("I think X, because Y") and confirm it, in the code, the docs, or by asking, before building on it.
 - Heavy-lane items and anything against a Refusal: stop and ask.
 - Questions: batched and numbered, max 5 per round, each with your recommended default, so I can reply "1 ok, 2 b, 3 yours".
 
@@ -323,7 +323,7 @@ STATE · updated {{YYYY-MM-DD}} · branch {{BRANCH}} · phase {{P#}} · session 
 ```file path=".offthemode/DECISIONS.md"
 DECISIONS · append-only, newest at the bottom; superseded entries stay, marked.
 
-### D-{{NNN}} · {{Title}} · {{YYYY-MM-DD}} · {{decided | assumed | superseded by D-###}}
+### D-{{NNN}} · {{Title}} · {{YYYY-MM-DD}} · {{decided | hypothesis, to confirm (nothing built on it yet) | superseded by D-###}}
 Context: {{what forced a decision}} · Decision: {{what we do}}
 Rejected: {{OPTION_A}} ({{why not}}); {{OPTION_B}} ({{why not}})
 Because: {{the reason, tied to PRODUCT.md, an NFR or a spike result}} · Revisit if: {{condition}}
@@ -423,7 +423,7 @@ Set up the constitution for {{PROJECT_NAME}}: the standing rules every future se
 Inputs: {{@.offthemode/PRODUCT.md and @.offthemode/SKELETON.md if they exist, otherwise RAW_NOTES}}
 Interview me first, in rounds of at most 5 numbered questions, each with your recommended answer and a one-line reason. Cover in order: mission and moment of value; non-negotiables; platforms, stack pack and versions; boundaries and where the core engine sits; stack-specific bans; the exact check, lint-one-file, dev, screenshot, audit, eval, env and log commands, and the viewports; project-specific Heavy-lane paths. Stop when you could predict my answer to a new question in each area.
 Then write: AGENTS.md from the template (80-120 lines; every standard with its reason, every ban with its replacement; delete any line that could appear in any repo); CLAUDE.md; one directory AGENTS.md plus a one-line CLAUDE.md per domain pack; GLOSSARY.md seeded with 10-20 domain terms (names only; definitions into SKELETON.md §Domain model); STATE.md; DECISIONS.md with a D-### per stack choice including rejected alternatives; empty LESSONS.md, LESSONS.index.md and LOG.md; settings.json and hooks with placeholders filled.
-Tag anything I did not confirm [assumed]. Show every file before committing.
+Tag anything I did not confirm [hypothesis], and confirm it with me before relying on it. Show every file before committing.
 ```
 
 ```prompt title="Session Start"
@@ -435,7 +435,7 @@ Trivial or Standard: proceed unless I object. Heavy: wait for "go".
 ```prompt title="Session End Handoff"
 End the session, in this order:
 1. Rewrite .offthemode/STATE.md from scratch: present tense, no history. A fresh agent with zero chat context must be able to start item 1 of Next, so name files, commands, the lane and the done-check.
-2. Append a DECISIONS.md entry for every decision made this session, including silent ones (mark those "assumed").
+2. Append a DECISIONS.md entry for every decision made this session. There should be no silent ones; if you find one, list it as a hypothesis for me to confirm.
 3. Classify every correction I made. First time: add it to STATE.md §Corrections seen once. Second time: write the LESSONS entry and its index line (or put it in the matching directory AGENTS.md if it only applies there). Personal taste or a universal standard: propose an exact ~/.claude/ line with its reason. Prompt defect: propose a diff to prompts/. A lesson violated again: propose a lint rule, test or hook.
 4. List everything claimed but not verified under Known broken / unverified. The next session trusts this file.
 5. Propose (do not apply) edits for any AGENTS.md rule that proved wrong, stale or conflicting.
@@ -579,13 +579,13 @@ An agent can't build your vision. It can only build what the text makes unambigu
 
 ```file path=".offthemode/PRODUCT.md"
 PRODUCT: {{PRODUCT_NAME}} · {{draft | locked}} · tier {{weekend | product | complex}} · {{web | iOS | Android}} · reviewed {{DATE}}
-Lines 1-30 are injected every session: keep the north star here. Whole file under 150 lines. Evidence per claim: observed | heard | assumed; every assumed Person, Job or Moment line is also a RISKS.md row.
+Lines 1-30 are injected every session: keep the north star here. Whole file under 150 lines. Evidence per claim: observed | heard | hypothesis; every hypothesis Person, Job or Moment line is also a RISKS.md row until it is confirmed.
 
 ### Thesis
 For {{PERSON}} who {{STRUGGLE}}, {{PRODUCT_NAME}} is the {{FRAME}} that {{THE_ONE_THING}}, unlike {{STATUS_QUO}}, which {{WHY_IT_FAILS_THEM}}.
 
 ### Person, job, moment
-- Person: {{a specific person in a specific situation, with what they already have open}} · evidence {{observed | heard | assumed}}. Skill {{novice | practitioner | expert}} (sets default density). Uses today: {{TOOLS_AND_WORKAROUNDS}}.
+- Person: {{a specific person in a specific situation, with what they already have open}} · evidence {{observed | heard | hypothesis}}. Skill {{novice | practitioner | expert}} (sets default density). Uses today: {{TOOLS_AND_WORKAROUNDS}}.
 - Jobs (max 3, ranked): 1. When {{SITUATION}}, I want to {{MOTIVATION}}, so I can {{OUTCOME}} · evidence {{}}.
 - Moment of value: {{what they see or feel}}, within {{TIME}} of first open, at most {{N}} steps and {{N}} decisions before it; account required: {{no | yes, because}} · evidence {{}}.
 - Signature moment (outsized polish): {{the one interaction people would screen-record}}.
@@ -632,7 +632,7 @@ The skeleton is artifacts, not prose. A prose spec lets the agent pattern-match 
 > **Pro move:** Derive surfaces from the domain model and the journeys, never from "what apps have". The statistical-average app has Dashboard, Settings, Profile and Notifications. Yours might be one canvas and a command bar.
 
 ```file path=".offthemode/SKELETON.md"
-SKELETON: {{PROJECT_NAME}} · tag every item [decided], [assumed] or [open]
+SKELETON: {{PROJECT_NAME}} · tag every item [decided], [hypothesis] or [open]; nothing is built on a [hypothesis] or [open] item until it is confirmed
 
 ### Domain model
 ~~~mermaid
@@ -684,8 +684,8 @@ Assets {{}} · actors {{anon, user, admin, other tenant, compromised client}} ·
 ### Core contract (written by P2)
 Inputs {{}} · outputs {{}} · latency and cost envelope {{}} · failure modes {{}} · streaming or partial {{}} · quality baseline (eval pass rate) {{}}
 
-### Riskiest assumptions -> .offthemode/RISKS.md
-- {{R-##}}: {{assumption}}
+### Riskiest hypotheses -> .offthemode/RISKS.md
+- {{R-##}}: {{hypothesis}}
 ```
 
 **Becoming sound.** (1) Dump the raw vision, messy is fine. (2) Run Interrogate My Vision, answer its rounds, then edit the PRODUCT.md draft by hand, because the document is yours. (3) Run the **predict-my-call test**: give a fresh session nothing but PRODUCT.md and ask it three things you never discussed ("first launch with no data?", "is there a settings page?", "what does an error look like?"). If it answers the way you would, the vision transfers; if it doesn't, the gap is in the document. The test proves the document carries *your* intent, not that the Person exists: that's what the Evidence column and the two human gates are for. (4) Run Generate the Skeleton, then Pre-Mortem, and the top risks feed P2.
@@ -703,10 +703,10 @@ Round 1, in order:
 4. Framings: 2-3 alternative theses (different person, core object or moment of value), with what each gains and loses. Do not pick one; the choice is mine.
 5. Complexity: the hard things inside, and how the system absorbs each so the user never sees it.
 6. The strongest case that this should not exist, or should be a feature of something else.
-7. Evidence: for person, job and moment, what I have observed, what I have heard, and what I am assuming.
+7. Evidence: for person, job and moment, what I have observed, what I have heard, and what is still a hypothesis to confirm.
 
 Then interview me in rounds of at most 5 numbered questions, each with your recommended answer. Each round attacks the weakest of person, job, moment, the one thing, refusals; say which. Reject vague answers ("users", "easy", "powerful", "all-in-one", "seamless") and re-ask sharper. Never suggest features; if I do, ask which job it serves and what it displaces. Stop when you can state the product in one sentence and predict what I would cut.
-Finally draft .offthemode/PRODUCT.md from its template with an evidence tag on every Person, Job and Moment line. Tag anything unconfirmed [assumed]; unsettled items go to open questions, never invented. End with the 3 assumptions most likely to be wrong and the cheapest one-day test for each, each written as a RISKS.md row.
+Finally draft .offthemode/PRODUCT.md from its template with an evidence tag on every Person, Job and Moment line. Tag anything unconfirmed [hypothesis]; unsettled items go to open questions, never invented. End with the 3 hypotheses most likely to be wrong and the cheapest one-day test for each, each written as a RISKS.md row.
 ```
 
 ```prompt title="Generate the Skeleton"
@@ -716,7 +716,7 @@ Read @.offthemode/PRODUCT.md and @.offthemode/GLOSSARY.md. Produce .offthemode/S
 - Tag capabilities Core, Supporting or Generic; spend creativity only on Core.
 - Stack per layer: choice + version + why + rejected; must meet BUDGETS.md and the PRODUCT.md UX contract and reach {{TARGET_HOSTING}} cleanly; draft each as a D-### entry. If the UX contract trips the sync rule, mark the data layer [open] pending a P2 sync spike.
 - Threat sketch: assets, actors, trust boundaries, top 5 abuse cases with day-one mitigations.
-- Tag every item [decided], [assumed] or [open]. End with the 3-5 riskiest assumptions, weighted toward the core, as RISKS.md rows with proposed spikes.
+- Tag every item [decided], [hypothesis] or [open]. End with the 3-5 riskiest hypotheses, weighted toward the core, as RISKS.md rows with proposed spikes.
 - Flag anything in PRODUCT.md this skeleton cannot satisfy instead of quietly bending it.
 ```
 
@@ -831,7 +831,7 @@ Reply in at most 25 lines: progress per fragment with its Verify mode (F2 ■■
 
 > **Output:** a PASS / FAIL / PASS WITH CONSTRAINTS verdict with measured numbers, the core contract in `.offthemode/SKELETON.md`, a feel prototype tested by 3 target people with the winning waiting strategy written into `.offthemode/DESIGN.md`, an eval set v0 if the core is model-driven, and updated `.offthemode/RISKS.md` and `DECISIONS.md`.
 
-The core is "plug and play" only once the socket's shape is known, and in a complex product the core is exactly where the unknowns live. Can it hit the latency, quality, cost and device limits? Does the moment of value actually feel like a wow? Those are two different questions, so P2 builds two throwaway artifacts, each timeboxed: a **feasibility spike** on the single riskiest core assumption, then a **feel prototype** built on the spike's real numbers. The real core build stays in P6, as you planned.
+The core is "plug and play" only once the socket's shape is known, and in a complex product the core is exactly where the unknowns live. Can it hit the latency, quality, cost and device limits? Does the moment of value actually feel like a wow? Those are two different questions, so P2 builds two throwaway artifacts, each timeboxed: a **feasibility spike** on the single riskiest core hypothesis, then a **feel prototype** built on the spike's real numbers. The real core build stays in P6, as you planned.
 
 > **Why:** Spike results feed design as much as engineering. A 6-second generation means the signature moment has to be designed around streaming. Frequent sync conflicts make recovery UX a first-class surface. An expensive core call means queues, caching, and defaults that respect usage. Learning this after visuals are locked means redoing them. Feel is timing, sequencing and feedback, not styling, so it can't be judged on a page that dumps JSON after six seconds, and it doesn't need a brand to be judged.
 
@@ -861,7 +861,7 @@ After I paste the notes: the winning bridge as one DESIGN.md constraint line, GL
 > **Rule:** The feel gate passes when at least 2 of the 3 people describe what happened in their own words and say they'd wait. If it fails, redesign the moment (what streams, what's inferred, what happens first), never the pixels.
 
 ```file path=".offthemode/RISKS.md"
-RISKS · score = likelihood x impact (1-5 each). Any core risk scoring 12+ gets a spike before P3 starts. Assumed Person, Job or Moment lines from PRODUCT.md land here as ux risks.
+RISKS · score = likelihood x impact (1-5 each). Any core risk scoring 12+ gets a spike before P3 starts. Hypothesis Person, Job or Moment lines from PRODUCT.md land here as ux risks until they are confirmed.
 
 | ID | Risk (falsifiable) | Area | L | I | Score | Test or spike | Kill or pivot criterion | Status |
 |---|---|---|---|---|---|---|---|---|
@@ -1595,7 +1595,7 @@ Never provision paid resources without asking.
 ```
 
 ```prompt title="Hosting Decision"
-Choose hosting for {{?PRODUCT_NAME}} from workload facts, not popularity. Every assumption is a named, editable number; mark results estimate or measured.
+Choose hosting for {{?PRODUCT_NAME}} from workload facts, not popularity. Every input is a named, editable number; mark results estimate or measured.
 Facts: clients {{CLIENTS}}; users at launch / 12 months {{N_LAUNCH}} / {{N_12MO}}; peak RPS = DAU x sessions x requests per core journey (ROUTES.md) x peak ratio; longest job {{LONGEST_JOB}}; realtime or sync {{REALTIME_OR_SYNC}}; regions {{REGIONS}}; budget {{BUDGET}}; ops appetite {{OPS_APPETITE}}; core envelope from P2 {{?CORE_CONTRACT}}.
 1. Score serverless, edge, managed containers and VPS on monthly cost at launch, 10x, 100x (egress, storage, seats, per-call APIs {{PAID_APIS}}); cold starts on the core journey; long-running work; WebSockets and sync servers; compute-to-DB latency; lock-in; ops burden.
 2. What breaks first at 10x (connections, a lock, a seq scan, a vendor rate limit); DB size at 12 months; cost per active user and per core action.
@@ -1745,7 +1745,7 @@ Write a test script for journey {{JOURNEY_ID, default J1}} in .offthemode/ROUTES
 After I paste the notes, output: Task | Success | Time | Pause points | Their word vs the GLOSSARY term. Then the 3 changes that remove the most hesitation, each tried first as a subtraction, default or inference before any new UI, plus GLOSSARY and copy edits wherever their words differ from ours.
 ```
 
-> **Rule:** The gate passes when at least 4 of 5 reach the moment of value unaided, inside the PRODUCT.md budget. Below that, make the three changes and test five new people, never the same five. Update the Evidence column: after this, Person, Job and Moment are observed, not assumed.
+> **Rule:** The gate passes when at least 4 of 5 reach the moment of value unaided, inside the PRODUCT.md budget. Below that, make the three changes and test five new people, never the same five. Update the Evidence column: after this, Person, Job and Moment are observed, not hypotheses.
 
 ## Taming Complexity
 <!-- origin: added -->
@@ -2653,7 +2653,7 @@ The Laws table already covers reverse prompting, diverge-then-converge, handoffs
 
 | Move | Mechanism | Template |
 |---|---|---|
-| Assumptions first | Surfaces hidden guesses while they're cheap to veto | Assumptions Before Action |
+| Hypotheses first | Makes hidden guesses visible, so they are confirmed before anything is built on them | Confirm Before Building |
 | Constraint stacking | Independent constraints overlap only in a small, unusual region | Constraint Stack |
 | Reference anchoring | One reference carries thousands of constraints; take/ignore stops surface copying | Anchor to References |
 | Ban with replacement | A bare ban primes the banned thing; an alternative gives the model somewhere to go | Ban With Replacement |
@@ -2669,8 +2669,8 @@ The Laws table already covers reverse prompting, diverge-then-converge, handoffs
 Before any plan or code, interview me about {{FEATURE}}. Rounds of at most 5 numbered questions, max 3 rounds, ordered by how much the answer changes architecture or UX, each with your default and what breaks if it is wrong. Stop when no remaining question would change the plan. Record the answers as D-### entries in .offthemode/DECISIONS.md.
 ```
 
-```prompt title="Assumptions Before Action"
-Before changing anything, list your assumptions about {{TASK}}: data shapes, current behavior, user expectations, environment. Mark each VERIFIED (file:line) or GUESS. Resolve every GUESS you can by reading code; ask me about the rest. Then proceed.
+```prompt title="Confirm Before Building"
+Before changing anything, list what you believe about {{TASK}}: data shapes, current behavior, user expectations, environment. Mark each VERIFIED (file:line) or HYPOTHESIS. Confirm every hypothesis before building on it: check the code or docs, and ask me about the rest. Build only on what is verified.
 ```
 
 ```prompt title="Constraint Stack"
@@ -2798,7 +2798,7 @@ The kit is a git repo (`~/agent-kit`) with three folders. `global/` gets symlink
 ```prompt title="Bootstrap New Project"
 Bootstrap {{PROJECT_NAME}} from the agent kit and the {{STACK}} stack pack just copied into this repo. Tier: {{weekend | product | complex}}. Platforms: {{web | iOS | Android}}. Raw vision: @.offthemode/raw-vision.md.
 1. List every scaffold file with unfilled {{PLACEHOLDERS}}, grouped as: fill now (only facts I stated in the raw vision, plus the stack pack's commands.env), fill after P1 (mission, stack, remaining commands), delete for this tier (per the kit's scaling table). Show the delete list and wait for my ok.
-2. Delete the approved files. Fill what you can now; tag every inference [assumed]. Never invent a stack, a command, a metric or a user.
+2. Delete the approved files. Fill what you can now; tag every inference [hypothesis] and confirm it with me before relying on it. Never invent a stack, a command, a metric or a user.
 3. If code exists, detect the toolchain (package manager, framework versions from the lockfile, test and lint scripts) and fill AGENTS.md Commands; otherwise list them under Waiting on me in STATE.md.
 4. Write .offthemode/STATE.md: Now = "bootstrapped"; Next = 1. Interrogate My Vision, 2. Generate the Skeleton, 3. Draft the Constitution (lock), 4. Core Spike.
 5. Check the wiring: every hook in .claude/settings.json and .cursor/hooks.json points at an executable script; every @ import in CLAUDE.md and AGENTS.md files resolves; each directory pack has its one-line CLAUDE.md; .gitignore covers .env*, shots/, logs/; ~/.claude/design/TASTE.md exists (if not, tell me to run /taste).

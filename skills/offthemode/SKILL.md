@@ -19,7 +19,7 @@ Say which door you picked and why, in one line.
 
 ## New project
 1. Interview the user about the vision, in rounds of at most 5 numbered questions, each with your recommended default: who it's for, the one job it does, the moment of value, the core concept, what it must never become, references for the look and feel (only if it has a UI), and constraints (platforms, stack preferences, deadline).
-2. Write `.offthemode/PRODUCT.md` from the template with their answers. Mark every guess as assumed.
+2. Write `.offthemode/PRODUCT.md` from the template with their answers. Write every guess as a hypothesis, and confirm each one with them before anything is built on it.
 3. Ask them to confirm or correct PRODUCT.md. Then write `.offthemode/GLOSSARY.md`, `.offthemode/RULES.md` (fill what you know; leave commands for when the toolchain exists), `.offthemode/STATE.md` and `.offthemode/DECISIONS.md`.
 4. Build the checklist by following the listrevisit instructions (the checklist doesn't exist yet, so listrevisit builds it).
 

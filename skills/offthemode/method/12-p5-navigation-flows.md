@@ -105,4 +105,4 @@ Write a test script for journey {{JOURNEY_ID, default J1}} in .offthemode/ROUTES
 After I paste the notes, output: Task | Success | Time | Pause points | Their word vs the GLOSSARY term. Then the 3 changes that remove the most hesitation, each tried first as a subtraction, default or inference before any new UI, plus GLOSSARY and copy edits wherever their words differ from ours.
 ```
 
-> **Rule:** The gate passes when at least 4 of 5 reach the moment of value unaided, inside the PRODUCT.md budget. Below that, make the three changes and test five new people, never the same five. Update the Evidence column: after this, Person, Job and Moment are observed, not assumed.
+> **Rule:** The gate passes when at least 4 of 5 reach the moment of value unaided, inside the PRODUCT.md budget. Below that, make the three changes and test five new people, never the same five. Update the Evidence column: after this, Person, Job and Moment are observed, not hypotheses.

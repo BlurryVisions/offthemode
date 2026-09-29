@@ -13,7 +13,7 @@ This is not a phase. It's the lens applied before the rules are final and again 
 | The one thing (10x better than anything else) | Six strengths | One sentence; everything else is parity or absent |
 | Refusals (what it won't do, even when asked) | Nothing | "No multitrack mixing. No collaboration in v1." |
 
-Every decision carries its evidence: **observed** (you watched someone do it), **heard** (someone told you), or **assumed**. Each assumed Person, Job or Moment row is copied into RISKS.md, because every downstream template treats PRODUCT.md as fact, and a fictional person makes every later gate pass for the wrong reason.
+Every decision carries its evidence: **observed** (you watched someone do it), **heard** (someone told you), or **hypothesis**: a guess written down for clarity. Nothing is built on a hypothesis until it is confirmed. Each hypothesis Person, Job or Moment row is copied into RISKS.md, because every downstream template treats PRODUCT.md as fact, and a fictional person makes every later gate pass for the wrong reason.
 
 Each decision also becomes a technical constraint. "40 s, no signup" means anonymous sessions, resumable uploads and streamed results, written into PRODUCT.md §Tech consequences so P4 inherits them. Agents help by adding, and the global rules (P0) push back: no feature without a job, ideas arrive as ranked bets, the design that asks fewer questions wins, and any conflicting PRODUCT.md line gets quoted before acting. That quoting rule turns a vague value into a lookup, which models do reliably.
 

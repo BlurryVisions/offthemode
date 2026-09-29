@@ -59,7 +59,7 @@ The kit is a git repo (`~/agent-kit`) with three folders. `global/` gets symlink
 ```prompt title="Bootstrap New Project"
 Bootstrap {{PROJECT_NAME}} from the agent kit and the {{STACK}} stack pack just copied into this repo. Tier: {{weekend | product | complex}}. Platforms: {{web | iOS | Android}}. Raw vision: @.offthemode/raw-vision.md.
 1. List every scaffold file with unfilled {{PLACEHOLDERS}}, grouped as: fill now (only facts I stated in the raw vision, plus the stack pack's commands.env), fill after P1 (mission, stack, remaining commands), delete for this tier (per the kit's scaling table). Show the delete list and wait for my ok.
-2. Delete the approved files. Fill what you can now; tag every inference [assumed]. Never invent a stack, a command, a metric or a user.
+2. Delete the approved files. Fill what you can now; tag every inference [hypothesis] and confirm it with me before relying on it. Never invent a stack, a command, a metric or a user.
 3. If code exists, detect the toolchain (package manager, framework versions from the lockfile, test and lint scripts) and fill AGENTS.md Commands; otherwise list them under Waiting on me in STATE.md.
 4. Write .offthemode/STATE.md: Now = "bootstrapped"; Next = 1. Interrogate My Vision, 2. Generate the Skeleton, 3. Draft the Constitution (lock), 4. Core Spike.
 5. Check the wiring: every hook in .claude/settings.json and .cursor/hooks.json points at an executable script; every @ import in CLAUDE.md and AGENTS.md files resolves; each directory pack has its one-line CLAUDE.md; .gitignore covers .env*, shots/, logs/; ~/.claude/design/TASTE.md exists (if not, tell me to run /taste).

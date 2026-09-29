@@ -5,7 +5,7 @@ The Laws table already covers reverse prompting, diverge-then-converge, handoffs
 
 | Move | Mechanism | Template |
 |---|---|---|
-| Assumptions first | Surfaces hidden guesses while they're cheap to veto | Assumptions Before Action |
+| Hypotheses first | Makes hidden guesses visible, so they are confirmed before anything is built on them | Confirm Before Building |
 | Constraint stacking | Independent constraints overlap only in a small, unusual region | Constraint Stack |
 | Reference anchoring | One reference carries thousands of constraints; take/ignore stops surface copying | Anchor to References |
 | Ban with replacement | A bare ban primes the banned thing; an alternative gives the model somewhere to go | Ban With Replacement |
@@ -21,8 +21,8 @@ The Laws table already covers reverse prompting, diverge-then-converge, handoffs
 Before any plan or code, interview me about {{FEATURE}}. Rounds of at most 5 numbered questions, max 3 rounds, ordered by how much the answer changes architecture or UX, each with your default and what breaks if it is wrong. Stop when no remaining question would change the plan. Record the answers as D-### entries in .offthemode/DECISIONS.md.
 ```
 
-```prompt title="Assumptions Before Action"
-Before changing anything, list your assumptions about {{TASK}}: data shapes, current behavior, user expectations, environment. Mark each VERIFIED (file:line) or GUESS. Resolve every GUESS you can by reading code; ask me about the rest. Then proceed.
+```prompt title="Confirm Before Building"
+Before changing anything, list what you believe about {{TASK}}: data shapes, current behavior, user expectations, environment. Mark each VERIFIED (file:line) or HYPOTHESIS. Confirm every hypothesis before building on it: check the code or docs, and ask me about the rest. Build only on what is verified.
 ```
 
 ```prompt title="Constraint Stack"
