@@ -2491,7 +2491,7 @@ Before writing code for {{FEATURE}}, propose 3-7 events answering {{QUESTIONS}}:
 
 > **Output:** separate contexts for research, building and review; worktrees for parallel and isolated work; headless batches for mechanical sweeps; a model and effort choice per task.
 
-> **Rule:** Every agent starts with a blank memory, so it re-reads what you already know, and you pay for that reading again. Thirteen agents means thirteen readings; a checker agent redoes the work it checks. So: scripts for anything measurable, one agent by default, a second only for an independent review or for a large search whose raw results would otherwise sit in the main session (where every later reply re-reads them). Many agents only when the user asks, with the cost said up front.
+> **Rule:** Every agent starts with a blank memory, so it re-reads what you already know, and you pay for that reading again: thirteen agents, thirteen readings. Don't cap the agents; remove the repetition. One scout reads once and writes a short brief. Every agent's prompt starts with that brief byte for byte, so it is read from the prompt cache (about 0.05 to 0.1 times the input price) instead of paid in full. Launch one agent first and the rest once it is running, because parallel requests that start together all miss the cache. Agents return short structured results, since output is never cached and costs the most. Scripts do anything measurable. And a search whose raw results would otherwise sit in the main session, re-read on every later reply, is cheaper in an agent that returns a summary.
 
 The context window is working memory. Long sessions pile up stale and contradictory information, and a fresh context reviewing code has no stake in defending it.
 

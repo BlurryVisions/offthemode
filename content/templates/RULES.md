@@ -40,13 +40,14 @@ RULES · {{?PROJECT_NAME}} · read before working. The standards every change is
 - Authorization is checked on the server for every action, never only in the UI.
 - No secret in the repo, the client bundle or the logs.
 
-## Cost (keep token use low)
+## Efficiency (spend tokens on results, not on repetition)
+- No caps: use whatever the job needs. The aim is that nothing gets paid for twice.
 - Measure with scripts, not by reading: tests, layout checks and link checks run as commands, and you read their short output, never the raw data.
 - Read narrow: search first, then open only the lines you need. Never read generated files, lockfiles or build output; tail logs instead of reading them whole.
-- One agent by default. Use a second only for an independent review of your own work, or a big search whose raw results would otherwise fill this session. Ask before running more than two.
+- Many agents, one reading: a scout reads once and writes a short brief; every agent starts with that brief word for word (the shared start is read from cache at a fraction of the price) and its own task after it. Start one agent first and the rest once it is running, so they read the cache instead of all writing it. Agents return short, structured results.
 - Keep sessions short: when a piece of work ends, update STATE.md and start fresh. A long session re-reads its whole history on every reply.
 - Open a method sheet or template only when you need it.
-- Before anything expensive (many agents, reading a whole repo, long loops), say so, give a rough size, and offer the cheaper path.
+- For big runs, say roughly what they will cost before starting, then go.
 
 ## Budgets (the only place these numbers live)
 - Load: main content visible within {{LCP_MS | 2500}} ms on a mid-tier phone; feedback to any tap or click within {{FEEDBACK_MS | 100}} ms.
