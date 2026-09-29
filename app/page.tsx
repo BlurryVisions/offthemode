@@ -19,6 +19,9 @@ const WHAT: Record<string, string> = {
   glossaryrevisit: "Refreshes a summary of the project anyone can understand",
 };
 const ARG: Record<string, string> = { listrevisit: " [idea]", commentrevisit: " [path]" };
+// The order people meet them in: set up first, then the revisits from most to least used.
+const SEQUENCE = ["offthemode", "listrevisit", "reassess", "commentrevisit", "glossaryrevisit"];
+const byUse = [...commands].sort((a, b) => SEQUENCE.indexOf(a.name) - SEQUENCE.indexOf(b.name));
 
 const ORDER = [
   ["Rules", "The standard every change is held to"],
@@ -138,7 +141,7 @@ export default function Home() {
                   <tr><th>Say or type</th><th>What it does</th><th>What it can change</th></tr>
                 </thead>
                 <tbody>
-                  {commands.map((c) => (
+                  {byUse.map((c) => (
                     <tr key={c.name}>
                       <td><code>/{c.name}{ARG[c.name] ?? ""}</code></td>
                       <td>{WHAT[c.name] ?? c.title}</td>
