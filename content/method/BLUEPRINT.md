@@ -1,6 +1,6 @@
 # Off the Mode
 
-Left alone, every coding agent returns the mode of its training data: the most common stack, the most common landing page, the most common happy-path code. This blueprint is a portable system for pulling agents off the mode, and toward something recognisably yours, on every project you build: web or mobile, weekend build or extremely complex product. A GLOBAL layer (your taste, rules, expert profiles, critics, commands) follows you to every repo. A PER-PROJECT scaffold gets filled in fresh in ten minutes. The blueprint keeps your order, fixes the places where it leaks, and applies one product-first lens throughout: complex inside, simple outside.
+Left alone, every coding agent returns the mode of its training data: the most common stack, the most common landing page, the most common happy-path code. This blueprint is a portable system for pulling agents off the mode, and toward something recognisably yours, on every project you build: web or mobile, weekend build or extremely complex product. A GLOBAL layer (your taste, rules, expert profiles, critics, commands) follows you to every repo. A PER-PROJECT scaffold gets filled in fresh in ten minutes. It keeps one order (rules, plan, look and feel, backend, navigation, the core in fragments, security, ship), adds what AI builds usually miss (Why each part exists), and applies one product-first lens throughout: complex inside, simple outside.
 
 Read it in three layers, like a product. **L1, daily:** The Pipeline, The One-Page Loop (fifteen commands) and Bootstrap in 10 minutes inside The Portable Kit. **L2, per phase:** open a phase section only while you're in that phase. **L3, once:** the file and prompt templates, which you copy into the kit and then run as commands. Two conventions run through every template. `{{NAME}}` is something you supply. `{{?NAME}}` is something the agent resolves from the docs and shows with its source (`PERSON <- PRODUCT.md L7`), so most prompts need one argument, not ten. And every task runs in a lane (Trivial, Standard, Heavy), so a copy tweak never pays for the ritual a schema change needs.
 
@@ -26,24 +26,6 @@ Read it in three layers, like a product. **L1, daily:** The Pipeline, The One-Pa
 
 This is not a waterfall. P1 and P2 form one loop. P4 and P5 run in parallel once the mock server exists. P6 loops dozens of times, and P7 only audits controls that P0, P4 and P6 already built. The Always-On rails run under every phase from the first commit. The Doctrine and Taming Complexity are lenses applied at every phase gate: an output that can't name the person, job and moment it serves isn't done. Two gates use real people, because every other judge in the system is a model or you: 3 target people try the feel prototype after P2, and 5 do the core job on the clickable skeleton after P5. The tier sets how deep you go (The Portable Kit, scaling).
 
-## Where Your Approach Leaks
-<!-- origin: added -->
-
-The intent of your order is right: rules first, vision before code, function before polish. It leaks in twelve places. Each fix keeps your phases.
-
-1. **Product is implicit.** Person, job and moment of value are never written down, so the agent fills them with the average product. **Fix:** Product-First Doctrine, written into `.offthemode/PRODUCT.md`.
-2. **Nothing checks the work.** "Done" means the agent stopped typing. **Fix:** Always-On · Verification Loop: audits that assert, hooks that gate a `DONE:` claim, `/ship`.
-3. **Security is scheduled as a phase but lives in the schema.** Tenancy, authz and where PII lives get decided in backend work either way. **Fix:** invariants in the rules on day one, a threat sketch in P1, and P7 as an audit.
-4. **A risky fragment gets built last.** Defining the core concept first, in planning, is right. But the core is built last, so if one fragment needs realtime, a sync engine or a different data shape, everything built before it bends. **Fix:** the Living Checklist splits the core into fragments and marks each one as provable early or only on completion. P2 proves the early ones before the plan depends on them; the rest get an end-to-end check when they are complete. "Plug and play" is only true once the socket is known.
-5. **Complexity has no owner.** Every feature arrives with a control. **Fix:** Taming Complexity, where clutter is a counted score that fails like a test.
-6. **The "made JS" persona is placebo.** It changes tone, not tradeoffs. **Fix:** Expertise Injection: values, refusals, sources, an adversarial critic.
-7. **The content layer is missing.** Visuals judged on lorem ipsum, copy left to defaults. **Fix:** Always-On · Real Data and Words & Voice, before visuals lock.
-8. **Corrections evaporate.** **Fix:** the LESSONS promotion ladder (P0) and retros that upgrade the global layer.
-9. **Hosted is not shipped.** No launch, no monitoring, no loop from usage back to product. **Fix:** Always-On · Instrumentation and P8.
-10. **One agent in one context does everything, including reviewing itself.** **Fix:** Always-On · Agent Orchestration.
-11. **Every judge is a model or you.** The predict-my-call test proves a model can predict you; critics score screenshots. Nothing checks that the Person exists or that a stranger reaches the moment of value unaided. **Fix:** an Evidence column in PRODUCT.md and two human gates (P2 feel test, P5 Five-Person Test).
-12. **"Unique" is defined against the average, not toward you.** Bans without a positive signature converge on the next mode, and in 2026 that mode is the anti-slop look itself. **Fix:** `TASTE.md` built from your own loves and hates, plus a `USED.md` ledger so project 3 can't look like project 1 (P3).
-
 ```mermaid
 flowchart LR
   D[Product lens] --> R[Rules] --> S[Vision + skeleton] --> C[Core spike + feel test] --> V[Visuals from TASTE.md] --> B[Backend + infra] --> N[Navigation + five-person test] --> K[Core build] --> H[Security audit] --> O[Ship + operate]
@@ -53,6 +35,26 @@ flowchart LR
     A1[Verification] --- A2[Words] --- A3[Real data] --- A4[Budgets] --- A5[Instrumentation] --- A6[Orchestration] --- A7[Prompt library]
   end
 ```
+
+## Why each part exists
+<!-- origin: added -->
+
+Each part of the method is there because building with AI goes wrong in a specific way without it.
+
+| Part | What goes wrong without it |
+|---|---|
+| Product-First Doctrine | The person, the job and the moment of value are never written down, so the AI fills them in with the average product. |
+| Always-On · Verification Loop | Nothing checks the work: "done" means the AI stopped typing. |
+| Security from day one (P0 rules, a threat sketch in P1, the P7 audit) | Permissions, tenancy and where personal data lives get decided during backend work anyway. A security phase at the end finds them too late. |
+| Living Checklist and P2 · Core Spike | The riskiest piece of the core gets built last, and if it needs a different data shape, everything built before it bends. |
+| Taming Complexity | Every feature arrives with a new control until the product is cluttered. |
+| Expertise Injection | "Act as a senior engineer" changes the tone, not the decisions. |
+| Always-On · Real Data, and Words & Voice | Screens are judged on placeholder text and copy is left to defaults, so everything looks generic. |
+| P0 · Constitution (lessons) | Corrections are lost between sessions and the same mistakes come back. |
+| P8 · Ship & Operate, and Instrumentation | Hosted isn't shipped: no launch, no monitoring, no loop from real use back to the product. |
+| Always-On · Agent Orchestration | One AI in one session does everything, including reviewing its own work. |
+| Evidence in PRODUCT.md, and the Five-Person Test | Every judge is a model or the builder; nobody checks that real people reach the moment of value. |
+| P3 · Visual Language (taste) | "Unique" is defined against the average instead of toward a real point of view, so it drifts into the next trend. |
 
 ## The Laws
 <!-- origin: added -->

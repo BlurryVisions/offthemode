@@ -19,3 +19,13 @@
 | Always-On (8 rails) | added | Verification, words, data, budgets, instrumentation, orchestration, prompts, revisits | Hooks, audits, evals, `VOICE.md`, seeds, `BUDGETS.md`, commands, `/reassess`, `/commentrevisit`, `/glossaryrevisit` |
 
 This is not a waterfall. P1 and P2 form one loop. P4 and P5 run in parallel once the mock server exists. P6 loops dozens of times, and P7 only audits controls that P0, P4 and P6 already built. The Always-On rails run under every phase from the first commit. The Doctrine and Taming Complexity are lenses applied at every phase gate: an output that can't name the person, job and moment it serves isn't done. Two gates use real people, because every other judge in the system is a model or you: 3 target people try the feel prototype after P2, and 5 do the core job on the clickable skeleton after P5. The tier sets how deep you go (The Portable Kit, scaling).
+
+```mermaid
+flowchart LR
+  D[Product lens] --> R[Rules] --> S[Vision + skeleton] --> C[Core spike + feel test] --> V[Visuals from TASTE.md] --> B[Backend + infra] --> N[Navigation + five-person test] --> K[Core build] --> H[Security audit] --> O[Ship + operate]
+  O -. retro upgrades the global layer .-> R
+  subgraph AO [Always-On rails under every phase]
+    direction LR
+    A1[Verification] --- A2[Words] --- A3[Real data] --- A4[Budgets] --- A5[Instrumentation] --- A6[Orchestration] --- A7[Prompt library]
+  end
+```

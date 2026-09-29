@@ -4,7 +4,7 @@ One file per sheet. Open only the sheet for the phase you are in.
 
 - `00-introduction.md` · Introduction
 - `01-the-pipeline.md` · The Pipeline
-- `02-where-your-approach-leaks.md` · Where Your Approach Leaks
+- `02-why-each-part-exists.md` · Why each part exists
 - `03-the-laws.md` · The Laws
 - `04-product-first-doctrine.md` · Product-First Doctrine
 - `05-p0-constitution.md` · P0 · Constitution
