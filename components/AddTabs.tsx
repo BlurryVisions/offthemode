@@ -57,9 +57,13 @@ export function AddTabs({ mcpUrl, cursorLink, vscodeLink, repoUrl, zips }: Props
           )}
           {t === "Claude Code" && (
             <>
-              <p>For Claude Code in the terminal and in its VS Code and JetBrains extensions. Run this once in a terminal (in VS Code: Terminal → New Terminal). It adds Off the Mode for every project:</p>
+              <p>For Claude Code in the terminal and in its VS Code and JetBrains extensions.</p>
+              <p><b>Easiest: the skills</b> (last tab). They install as files on your machine, work in auto mode with no extra step, and give you clean commands like <span className="inline">/offthemode</span>.</p>
+              <p><b>Or the link.</b> Run this once in a terminal (in VS Code: Terminal → New Terminal). It adds Off the Mode for every project:</p>
               <Copy text={`claude mcp add --transport http --scope user offthemode ${mcpUrl}`} label="the command" />
-              <p>Commands show up as <span className="inline">/mcp__offthemode__listrevisit</span> and so on, or just say what you want. For clean names like <span className="inline">/listrevisit</span>, use the skills instead (last tab).</p>
+              <p>Auto mode, Claude Code&apos;s default, blocks tools from a server you just added until you allow them. Type <span className="inline">/permissions</span> in Claude Code and add this allow rule, or switch the session to Manual mode once and approve the tool when it asks:</p>
+              <Copy text="mcp__offthemode" label="the allow rule" />
+              <p>Commands then show up as <span className="inline">/mcp__offthemode__listrevisit</span> and so on, or just say what you want.</p>
             </>
           )}
           {t === "Cursor" && (

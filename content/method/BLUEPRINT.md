@@ -2733,6 +2733,8 @@ On Team and Enterprise plans only admins can add connectors, so ask yours to add
 claude mcp add --transport http --scope user offthemode https://offthemode.vercel.app/mcp
 ```
 
+In auto mode, Claude Code's default, the safety check blocks tools from a server you just added until you allow them. Type `/permissions` and add the allow rule `mcp__offthemode`, or switch the session to Manual mode once and approve the tool when it asks. The skills avoid this step: they are files on your machine, so they work in auto mode as they are.
+
 `--scope user` makes it available in every project on your machine. Run `claude mcp list` to check that `offthemode` shows as connected. The commands appear as `/mcp__offthemode__offthemode`, `/mcp__offthemode__listrevisit` and so on.
 
 #### Cursor and VS Code

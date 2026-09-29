@@ -17,7 +17,7 @@ const handler = createMcpHandler(
         c.name,
         {
           title: c.title,
-          description: `${c.description} Returns the instructions to follow in the user's project.`,
+          description: `${c.description} Read-only: returns a guide (text) for this step; it changes nothing by itself.`,
           inputSchema,
           annotations: { readOnlyHint: true, openWorldHint: false },
         },

@@ -15,7 +15,7 @@ https://offthemode.vercel.app/mcp
 ```
 
 - **Claude** (desktop or claude.ai): Settings → Connectors → Add custom connector → paste the link.
-- **Claude Code:** `claude mcp add --transport http --scope user offthemode https://offthemode.vercel.app/mcp`
+- **Claude Code:** the skills (below) are the easiest route. For the link, run `claude mcp add --transport http --scope user offthemode https://offthemode.vercel.app/mcp`, then allow its tools: auto mode (the default) blocks a newly added server until you add the allow rule `mcp__offthemode` in `/permissions`.
 - **Cursor, VS Code:** one-click buttons on the website.
 
 **2. The skills** (no server)

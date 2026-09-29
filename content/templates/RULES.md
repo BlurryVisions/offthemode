@@ -3,7 +3,7 @@ RULES · {{?PROJECT_NAME}} · read before working. The standards every change is
 ## This project
 - What it is: {{?THESIS}} (the full vision is in .offthemode/PRODUCT.md)
 - Stack: {{?STACK}} · Platforms: {{?PLATFORMS}}
-- Other rule files that stay in force: {{?EXISTING_RULE_FILES | none}}
+- Other rule files that stay in force: {{?EXISTING_RULE_FILES | none}} (where they overlap with this file: {{which wins, as decided in DECISIONS.md}})
 
 ## How to work
 - Talk first, then do. For anything beyond a small fix (a typo, a one-line change), restate the task and your plan in a few lines and wait for my go. Say what you changed when you're done.
