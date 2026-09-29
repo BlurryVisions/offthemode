@@ -30,7 +30,11 @@ Say which door you picked and why, in one line.
 4. Follow the reassess instructions to report how the code compares with the core concept, then the listrevisit instructions to build the checklist, with what's already built marked [x].
 
 ## Both doors, last step
-- Offer to add one line to the project's agent instructions file (AGENTS.md, CLAUDE.md or the tool's rules file): "This project uses Off the Mode: read .offthemode/RULES.md and .offthemode/STATE.md before working." Add it only if they say yes.
+- Make the rules load in every session, not only when a command runs. Explain this in one line and ask before editing, then use the tool's own auto-load:
+  - Claude Code: add `@.offthemode/RULES.md` and `@.offthemode/STATE.md` on their own lines in CLAUDE.md (these imports load at the start of every session).
+  - Cursor: create `.cursor/rules/offthemode.mdc` with `alwaysApply: true` telling the agent to read those two files before any change.
+  - Tools that read AGENTS.md: add "This project uses Off the Mode: read .offthemode/RULES.md and .offthemode/STATE.md before any change." to AGENTS.md.
+  Keep any existing content; add, never replace. Say which file you changed.
 - Ask whether `.offthemode/` should be committed (recommended, so the whole team shares it) or kept out of git.
 - End with what you created and the next 3 steps.
 

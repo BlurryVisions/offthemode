@@ -90,6 +90,7 @@ const handler = createMcpHandler(
     serverInfo: { name: "offthemode", version: "0.1.0" },
     instructions:
       "Off the Mode makes you plan first, build in the right order and hold an elite bar. Each tool returns instructions to follow in the user's project; the project's plan and memory live in its .offthemode/ folder. " +
+      "Standing rule, even when no Off the Mode command was run: if the project has a .offthemode/ folder, read .offthemode/RULES.md and .offthemode/STATE.md before your first change in a session, and follow RULES.md. " +
       "Start with the offthemode tool (set up, or status if already set up). Then, when the user asks: listrevisit (the checklist), reassess (code vs core concept), commentrevisit (comments only), glossaryrevisit (plain-words summary). " +
       `Source: ${REPO_URL}`,
   },
