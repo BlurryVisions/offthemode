@@ -13,7 +13,7 @@ RULES · {{?PROJECT_NAME}} · read before working. The standards every change is
 - Sessions stay free. Never force the checklist; /listrevisit catches up afterwards.
 
 ## Guides (open the matching one before the work; once per session is enough)
-Off the Mode has a guide for each kind of work. Before you start work of that kind, open its guide (the get_method tool with the name below, or the file ending in that name in the offthemode skill's method/ folder) and follow it. Skip this for a one-line fix.
+Off the Mode has a guide for each kind of work. Before you plan or do work of that kind, open its guide now, in this reply, not as a later step (the get_method tool with the name below, or the file ending in that name in the offthemode skill's method/ folder) and follow it. Skip this for a one-line fix.
 | Before you... | Open |
 |---|---|
 | shape the product or plan a new feature | product-first-doctrine, p1-vision-skeleton |
