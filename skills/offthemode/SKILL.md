@@ -45,5 +45,5 @@ Work in this order, letting phases overlap: rules, then the plan (vision and cor
 The full method, sheet by sheet, is in the Off the Mode method (get_method on the server, or `method/` next to this skill).
 
 ## Files
-- Templates are in `templates/` next to this file: `templates/PRODUCT.md`, `templates/RULES.md`, `templates/GLOSSARY.md`, `templates/STATE.md`, `templates/DECISIONS.md`, `templates/CHECKLIST.md`.
+- Templates are in `templates/` next to this file: `templates/PRODUCT.md`, `templates/RULES.md`, `templates/GLOSSARY.md`, `templates/STATE.md`, `templates/DECISIONS.md`, `templates/CHECKLIST.md`. Open one only when you are about to write that file.
 - The full method is in `method/`, one file per sheet; start with `method/INDEX.md` and open only the sheet for the phase you are in.

@@ -36,12 +36,13 @@ expect(JSON.stringify(tools) === JSON.stringify(wantTools), `tools/list · ${too
 
 const note = "add CSV export to reports";
 const lr = (await rpc("tools/call", { name: "listrevisit", arguments: { note } })).content[0].text;
-expect(lr.includes(`User's note: ${note}`) && lr.includes("# Off the Mode · list revisit") && lr.includes('<template file=".offthemode/CHECKLIST.md">'),
-  "tools/call listrevisit · note, instructions and checklist template");
+expect(lr.includes(`User's note: ${note}`) && lr.includes("# Off the Mode · list revisit") && lr.includes('get_template tool: "CHECKLIST.md"') && !lr.includes("<template"),
+  "tools/call listrevisit · note and instructions, template fetched on demand (not inlined)");
 
 for (const name of ["offthemode", "reassess", "commentrevisit", "glossaryrevisit"]) {
   const t = (await rpc("tools/call", { name, arguments: {} })).content[0].text;
-  expect(t.length > 500 && t.includes("Off the Mode"), `tools/call ${name} · ${t.length} chars`);
+  // Size guard: commands carry instructions only, so a status check stays cheap (~4 chars per token).
+  expect(t.length > 500 && t.length < 6000 && t.includes("Off the Mode"), `tools/call ${name} · ${t.length} chars (~${Math.round(t.length / 4)} tokens, limit 1500)`);
 }
 
 const tpl = (await rpc("tools/call", { name: "get_template", arguments: { name: "RULES.md" } })).content[0].text;

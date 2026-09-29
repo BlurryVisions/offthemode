@@ -23,14 +23,15 @@ export const SITE_URL =
   (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000");
 export const MCP_URL = `${SITE_URL}/mcp`;
 
-/** A command as the agent receives it: who is speaking, the user's input, the instructions, then any templates inline. */
+/** A command as the agent receives it: who is speaking, the user's input, the instructions, and which templates to fetch.
+ * Templates are not inlined: a status check needs none, so the agent fetches one only when it is about to write that file. */
 export function renderCommand(c: Command, input?: string): string {
   const header =
     `You are running Off the Mode's "${c.name}" command in the user's project. Follow the instructions below. ` +
     "This server only supplies instructions and templates; you do the reading and writing in the project, with the user's normal permissions.";
   const inputLine = c.argument ? `\n\nUser's ${c.argument}: ${input?.trim() ? input.trim() : "(none)"}` : "";
   const tpl = c.templates.length
-    ? "\n\n# Templates\n" + c.templates.map((t) => `\n<template file=".offthemode/${t}">\n${templates[t]}</template>\n`).join("")
+    ? `\n\n# Templates\nFetch a template only when you are about to write that file, with the get_template tool: ${c.templates.map((t) => `"${t}"`).join(", ")}. Follow it exactly.\n`
     : "";
   return `${header}${inputLine}\n\n${c.body}${tpl}`;
 }

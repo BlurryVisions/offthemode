@@ -27,4 +27,4 @@ Reply in at most 25 lines: progress per fragment with its Verify mode (F2 ■■
 
 ## Files
 - The user's note, if any, is whatever they typed after the command.
-- Templates are in `templates/` next to this file: `templates/CHECKLIST.md`.
+- Templates are in `templates/` next to this file: `templates/CHECKLIST.md`. Open one only when you are about to write that file.

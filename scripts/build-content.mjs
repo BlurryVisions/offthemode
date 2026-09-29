@@ -103,7 +103,7 @@ function skillFiles() {
     const refs = [];
     if (c.argument) refs.push(`The user's ${c.argument}, if any, is whatever they typed after the command.`);
     if (c.templates.length) {
-      refs.push("Templates are in `templates/` next to this file: " + c.templates.map((t) => `\`templates/${t}\``).join(", ") + ".");
+      refs.push("Templates are in `templates/` next to this file: " + c.templates.map((t) => `\`templates/${t}\``).join(", ") + ". Open one only when you are about to write that file.");
       for (const t of c.templates) files[`${dir}/templates/${t}`] = templates[t];
     }
     if (c.name === ENTRY) {

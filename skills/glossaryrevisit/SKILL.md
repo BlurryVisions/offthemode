@@ -19,4 +19,4 @@ Rules:
 Before writing, reread every sentence as someone outside tech and rewrite any they would have to ask about. If the section exists, show what changed and why (usually "Where we are"), then write it.
 
 ## Files
-- Templates are in `templates/` next to this file: `templates/GLOSSARY.md`.
+- Templates are in `templates/` next to this file: `templates/GLOSSARY.md`. Open one only when you are about to write that file.
