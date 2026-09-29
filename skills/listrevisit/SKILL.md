@@ -12,7 +12,7 @@ Input: {{?NOTE: empty for status, or a new feature, idea or change}}. Edit only 
 ## If the checklist is missing or still the unfilled template, build it
 1. Read the plan: `.offthemode/PRODUCT.md`, or the plan file the user names.
 2. Split the core concept into fragments: the separate pieces of the core a user would notice, usually 3 to 8. A fragment cuts through every layer it needs; "the API for F2" is not a fragment. For each: what it does for the person, what it depends on, and Verify: early (it can be proven on its own) or on completion (only an end-to-end run proves it).
-3. Give each fragment 2 to 6 items with a provable "done when": a test by name, a number against RULES.md §Budgets, a named state you can screenshot, or an end-to-end run with real inputs. Reject "works", "clean" and "fast".
+3. Give each fragment 2 to 6 items with a provable "done when": a test by name, a number against RULES.md §Budgets, a named state you can screenshot, or an end-to-end run with real inputs. Reject "works", "clean" and "fast". Tag each item with the guide from RULES.md §Guides that applies, so whoever builds it opens the right one.
 4. Keep only the foundation items and quality bars this product needs; delete the rest with a one-line reason each. Point every bar at a command from RULES.md §Commands.
 5. Order: dependencies first, then the fragment nearest the moment of value.
 Show the user the fragments in order, one line each, and wait for their ok. Then write the file, with anything already built marked [x], never [v].

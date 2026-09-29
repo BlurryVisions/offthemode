@@ -89,6 +89,12 @@ function splitSheets(md) {
 }
 const sheets = splitSheets(blueprint);
 if (sheets.length < 20) fail(`BLUEPRINT.md split into only ${sheets.length} sheets`);
+// RULES.md §Guides routes work to sheets by name; a renamed sheet must not leave the map pointing at nothing.
+const slugs = new Set(sheets.map((s) => s.slug));
+const guideMap = templates["RULES.md"].split("## Guides")[1]?.split("\n## ")[0] ?? "";
+const cited = [...guideMap.matchAll(/\| ([a-z0-9-]+(?:, [a-z0-9-]+)*) \|$/gm)].flatMap((m) => m[1].split(", "));
+if (!cited.length) fail("RULES.md: §Guides map is missing or empty");
+for (const g of cited) if (!slugs.has(g)) fail(`RULES.md §Guides cites "${g}", which is not a method sheet`);
 
 // ---------- skills ----------
 const yamlString = (s) => `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;

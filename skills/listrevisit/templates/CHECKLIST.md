@@ -14,7 +14,7 @@ Verify: early = can be proven on its own · on completion = only an end-to-end r
 
 ### F1 · {{FRAGMENT_NAME}} · depends on: {{none | F#}} · Verify: {{early | on completion}}
 For the person: {{what they can now do, in their words}}
-- [ ] F1.1 {{capability}} · done when: {{a test by name | a number against RULES.md §Budgets | a named state you can screenshot | an end-to-end run with real inputs}} · evidence:
+- [ ] F1.1 {{capability}} · done when: {{a test by name | a number against RULES.md §Budgets | a named state you can screenshot | an end-to-end run with real inputs}} · guide: {{the RULES.md §Guides entry that applies | none}} · evidence:
 - [ ] F1.2 {{capability}} · done when: {{...}} · evidence:
 - [ ] F1.Q Quality bars met for F1 · evidence:
 

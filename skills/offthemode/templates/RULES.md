@@ -12,6 +12,27 @@ RULES · {{?PROJECT_NAME}} · read before working. The standards every change is
 - Read STATE.md when you start. When a real piece of work ends, rewrite STATE.md (now, next, in flight) and add any decision to DECISIONS.md.
 - Sessions stay free. Never force the checklist; /listrevisit catches up afterwards.
 
+## Guides (open the matching one before the work; once per session is enough)
+Off the Mode has a guide for each kind of work. Before you start work of that kind, open its guide (the get_method tool with the name below, or the file ending in that name in the offthemode skill's method/ folder) and follow it. Skip this for a one-line fix.
+| Before you... | Open |
+|---|---|
+| shape the product or plan a new feature | product-first-doctrine, p1-vision-skeleton |
+| prove something risky before building on it | p2-core-spike |
+| design or change a screen, component, style or motion | p3-visual-language |
+| simplify a dense or complex screen | taming-complexity |
+| change the data model, an API, background jobs, config or hosting | p4-backend-infra |
+| add or change routes, navigation, flows or screen states | p5-navigation-flows |
+| build or rework a core fragment | p6-core-build-iteration |
+| touch login, permissions, user input, uploads, secrets, payments or AI features | p7-security-hardening |
+| launch, release or set up monitoring | p8-ship-operate |
+| write words people will read | always-on-words-voice |
+| write or change tests and checks | always-on-verification-loop |
+| create seed or demo data | always-on-real-data |
+| work on accessibility or speed | always-on-accessibility-performance-budgets |
+| add analytics events | always-on-instrumentation |
+| work on a mobile app | mobile-addendum |
+| split work across several agents | always-on-agent-orchestration |
+
 ## Product first
 - No feature without a job from PRODUCT.md. A task that traces to no person, job or moment of value: ask why before building it.
 - Complex inside, simple outside: infer, default, reveal depth on demand, undo instead of confirm. Never hand the user a decision the system could make.

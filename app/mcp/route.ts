@@ -55,7 +55,7 @@ const handler = createMcpHandler(
       {
         title: "Read the Off the Mode method",
         description:
-          "Returns a sheet of the Off the Mode method (rules, planning, look and feel, backend, navigation, the core, security, shipping, and the always-on practices). Call with no sheet for the index, then fetch only the sheet for the phase you are in.",
+          "Returns an Off the Mode guide: planning, look and feel, backend, navigation, the core, security, shipping, and the always-on practices. Open the guide that matches the work you are about to do (the project's .offthemode/RULES.md §Guides maps work to guides), once per session. Call with no sheet for the index.",
         inputSchema: z.object({ sheet: z.enum(sheetSlugs).optional() }),
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
@@ -91,6 +91,7 @@ const handler = createMcpHandler(
     instructions:
       "Off the Mode makes you plan first, build in the right order and hold an elite bar. Each tool returns instructions to follow in the user's project; the project's plan and memory live in its .offthemode/ folder. " +
       "Standing rule, even when no Off the Mode command was run: if the project has a .offthemode/ folder, read .offthemode/RULES.md and .offthemode/STATE.md before your first change in a session, and follow RULES.md. " +
+      "Before design, backend, navigation, core, security or launch work, open the matching guide with get_method (RULES.md §Guides maps the work to the guide), once per session. " +
       "Start with the offthemode tool (set up, or status if already set up). Then, when the user asks: listrevisit (the checklist), reassess (code vs core concept), commentrevisit (comments only), glossaryrevisit (plain-words summary). " +
       `Source: ${REPO_URL}`,
   },
