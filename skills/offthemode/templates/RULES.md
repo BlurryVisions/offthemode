@@ -34,6 +34,7 @@ RULES · {{?PROJECT_NAME}} · read before working. The standards every change is
 - Stunning comes from restraint: typography, spacing, motion and one signature moment. Never from decoration.
 - One primary action per screen. Every screen has empty, loading, error, offline and no-permission states.
 - Visual values come from one set of design tokens, never hard-coded.
+- Layout is checked section by section at phone, tablet and wide widths, not just the first screen. Grids use a column count their items fill (8 items: 4+4 or 2x4, never 7+1); nothing sits alone in a row, nothing is clipped.
 
 ## Safety
 - Authorization is checked on the server for every action, never only in the UI.

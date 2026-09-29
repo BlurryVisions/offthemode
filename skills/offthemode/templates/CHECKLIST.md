@@ -34,6 +34,7 @@ Speed
 - Response and load times inside the budgets, with realistic data volume · audit command
 - Every new dependency has a size and a reason in DECISIONS.md · bundle size command
 - (UI) No layout shift on load or when data arrives
+- (UI) Every section looked at on phone, tablet and wide screens: grids fill their rows, nothing orphaned, clipped or overflowing
 - (native) The heaviest interaction holds its frame budget in a profile build
 Experience
 - (UI) Every screen has empty, loading, error, offline and no-permission states, each with one next action
