@@ -44,7 +44,8 @@ RULES · {{?PROJECT_NAME}} · read before working. The standards every change is
 - No caps: use whatever the job needs. The aim is that nothing gets paid for twice.
 - Measure with scripts, not by reading: tests, layout checks and link checks run as commands, and you read their short output, never the raw data.
 - Read narrow: search first, then open only the lines you need. Never read generated files, lockfiles or build output; tail logs instead of reading them whole.
-- Many agents, one reading: a scout reads once and writes a short brief; every agent starts with that brief word for word (the shared start is read from cache at a fraction of the price) and its own task after it. Start one agent first and the rest once it is running, so they read the cache instead of all writing it. Agents return short, structured results.
+- Scout first: one agent assesses the task, finds the files it actually touches (and what those depend on, not the whole repo), writes a short brief, and decides how many agents the job needs. A small job stays with one.
+- Many agents, one reading: every agent starts with the scout's brief word for word (the shared start is read from cache at a fraction of the price) and its own task after it. Start one first and the rest once it is running, so they read the cache instead of all writing it. Agents return short, structured results.
 - Keep sessions short: when a piece of work ends, update STATE.md and start fresh. A long session re-reads its whole history on every reply.
 - Open a method sheet or template only when you need it.
 - For big runs, say roughly what they will cost before starting, then go.
