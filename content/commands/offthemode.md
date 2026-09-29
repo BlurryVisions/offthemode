@@ -37,11 +37,7 @@ Draft its Project specifics from what is already knowable, and show them for con
 If the project already has rules: sort them for the user in two groups: general rules Off the Mode already covers (working style, comments, secrets, commits), and project specifics only this codebase could teach (a framework quirk, a data rule, a required check). Then offer two options and wait for their choice. Recommended: one rulebook, where the project specifics move into RULES.md §Project specifics, decisions such as a known deviation go into DECISIONS.md, the general duplicates are dropped, and the old files are retired once the user agrees (keep them only if another tool, such as Cursor, still reads them). The alternative: keep the existing files as they are, and RULES.md points to them and says which wins where they overlap. Record the choice in DECISIONS.md.
 
 ## Both doors, last step
-- Make the rules load in every session, not only when a command runs. Explain this in one line and ask before editing, then use the tool's own auto-load:
-  - Claude Code: add `@.offthemode/RULES.md` and `@.offthemode/STATE.md` on their own lines in CLAUDE.md (these imports load at the start of every session).
-  - Cursor: create `.cursor/rules/offthemode.mdc` with `alwaysApply: true` telling the agent to read those two files before any change.
-  - Tools that read AGENTS.md: add "This project uses Off the Mode: read .offthemode/RULES.md and .offthemode/STATE.md before any change." to AGENTS.md.
-  Keep any existing content; add, never replace. Say which file you changed.
+- Make RULES.md and STATE.md load in every session. Ask first, then use the tool's own auto-load, adding to existing content, never replacing it: Claude Code, `@.offthemode/RULES.md` and `@.offthemode/STATE.md` on their own lines in CLAUDE.md; Cursor, `.cursor/rules/offthemode.mdc` with `alwaysApply: true` saying to read both files before any change; tools that read AGENTS.md, one line there saying the same. Say which file you changed.
 - Ask whether `.offthemode/` should be committed (recommended, so the whole team shares it) or kept out of git.
 - End with what you created and the next 3 steps.
 
