@@ -3,10 +3,10 @@ RULES · {{?PROJECT_NAME}} · read before working. The standards every change is
 ## This project
 - What it is: {{?THESIS}} (the full vision is in .offthemode/PRODUCT.md)
 - Stack: {{?STACK}} · Platforms: {{?PLATFORMS}}
-- Other rule files still in force: {{?EXISTING_RULE_FILES | none, their lessons are in §Project specifics}}
+- The project's own rule files, still in force and never moved: {{?EXISTING_RULE_FILES | none}}. They win over this file on project specifics.
 
 ## Project specifics
-Rules only this project needs, each saying what to do and why. Written at setup from the plan (the stack's known traps, data rules, security boundaries), and added to when a correction has to be given twice. Keep a line only if it is certain to apply, not something an AI does anyway, and costly if missed.
+Rules only this project needs, each saying what to do and why, kept apart from the Off the Mode standards below and never repeating the project's own rule files. Written at setup from the plan (the stack's known traps, data rules, security boundaries), and added to when a correction has to be given twice. Keep a line only if it is certain to apply, not something an AI does anyway, and costly if missed.
 - {{?PROJECT_RULE: what to do, because why}}
 
 ## How to work
@@ -21,6 +21,7 @@ Off the Mode has a guide for each kind of work. Before you plan or do work of th
 | Before you... | Open |
 |---|---|
 | shape the product or plan a new feature | product-first-doctrine, p1-vision-skeleton |
+| name the product, a feature or a screen | p1-vision-skeleton, always-on-words-voice |
 | prove something risky before building on it | p2-core-spike |
 | design or change a screen, component, style or motion | p3-visual-language |
 | simplify a dense or complex screen | taming-complexity |

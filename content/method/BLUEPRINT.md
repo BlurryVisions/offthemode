@@ -599,6 +599,27 @@ Inputs {{}} · outputs {{}} · latency and cost envelope {{}} · failure modes {
 - {{R-##}}: {{hypothesis}}
 ```
 
+### Naming the product
+
+The name is the first part of the product people meet, and the part they repeat. Left alone, an AI names things by joining the category to a buzzword ("DataSense AI", "TaskFlow"): it describes a feature, sounds like a hundred others, and is usually taken. A strong name is short, easy to say and to spell after hearing it once, distinctive in its category, and evokes the feeling or the job rather than naming the feature. It also has to be ownable: the domain, the handles you need, the app stores, the package registry if you publish one, and no live trademark in your field.
+
+Go wide, then narrow:
+1. Generate across styles, so the options don't all sound alike: real words that evoke the feeling, metaphors from the product's world, invented words, compounds, words borrowed from another language, and a plain descriptive name as a baseline.
+2. Cut with the criteria above, then say each survivor aloud in a sentence ("I'll send it on X") and check how it reads in the languages you serve.
+3. Check availability live (domains, handles, stores, trademark databases), never from memory. A name you can't own is a hypothesis, not a name.
+4. You choose. The name, why it fits and the checks go in PRODUCT.md §Name, and nothing public is built on it until it is confirmed.
+
+Feature and screen names follow the same rule, in the words your users already use, and live in GLOSSARY.md §Terms.
+
+```prompt title="Name the Product"
+Help me name {{?PRODUCT: from the thesis and core concept in PRODUCT.md}}. Talk first; don't write any file until I choose.
+1. Read PRODUCT.md (person, job, moment of value, feeling, refusals) and say in two lines what the name has to carry.
+2. Generate at least 30 candidates across six styles: evocative real words, metaphors from the product's world, invented words, compounds, borrowed words, and plain descriptive as a baseline. Avoid category-plus-buzzword compounds and the endings everyone uses (-ly, -ify, -hub, AI).
+3. Shortlist the strongest 8: short, easy to say and spell after hearing it once, distinctive in its category, evoking the feeling or the job rather than the feature, and working in {{LANGUAGES}}. For each, one line on why it survived and one risk.
+4. Check the shortlist live with web search: .com and {{OTHER_DOMAINS}}, handles on {{PLATFORMS}}, the app stores, {{PACKAGE_REGISTRY | skip}}, and a trademark search in {{COUNTRIES}}. Mark each check found, taken or unclear, with its source. Never report availability from memory.
+5. Recommend 3, each with the sentence test ("I'll send it on X"). I choose; then write PRODUCT.md §Name with the name, why it fits and the checks, on my go.
+```
+
 ### Making the vision sound
 
 1. Dump the raw vision. Messy is fine.

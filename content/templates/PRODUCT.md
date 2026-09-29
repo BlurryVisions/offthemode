@@ -1,6 +1,9 @@
 PRODUCT · {{?PROJECT_NAME}} · {{draft | confirmed}} · reviewed {{DATE}}
 The vision and the core concept. Read it before any product or UX decision. Every claim carries its evidence: observed (seen people do it), heard (people said it), or hypothesis (a guess, written down for clarity and confirmed before anything is built on it).
 
+## Name
+{{NAME}} · why it fits: {{what it evokes, in a phrase}} · checked: {{domain, handles, app stores, trademark search, how it sounds aloud in the languages you serve}} · {{confirmed | hypothesis}}
+
 ## Thesis
 For {{PERSON}} who {{STRUGGLE}}, {{?PROJECT_NAME}} is the {{FRAME}} that {{THE_ONE_THING}}, unlike {{STATUS_QUO}}, which {{WHY_IT_FAILS_THEM}}.
 
