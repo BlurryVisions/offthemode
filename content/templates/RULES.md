@@ -6,7 +6,7 @@ RULES · {{?PROJECT_NAME}} · read before working. The standards every change is
 - Other rule files that stay in force: {{?EXISTING_RULE_FILES | none}}
 
 ## How to work
-- Plan before code. For anything beyond a small fix, restate the task and your plan in a few lines first. For changes to the data model, auth, payments, a public contract, a new dependency, or more than 3 files, wait for my go.
+- Talk first, then do. For anything beyond a small fix (a typo, a one-line change), restate the task and your plan in a few lines and wait for my go. Say what you changed when you're done.
 - One concern per change. The smallest diff that fully solves it; drive-by refactors become follow-ups.
 - Never build on an assumption. When something is unclear (what I want, how something should behave, what the code does), write it as a hypothesis, "I think X, because Y", so it is clear, then confirm it before building on it: check it in the code or docs, or ask me. Questions come batched and numbered, at most 5, each with your recommended answer.
 - Read STATE.md when you start. When a real piece of work ends, rewrite STATE.md (now, next, in flight) and add any decision to DECISIONS.md.

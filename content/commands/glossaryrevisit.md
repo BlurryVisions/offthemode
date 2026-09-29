@@ -16,4 +16,4 @@ Rules:
 - Say what people can do, never how it's built.
 - Under 300 words, so it fits on one screen.
 
-Before writing, reread every sentence as someone outside tech and rewrite any they would have to ask about. If the section exists, show what changed and why (usually "Where we are"), then write it.
+Before showing it, reread every sentence as someone outside tech and rewrite any they would have to ask about. Show the new section and, if one exists, what changed and why (usually "Where we are"). Write it on the user's go.

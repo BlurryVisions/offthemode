@@ -30,5 +30,5 @@ One file per sheet. Open only the sheet for the phase you are in.
 - `25-mobile-addendum.md` · Mobile Addendum
 - `26-prompt-craft-toolkit.md` · Prompt Craft Toolkit
 - `27-anti-patterns.md` · Anti-patterns
-- `28-the-portable-kit.md` · The Portable Kit
-- `29-the-one-page-loop.md` · The One-Page Loop
+- `28-how-to-add-it.md` · How to add it
+- `29-the-daily-loop.md` · The daily loop

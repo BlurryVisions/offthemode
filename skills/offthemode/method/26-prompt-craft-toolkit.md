@@ -1,56 +1,56 @@
 ## Prompt Craft Toolkit
-<!-- origin: added -->
 
-The Laws table already covers reverse prompting, diverge-then-converge, handoffs, builder versus reviewer and versioning. These are the remaining moves. Save any you use twice as a command, and keep the canonical text in `prompts/`.
+The Laws state the principles. These are the moves that put them to work, each with the mechanism that makes it effective and a template. Templates not shown on this sheet live in the guide for that kind of work. Save any you use twice in `.offthemode/prompts/` (see Prompt Library).
 
 | Move | Mechanism | Template |
 |---|---|---|
+| Interview first | The model asks about what it would otherwise guess, most important question first | Interview Me First |
 | Hypotheses first | Makes hidden guesses visible, so they are confirmed before anything is built on them | Confirm Before Building |
 | Constraint stacking | Independent constraints overlap only in a small, unusual region | Constraint Stack |
-| Reference anchoring | One reference carries thousands of constraints; take/ignore stops surface copying | Anchor to References |
+| Reference anchoring | One reference carries thousands of constraints; saying what to take and what to ignore stops surface copying | Anchor to References |
 | Ban with replacement | A bare ban primes the banned thing; an alternative gives the model somewhere to go | Ban With Replacement |
-| Rubric first | Written first, it shapes generation; written after, it justifies it | Rubric First |
+| Rubric first | Written first, it shapes what gets made; written after, it only justifies it | Rubric First |
 | Subtraction | Models are trained to be complete; explicit deletion reverses that | Subtraction Pass |
-| Checkpoints | Errors compound; a verifiable exit catches drift early | Checkpoint Plan |
-| Tests as spec | A failing test is a target the agent iterates on alone | Test-First |
+| Checkpoints | Errors compound; a checkable exit at each step catches drift early | Checkpoint Plan |
+| Tests as spec | A failing test is a target the AI can work toward on its own | Test-First |
 | Few-shot from your code | The model copies the structure it sees, so show it yours | Match the Exemplar |
-| Structured sections | Tags separate instructions from data; material first, ask last | Sectioned Brief |
-| Escalation ladder | Being stuck is context, scope or signal, rarely intelligence | Hypotheses Before Fixes, P6 ladder |
+| Structured sections | Tags separate instructions from material; material first, the ask last | Sectioned Brief |
+| Escalation ladder | Being stuck is a problem of context, scope or signal, rarely of intelligence | Hypotheses Before Fixes (P6 · Core Build & Iteration) |
 
 ```prompt title="Interview Me First"
 Before any plan or code, interview me about {{FEATURE}}. Rounds of at most 5 numbered questions, max 3 rounds, ordered by how much the answer changes architecture or UX, each with your default and what breaks if it is wrong. Stop when no remaining question would change the plan. Record the answers as D-### entries in .offthemode/DECISIONS.md.
 ```
 
 ```prompt title="Confirm Before Building"
-Before changing anything, list what you believe about {{TASK}}: data shapes, current behavior, user expectations, environment. Mark each VERIFIED (file:line) or HYPOTHESIS. Confirm every hypothesis before building on it: check the code or docs, and ask me about the rest. Build only on what is verified.
+Before changing anything, list what you believe about {{TASK}}: data shapes, current behavior, user expectations, environment. Mark each VERIFIED (file:line) or HYPOTHESIS, written as "I think X, because Y". Confirm every hypothesis before building on it: check the code or docs, and ask me about the rest. Build only on what is verified.
 ```
 
 ```prompt title="Constraint Stack"
 Design {{SURFACE}} satisfying all of these:
 - Layout: {{e.g. asymmetric grid, content starts at column 3, nothing centered}}
 - Type: {{DISPLAY_FACE}} for one headline only; {{TEXT_FACE}}; {{MONO}} for data; at most {{N}} steps of the --text-* scale
-- Colour: per the DESIGN.md strategy; one accent role, on the primary action
+- Colour: per the colour strategy in .offthemode/DESIGN.md; one accent role, on the primary action
 - Motion: one signature transition ({{DESCRIBE}}); everything else --dur-quick or shorter, opacity and transform only
 - Copy: verbs, at most 8 words per heading, no greetings, no exclamation marks
 ```
 
 ```prompt title="Anchor to References"
-For this one change only. References: {{.offthemode/design/refs/01.png}} (take: type scale, density; ignore: colour), {{.offthemode/design/refs/motion/03-strip.png with its notes}} (take: the settle, not the overshoot), @{{src/best/Component.tsx}} (take: state and prop patterns). For each, state in one line the principle you extract and the PRINCIPLES.md or TASTE.md line it serves. Apply principles, not pixels.
+For this one change only. References: {{REF_1: a screenshot path}} (take: type scale, density; ignore: colour), {{REF_2: a motion reference, with its notes}} (take: the settle, not the overshoot), @{{src/best/Component.tsx}} (take: state and prop patterns). For each, state in one line the principle you extract and the line in .offthemode/PRODUCT.md §Feeling or .offthemode/DESIGN.md it serves. Apply principles, not pixels.
 ```
 
 ```prompt title="Ban With Replacement"
-A pattern keeps coming back that ~/.claude/design/BANS.md doesn't name yet: {{PATTERN}}. For this task, replace, don't just avoid:
+A pattern keeps coming back that .offthemode/DESIGN.md doesn't name yet: {{PATTERN}}. For this task, replace it, don't just avoid it:
 - Instead of {{PATTERN}}: {{REPLACEMENT}}, because {{REASON}}.
 - Instead of "Get started": the verb of the job, "{{VERB}} your first {{OBJECT}}".
-If I confirm it generalizes, propose the BANS.md row (id, tier, why, instead) and the bans.txt pattern for the current stack pack.
+If I confirm it applies beyond this task, propose one line for .offthemode/DESIGN.md (the pattern, why, what to use instead) and, if a text search can find it, the pattern a check script should flag.
 ```
 
 ```prompt title="Rubric First"
-Before designing {{SURFACE}}, a surface type RUBRIC.md doesn't cover well ({{onboarding | chart | editor | landing | OTHER}}), write 3-5 surface-specific criteria for DESIGN.md §Rubric additions. For each: what a 1-anchor and a 3-anchor look like, and which files in .offthemode/design/refs/ or ~/.claude/design/anchors/ serve as those anchors. Include: primary action obvious at a glance; nothing that doesn't serve the job; the signature moment if it lives here; the {{?PERF_BUDGET}}. I approve it, then you build to it.
+Before designing {{SURFACE}} ({{onboarding | chart | editor | landing | OTHER}}), write 3-5 criteria for this kind of surface in .offthemode/DESIGN.md. For each: what weak (1) and strong (3) look like, and which reference shows each. Include: the primary action is obvious at a glance; nothing that doesn't serve the job; the signature moment, if it lives here; {{?PERF_BUDGET}}. Wait for my go, then build to it.
 ```
 
 ```prompt title="Checkpoint Plan"
-Break {{FEATURE}} into checkpoints of at most {{SIZE}}, each ending in a runnable, verifiable state (test, screenshot, curl): goal, files, exit check, decisions I owe you. Execute checkpoint 1 only, run its exit check, append a line to .offthemode/LOG.md, stop.
+Break {{FEATURE}} into checkpoints of at most {{SIZE}}, each ending in a state that runs and can be checked (a test, a screenshot, a request): goal, files, exit check, decisions you need from me. Show me the plan and wait for my go. Then do checkpoint 1 only, run its exit check, update .offthemode/STATE.md with where things stand, and stop.
 ```
 
 ```prompt title="Match the Exemplar"

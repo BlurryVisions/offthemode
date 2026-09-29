@@ -1,9 +1,8 @@
 ## Taming Complexity
-<!-- origin: added -->
 
-> **Output:** `.offthemode/COMPLEXITY.md` (budgets, verbs, disclosure map, settings ledger, audit log), a power layer for experts, and the audit-subtract-re-audit ritual run by design-critic.
+> **Output:** `.offthemode/COMPLEXITY.md` (budget, verbs, disclosure map, settings ledger, audit log), a power layer for experts, and a regular cycle of audit, subtract and re-audit, run by a second, fresh AI session.
 
-Complexity is conserved (Tesler's law). What can't be removed gets carried by the system or by the user. Your products are complex by nature, so the job is deciding who carries it: the system first, and the user only when they ask.
+Complexity is conserved. Tesler's law says every product has some complexity that cannot be removed, only moved. What can't be removed gets carried by the system or by the person. A complex product has a lot of it, so the job is deciding who carries it: the system first, and the person only when they ask.
 
 | Layer | What lives here | Example |
 |---|---|---|
@@ -12,13 +11,13 @@ Complexity is conserved (Tesler's law). What can't be removed gets carried by th
 | L2 On intent | Depth revealed by selection, focus, expansion, long-press, repeat visits | Selecting a clip reveals trim and fade in place |
 | L3 Power | Everything else, fully capable, never in the way | Palette, shortcuts, advanced panel, bulk ops, API |
 
-> **Rule:** A new capability starts in L0 if the system can do it for the user, and in L3 otherwise. It moves toward L1 only on evidence (usage data, a Five-Person Test result, or a PRODUCT.md job that fails without it). Agents add one button to the main screen per feature, so this has to be written down.
+> **Rule:** A new capability starts in L0 if the system can do it for the person, and in L3 otherwise. It moves toward L1 only on evidence (usage data, a Five-Person Test result, or a PRODUCT.md job that fails without it). AI tools add one button to the main screen per feature, so this has to be written down.
 
-- **One primary action per surface** (screen, sheet, modal, panel, popover), marked `data-primary` so a script can count it. Blur test: in a heavily blurred render (CDP `Emulation.setEmulatedVisionDeficiency` with `blurredVision`) you can still tell what to do.
-- **A countable budget.** Score = distinct actions x1 + decisions before value x2 + mandatory inputs x3 + competing emphasis x2 + nav destinations x1, measured on the L1 state (nothing selected, no menu open). Count actions, not elements: controls group by role plus accessible name, a repeated control in a list, grid or table counts once, and content links whose name is the object's title count once as "open item". Otherwise a collection with 30 row links blows the budget on the most normal screen in the product, and the agent learns to make rows non-clickable to pass.
-- **Never the only gate.** Agents optimize the number they're given. Pair the score with the blur test and, once you have it, the Five-Person Test's first-click result.
+- **One primary action per surface** (screen, sheet, modal, panel, popover), marked `data-primary` so a script can count it. Blur test: in a heavily blurred render you can still tell what to do. In Chrome, the DevTools Protocol call `Emulation.setEmulatedVisionDeficiency` with `blurredVision` makes one.
+- **A countable budget.** Score = distinct actions x1 + decisions before value x2 + mandatory inputs x3 + competing emphasis x2 + nav destinations x1, measured on the L1 state (nothing selected, no menu open). Count actions, not elements: controls group by role plus accessible name, a repeated control in a list, grid or table counts once, and content links whose name is the object's title count once as "open item". Otherwise a collection with 30 row links blows the budget on the most normal screen in the product, and your AI learns to make rows non-clickable to pass.
+- **Never the only gate.** AI tools optimize the number they're given. Pair the score with the blur test and, once you have it, the Five-Person Test's first-click result.
 - **Hover is a shortcut, never a door.** Hover may only reveal actions that are also reachable by selection, context menu or long-press, and the palette. Hover doesn't exist on touch and fails keyboard and screen-reader discovery. After every Subtraction Pass, re-run the core job keyboard-only and touch-only.
-- **Defaults over settings.** Can it be inferred? Is there a default right for 80%? Can it be changed in context? Only if all three fail does it become a setting, logged in the ledger.
+- **Defaults over settings.** Can it be inferred? Is there a default right for 80%? Can it be changed in context? Only if all three fail does it become a setting, logged in the settings ledger.
 - **Nouns and verbs.** 5-7 core nouns in v1, and every verb behaves identically on every noun (gesture, shortcut, menu position), so learning one object teaches all of them.
 - **Teach by doing.** First run is the real job on seeded data and ends at the moment of value. Empty states say what goes here, give one action that fills it, and offer an optional sample.
 - **Dense but calm.** Clutter is density without hierarchy. At most four steps of the type scale per surface, two weights, grouping by spacing and alignment, never cards inside cards. Status escalates ambient, then inline, then toast, then blocking, with blocking reserved for data loss or safety.
@@ -39,7 +38,7 @@ const actions = await page.evaluate(() => {
 });
 ```
 
-Minimal = subtraction + one bold choice. Subtraction alone lands on the most common answer: white page, gray text, rounded cards. The bold choice makes it yours, and subtraction makes the bold choice visible.
+Minimal = subtraction + one bold choice. Subtraction alone lands on the most common answer: white page, grey text, rounded cards. The bold choice makes the product distinct, and subtraction makes the bold choice visible.
 
 | Stunning comes from | Never from |
 |---|---|
@@ -49,7 +48,7 @@ Minimal = subtraction + one bold choice. Subtraction alone lands on the most com
 | A colour strategy with a reason: one scarce accent, colour-led, or photographic | Hues nobody chose |
 | One signature moment with outsized care | Decoration no principle asked for: default illustrations, "New" pills, confetti on routine actions |
 
-> **Why:** Run audits through design-critic, never the builder. A fresh context that sees only the rendered screen, the budget and PRODUCT.md is more honest than an author with its own reasoning in context. Audit every new screen, before every user-facing merge, and weekly during P6, where clutter accretes one reasonable addition at a time.
+> **Why:** Run audits in a second, fresh AI session with no memory of building the screen, never in the session that built it. A fresh context that sees only the rendered screen, the budget and PRODUCT.md is more honest than an author with its own reasoning in context. Audit every new screen, before every user-facing merge, and weekly during P6, where clutter builds up one reasonable addition at a time.
 
 ```file path=".offthemode/COMPLEXITY.md"
 COMPLEXITY: {{PRODUCT_NAME}} · read before adding any UI; budgets are limits, not suggestions.
@@ -82,30 +81,32 @@ Over budget is a bug; exceptions go in the Audit log with a reason and an expiry
 |---|---|---|---|---|
 ```
 
+Paste the audit into a new session, not the one that built the screens.
+
 ```prompt title="Complexity Audit"
-Run as design-critic. Audit rendered screens, not code; read .offthemode/PRODUCT.md and .offthemode/COMPLEXITY.md first. Screens {{ROUTES | "the core flow"}} at each of {{?VIEWPORTS}}, each in empty, loading, error and populated states (via the state switcher), measured on the L1 state.
+You are reviewing screens you did not build and have no memory of building. Audit rendered screens, not code; read .offthemode/PRODUCT.md and .offthemode/COMPLEXITY.md first. Screens {{ROUTES | "the core flow"}} at each of {{?VIEWPORTS}}, each in empty, loading, error and populated states (via the state switcher), measured on the L1 state.
 Per surface: (1) count, do not estimate: distinct actions (the counting rule in COMPLEXITY.md), required decisions, mandatory inputs, competing emphasis, nav destinations; show the score against budget; (2) blur test on a blurredVision render: what stands out? If it is not the primary action, or two things compete, name them; (3) elements that belong in another layer (L0/L2/L3); (4) dead ends, confirms that should be undo, settings that should be defaults, hover-only actions, decoration carrying no information.
-Output one table, worst overage first: surface, score/budget, top 3 offenders with evidence. Fix nothing and recommend no moves; the Subtraction Pass chooses them. Append scores to the Audit log.
+Output one table, worst overage first: surface, score/budget, top 3 offenders with evidence. Fix nothing and recommend no moves; the Subtraction Pass chooses them. Append the scores to the Audit log.
 ```
 
 ```prompt title="Subtraction Pass"
-Bring {{SURFACE}} within budget from the latest Complexity Audit. Every job in .offthemode/PRODUCT.md must stay completable in the same number of steps or fewer. Apply in order; stop once within budget:
+Bring {{SURFACE}} within budget, using the latest Complexity Audit. Every job in .offthemode/PRODUCT.md must stay completable in the same number of steps or fewer. Apply in order; stop once within budget:
 1. Delete elements with no job, duplicate paths, labels restating the obvious, decoration.
 2. Infer (L0): remove the control, do the work automatically, show the result with a one-step override.
 3. Default: the 80% option, changeable in context.
 4. Disclose (L2) on selection, focus, expansion or long-press; name the trigger. Hover never as the only path.
 5. Relocate (L3) to palette, shortcut or advanced panel, still findable by search.
 6. Merge controls never used independently.
-Exactly one primary action survives; nothing moves to L2/L3 without a findable trigger; the signature moment is untouched; no new UI may solve a subtraction. Show element -> fate -> mechanism, then implement, re-render, re-score, and re-run the core job keyboard-only and touch-only.
+Exactly one primary action survives; nothing moves to L2/L3 without a findable trigger; the signature moment is untouched; no new UI may solve a subtraction. Show element -> fate -> mechanism and wait for my go. Then implement, re-render, re-score, and re-run the core job keyboard-only and touch-only.
 ```
 
-Before a screen exists, fill its Disclosure map row first. Assign each capability to exactly one layer, give every L2 item its intent signal and every L3 item its palette name and shortcut, and list anything that won't fit the L1 limit as a product question for you, not a layout problem.
+Before a screen exists, fill its Disclosure map row. Assign each capability to exactly one layer, give every L2 item its intent signal and every L3 item its palette name and shortcut, and list anything that won't fit the L1 limit as a product question to decide, not a layout problem to solve.
 
 ```prompt title="Power-User Layer"
-Build the power layer for {{?PRODUCT_NAME}} without touching default surfaces. Read the verbs table and L3 column in .offthemode/COMPLEXITY.md.
+Build the power layer for {{?PRODUCT_NAME}} without touching default surfaces. Read the verbs table and the L3 column in .offthemode/COMPLEXITY.md.
 1. Command palette (Cmd/Ctrl+K on web, a search sheet on mobile): every verb x noun, plus jump-to-any-object; fuzzy match, recents first, shortcut beside each command, acts on the selection, runs inline.
 2. Shortcuts: single keys for the top 5-10 verbs outside text fields, modifiers otherwise, a "?" overlay; no conflicts with OS, browser or assistive-tech bindings.
 3. Bulk ops: shift-click ranges, Cmd/Ctrl-click, select all in view; one undo reverts the batch.
 4. After a user repeats a slow path {{3}} times, show its shortcut once, inline and dismissible.
-Zero additions to L1 beyond a palette hint; every command reachable without a keyboard. Test the core job keyboard-only and report time against the mouse path.
+Zero additions to L1 beyond a palette hint; every command reachable without a keyboard. Show me the command list and the shortcut map first and wait for my go. When it is built, test the core job keyboard-only and report the time against the mouse path.
 ```

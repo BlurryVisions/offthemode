@@ -174,20 +174,6 @@ for (const c of commands) writeFileSync(join(zipOut, `${c.name}.zip`), zipSync(e
 
 // ---------- public/method/index.html ----------
 let page = read("content/site/method-page.html");
-const swaps = [
-  ["Your method, redlined · Rev A → Rev B", "The method, redlined · Rev A → Rev B"],
-  ["['Drawn by', 'You']", "['Drawn by', 'BlurryVisions']"],
-  ["['Date', '2026-09-28']", "['Date', '2026-09-29']"],
-  ["yours: 'Rev A · your method'", "yours: 'Rev A · original method'"],
-  [">Your step<", ">Original step<"],
-  ["Yours, moved or reframed", "Original, moved or reframed"],
-  ["Rev A: your method, in your order.", "Rev A: the original method, in its order."],
-  ['<div class="index__kicker">Sheet set · Rev B</div>', '<a class="index__kicker" href="/">← Off the Mode</a>'],
-];
-for (const [from, to] of swaps) {
-  if (!page.includes(from)) fail(`method-page.html: expected text not found: ${from}`);
-  page = page.replace(from, () => to); // function form: no $-pattern expansion
-}
 const LS = String.fromCharCode(0x2028), PS = String.fromCharCode(0x2029);
 const payload = JSON.stringify(blueprint).replace(/</g, "\\u003c").replaceAll(LS, "\\u2028").replaceAll(PS, "\\u2029");
 if (!page.includes('/*__MD__*/""')) fail("method-page.html: markdown slot missing");

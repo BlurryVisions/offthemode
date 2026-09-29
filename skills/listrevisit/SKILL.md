@@ -7,7 +7,7 @@ argument-hint: "[empty for status, or a new feature, idea or change]"
 
 # Off the Mode · list revisit
 
-Input: {{?NOTE: empty for status, or a new feature, idea or change}}. Edit only `.offthemode/CHECKLIST.md`: never code, never other files.
+Input: {{?NOTE: empty for status, or a new feature, idea or change}}. Edit only `.offthemode/CHECKLIST.md`: never code, never other files. Talk first, then do: explain what you found and exactly what you will create or change, wait for the user's go, then do it and say what you did.
 
 ## If the checklist is missing or still the unfilled template, build it
 1. Read the plan: `.offthemode/PRODUCT.md`, or the plan file the user names.
@@ -19,9 +19,9 @@ Show the user the fragments in order, one line each, and wait for their ok. Then
 
 ## Otherwise
 1. Reconcile: map the git log and diff since the header's "Last revisit" to items. Work that matches no item is Untracked.
-2. Verify: for every [~] and [x] item, find its evidence and run the cheap checks from RULES.md §Commands. Promote to [v] only with evidence you can cite; demote a [v] whose evidence broke, and say why. An on-completion fragment stays unverified until its end-to-end check passes.
+2. Verify: for every [~] and [x] item, find its evidence and run the cheap checks from RULES.md §Commands. Propose promoting to [v] only with evidence you can cite, and demoting a [v] whose evidence broke, with the reason. An on-completion fragment stays unverified until its end-to-end check passes.
 3. If there is a note: say which fragment it belongs to or that it's new, which job in PRODUCT.md it serves (if none, ask before adding), and what it disturbs (data model, screens, budgets, other fragments, anything already [v]). Show the change to the list: added, changed, dropped (dropped items stay as [-] with the reason). Wait for their ok, apply it, and add one line per change under ## Changes. If the vision or architecture must change too, name the file and stop there.
-4. Update the header: "Last revisit" and the verified count.
+4. Show the status, then the mark changes you would record, and ask for go. On go, record them and update the header ("Last revisit" and the verified count).
 
 Reply in at most 25 lines: progress per fragment with its Verify mode (F2 ■■■□□ 3/5 · on completion), what moved since last time and why, untracked work, risks (failing bars, items stuck at [x], blocked fragments), and the next 3 items.
 

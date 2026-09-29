@@ -8,6 +8,8 @@ license: MIT
 
 Off the Mode makes you plan first, build in order and hold an elite bar. It keeps this project's plan and memory in one folder, `.offthemode/`, and changes nothing else in the repo unless the user says yes.
 
+Talk first, then do: explain what you found and exactly what you will create or change, wait for the user's go, then do it and say what you did. Never build on an assumption: write anything unclear as a hypothesis ("I think X, because Y") and confirm it first.
+
 Placeholders in the templates: `{{NAME}}` is something only the user can tell you; `{{?NAME}}` is something you work out from the code or the docs, showing where it came from.
 
 If `.offthemode/` already exists, do not set up again. Summarise `.offthemode/STATE.md` and `.offthemode/CHECKLIST.md` in a few lines and suggest the next step.
@@ -19,14 +21,14 @@ Say which door you picked and why, in one line.
 
 ## New project
 1. Interview the user about the vision, in rounds of at most 5 numbered questions, each with your recommended default: who it's for, the one job it does, the moment of value, the core concept, what it must never become, references for the look and feel (only if it has a UI), and constraints (platforms, stack preferences, deadline).
-2. Write `.offthemode/PRODUCT.md` from the template with their answers. Write every guess as a hypothesis, and confirm each one with them before anything is built on it.
-3. Ask them to confirm or correct PRODUCT.md. Then write `.offthemode/GLOSSARY.md`, `.offthemode/RULES.md` (fill what you know; leave commands for when the toolchain exists), `.offthemode/STATE.md` and `.offthemode/DECISIONS.md`.
+2. Draft PRODUCT.md in the chat, not in a file yet, following the template. Write every guess as a hypothesis.
+3. Once they confirm or correct it, list the files you will create (PRODUCT.md, GLOSSARY.md, RULES.md with what you know and commands left for when the toolchain exists, STATE.md, DECISIONS.md), one line each, and create them in `.offthemode/` on their go.
 4. Build the checklist by following the listrevisit instructions (the checklist doesn't exist yet, so listrevisit builds it).
 
 ## Existing project
 1. Read the code before asking anything: the README, dependency files, entry points, routes or screens, the data model, the core flow, tests, config, and any existing agent rules (AGENTS.md, CLAUDE.md, .cursor/rules, other rule folders). Existing rules stay where they are and stay in force: list them in RULES.md, never overwrite or move them.
 2. Tell the user, in plain words, what you understand: what the product is, who it's for, the core concept as the code shows it, what works, and what looks unfinished. Ask at most 5 questions, only where the code can't tell you (intent, audience, what's next).
-3. Once they confirm, write `.offthemode/PRODUCT.md` (the product as it is meant to be, with evidence), `GLOSSARY.md`, `RULES.md` (with the commands you found), `STATE.md` and `DECISIONS.md`.
+3. Once they confirm, list the files you will create in `.offthemode/` (PRODUCT.md as the product is meant to be, with evidence; GLOSSARY.md; RULES.md with the commands you found; STATE.md; DECISIONS.md), one line each, and create them on their go.
 4. Follow the reassess instructions to report how the code compares with the core concept, then the listrevisit instructions to build the checklist, with what's already built marked [x].
 
 ## Both doors, last step
