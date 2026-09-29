@@ -4,7 +4,7 @@ import { Copy } from "./Copy";
 
 type Props = { mcpUrl: string; cursorLink: string; vscodeLink: string; repoUrl: string; zips: { name: string; href: string }[] };
 
-const TABS = ["Claude", "Claude Code", "Cursor", "VS Code", "Other tools", "Skills"] as const;
+const TABS = ["Claude", "Claude Code", "Cursor", "VS Code (Copilot)", "Other tools", "Skills"] as const;
 type Tab = (typeof TABS)[number];
 
 export function AddTabs({ mcpUrl, cursorLink, vscodeLink, repoUrl, zips }: Props) {
@@ -57,7 +57,7 @@ export function AddTabs({ mcpUrl, cursorLink, vscodeLink, repoUrl, zips }: Props
           )}
           {t === "Claude Code" && (
             <>
-              <p>Run this once in your terminal. It adds Off the Mode for every project:</p>
+              <p>For Claude Code in the terminal and in its VS Code and JetBrains extensions. Run this once in a terminal (in VS Code: Terminal → New Terminal). It adds Off the Mode for every project:</p>
               <Copy text={`claude mcp add --transport http --scope user offthemode ${mcpUrl}`} label="the command" />
               <p>Commands show up as <span className="inline">/mcp__offthemode__listrevisit</span> and so on, or just say what you want. For clean names like <span className="inline">/listrevisit</span>, use the skills instead (last tab).</p>
             </>
@@ -71,10 +71,11 @@ export function AddTabs({ mcpUrl, cursorLink, vscodeLink, repoUrl, zips }: Props
               <Copy block text={json({ mcpServers: { offthemode: { url: mcpUrl } } })} label="the Cursor config" />
             </>
           )}
-          {t === "VS Code" && (
+          {t === "VS Code (Copilot)" && (
             <>
+              <p>This is for GitHub Copilot, VS Code&apos;s own AI chat. Using the Claude extension inside VS Code? Use the Claude Code tab instead.</p>
               <div className="buttons">
-                <a className="btn btn--solid" href={vscodeLink}>Add to VS Code</a>
+                <a className="btn btn--solid" href={vscodeLink}>Add to VS Code (Copilot)</a>
               </div>
               <p>Or add it by hand to <span className="inline">.vscode/mcp.json</span> in your project:</p>
               <Copy block text={json({ servers: { offthemode: { type: "http", url: mcpUrl } } })} label="the VS Code config" />
