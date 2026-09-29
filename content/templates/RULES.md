@@ -6,7 +6,7 @@ RULES · {{?PROJECT_NAME}} · read before working. The standards every change is
 - Other rule files still in force: {{?EXISTING_RULE_FILES | none, their lessons are in §Project specifics}}
 
 ## Project specifics
-Facts and lessons that only this codebase could teach: a framework quirk that broke something, a data rule, a required check, a boundary that must hold. Each line says what to do and why. A correction you had to give twice becomes a line here.
+Rules only this project needs, each saying what to do and why. Written at setup from the plan (the stack's known traps, data rules, security boundaries), and added to when a correction has to be given twice. Keep a line only if it is certain to apply, not something an AI does anyway, and costly if missed.
 - {{?PROJECT_RULE: what to do, because why}}
 
 ## How to work
