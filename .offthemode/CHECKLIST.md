@@ -37,7 +37,7 @@ For the person: no server; the folders alone run every step.
 - [v] F3.2 every mention of another command or guide says where to find it · done when: a grep of skills/*/SKILL.md finds no command or guide reference without a path · guide: always-on-words-voice · evidence: skills say 'the X command' and each Files section names ../X/SKILL.md and ../offthemode/method/ (grep of skills/*/SKILL.md, 2026-09-30)
 - [v] F3.3 frontmatter uses only keys the skills spec allows · done when: `npm run check` rejects a key outside the allowlist · guide: always-on-verification-loop · evidence: `npm run check` fails with 'unknown frontmatter key' on a made-up key; no argument-hint left in skills/ (2026-09-30)
 - [v] F3.4 install paths for every tool the site names · done when: the site and skills/README give .agents/skills for Codex, Gemini CLI, Cursor and VS Code, and .claude/skills for Claude Code · guide: always-on-words-voice · evidence: C6 paths on the site (AddTabs.tsx) and in skills/README.md; README points to the site (grep, 2026-09-30)
-- [ ] F3.5 each per-skill zip uploads to claude.ai · done when: a real upload of listrevisit.zip is accepted · guide: none · evidence:
+- [x] F3.5 each per-skill zip uploads to claude.ai · done when: a real upload of listrevisit.zip is accepted · guide: none · evidence: all five skills pass Anthropic's skill-creator validator, descriptions 185 to 196 characters (claude.ai allows 200), skill folder at the zip root (2026-09-30); a real upload is skipped for now: the author's claude.ai is an org account
 - [ ] F3.Q Quality bars met for F3 · evidence:
 
 ### F4 · The guides: the right one opens, and a small change stays small · depends on: F1 · Verify: early
@@ -118,3 +118,4 @@ Dropped: (native) frame budget, because there is no native app · (UI) empty, lo
 - 2026-09-30 · after the fix run: 15 items verified with the evidence cited, 14 built but not proven; F3.4's done-when no longer asks README for paths, since README points to the site (one source)
 - 2026-09-30 · F1.5 verified by the first CI run on GitHub
 - 2026-09-30 · revisit: 13 items verified with the checks cited; F6.2 and F6.3 back to [x], since an on-completion fragment stays unverified until its end-to-end run; untracked: CI actions moved from v4 to v7
+- 2026-09-30 · F3.5 to [x]: descriptions cut to claude.ai's 200-character limit and a build check added; the real upload waits for a personal account

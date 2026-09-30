@@ -1,7 +1,7 @@
 ---
 name: offthemode
 title: Set up Off the Mode
-description: Set up Off the Mode in the current project, new or existing, or show its status if it is already set up. Use when the user says "set up off the mode", "/offthemode", or wants their project planned, organised and held to an elite bar.
+description: Set up Off the Mode in a new or existing project, or show its status. Use when the user says "set up off the mode" or /offthemode, or wants the project planned and held to an elite bar.
 templates: PRODUCT.md, RULES.md, GLOSSARY.md, STATE.md, DECISIONS.md, CHECKLIST.md
 ---
 # Off the Mode · set up

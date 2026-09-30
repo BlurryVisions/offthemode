@@ -1,7 +1,7 @@
 ---
 name: commentrevisit
 title: Comment Revisit
-description: Clean up code comments so they are true, necessary and useful - remove stale, wrong or noisy ones and add a short why where the code can't explain itself. Use when the user says "/commentrevisit" or asks to tidy comments. Changes comments only, never code.
+description: Make code comments true and useful: remove stale or noisy ones, add a short why where code can't explain itself. Use when the user says /commentrevisit or asks to tidy comments. Comments only.
 argument: scope
 argument_hint: a path, or empty for the files changed on this branch
 ---

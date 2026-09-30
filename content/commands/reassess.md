@@ -1,7 +1,7 @@
 ---
 name: reassess
 title: Reassess Against the Core Concept
-description: Check what has actually been built (the code) against the project's core concept in .offthemode/PRODUCT.md, and report what serves it, what drifted and what is missing. Use when the user says "/reassess" or asks whether the project is still on course. Report only; edits nothing.
+description: Check the code against the core concept in .offthemode/PRODUCT.md: what serves it, what drifted, what is missing. Use when the user says /reassess or asks if the project is on course. Report only.
 ---
 # Off the Mode · reassess
 

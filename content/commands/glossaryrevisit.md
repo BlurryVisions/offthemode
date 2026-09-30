@@ -1,7 +1,7 @@
 ---
 name: glossaryrevisit
 title: Glossary Revisit
-description: Write or refresh the plain-words summary of the project at the top of .offthemode/GLOSSARY.md - what it is, who it's for, what works today and what's next - in words anyone can understand. Use when the user says "/glossaryrevisit" or needs to explain or present the project.
+description: Write or refresh the plain-words project summary in .offthemode/GLOSSARY.md, for anyone to understand. Use when the user says /glossaryrevisit or needs to explain or present the project.
 templates: GLOSSARY.md
 ---
 # Off the Mode · glossary revisit

@@ -1,7 +1,7 @@
 ---
 name: listrevisit
 title: List Revisit
-description: View or update the project checklist in .offthemode/CHECKLIST.md, or build it after planning. Use when the user says "/listrevisit", asks where the project stands, or wants to add a new feature or idea to the plan. Edits only the checklist, never code.
+description: Show, build or update the checklist in .offthemode/CHECKLIST.md. Use when the user says /listrevisit, asks where the project stands, or adds a feature or idea. Edits only the checklist.
 argument: note
 argument_hint: empty for status, or a new feature, idea or change
 templates: CHECKLIST.md

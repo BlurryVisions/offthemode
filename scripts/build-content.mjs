@@ -48,12 +48,13 @@ const commands = readdirSync(join(ROOT, "content/commands")).filter((f) => f.end
     templates: data.templates ? data.templates.split(",").map((t) => t.trim()) : [],
     body,
   };
-  // Agent Skills spec (and the skill-creator validator): kebab-case name matching the folder, description of at most
-  // 1024 characters with no angle brackets.
+  // Agent Skills spec (and the skill-creator validator): kebab-case name matching the folder, no angle brackets in the
+  // description. The spec allows 1024 characters, but claude.ai's skill upload allows 200 (support.claude.com article
+  // 12512198), and the per-skill zips exist for that upload.
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(cmd.name) || cmd.name.length > 64) fail(`${f}: invalid name "${cmd.name}"`);
   if (`${cmd.name}.md` !== f) fail(`${f}: name "${cmd.name}" must match the file name`);
   if (!cmd.title || !cmd.description) fail(`${f}: title and description are required`);
-  if (cmd.description.length > 1024) fail(`${f}: description over 1024 characters`);
+  if (cmd.description.length > 200) fail(`${f}: description is ${cmd.description.length} characters; claude.ai's skill upload allows 200`);
   if (/[<>]/.test(cmd.description)) fail(`${f}: description can't contain < or >`);
   for (const t of cmd.templates) if (!templates[t]) fail(`${f}: unknown template "${t}"`);
   // The method page shows each body inside a fence, so a fence in the body would break it.
