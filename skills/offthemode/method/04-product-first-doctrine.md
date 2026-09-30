@@ -28,7 +28,7 @@ AI tools help by adding. RULES.md §Product first pushes back: no feature withou
 
 ### Make the experience testable
 
-"Top of the game" UX has to be testable, or your AI cannot aim at it. An AI driving a browser cannot measure a 100 ms tap, because one tool round-trip takes longer than that, and "one-handed" is not something it can observe. So each property gets a script check: code that measures it and passes or fails. PRODUCT.md §Experience promises says what each promise is. RULES.md §Budgets holds every number the checks enforce, including the time to the moment of value, and nowhere else, so a number changes in one place.
+"Top of the game" UX has to be testable, or your AI cannot aim at it. An AI driving a browser cannot measure a 100 ms tap, because one tool round-trip takes longer than that, and "one-handed" is not something it can observe. So each property gets a script check: code that measures it and passes or fails. PRODUCT.md §Experience promises says what each promise is, and holds the time to the moment of value. Any speed, interaction or accessibility number the product chooses to hold is a key in RULES.md §Budgets: Off the Mode sets none for you, and Accessibility & Performance Budgets lists common keys to copy. Each number lives in one place only, so it changes in one place. Where a row below names a key the product doesn't hold, that part of the check is skipped.
 
 The checks below use two project scripts your AI writes. `audit-ux` drives the core journey in a real browser and measures it. The e2e (end-to-end) tests act like a person using the whole app.
 
@@ -48,15 +48,15 @@ The web measures, in plain words: LCP (Largest Contentful Paint) is when the mai
 ### Prompts
 
 ```prompt title="Feature Kill List"
-Read .offthemode/PRODUCT.md, and .offthemode/COMPLEXITY.md if it exists. Inventory every user-facing capability in {{SCOPE: codebase | roadmap | spec at PATH}}.
+Read .offthemode/PRODUCT.md, and .offthemode/COMPLEXITY.md if it exists. Inventory every user-facing capability in {{SCOPE: codebase, roadmap or spec at PATH}}.
 One row each: Capability | Job served (quote PRODUCT.md, or NONE) | Serves the one thing? | Actions it adds to default surfaces | Evidence of use | Verdict.
 Verdicts: CORE (produces the moment of value; keep and deepen), PARITY (expected; minimal version, moved to a secondary layer), DEFER (plausible, no evidence; remove it and log it in .offthemode/DECISIONS.md as a bet with a kill criterion), KILL (no job, contradicts a Refusal, or duplicates a path). When torn, pick the harsher verdict and say so.
 Then: the default-surface action count before and after, and a deletion plan (routes, components, flags, columns, tests) ordered so nothing breaks. Show me the plan and change nothing until I say go.
 ```
 
 ```prompt title="Moment of Value Map"
-Map the path from first contact ({{ENTRY: landing page | store install | shared link | invite}}) to {{?MOMENT_OF_VALUE}} (.offthemode/PRODUCT.md), walking it as {{?PERSON}} on {{?DEVICE}} with {{CONTEXT: one hand, flaky 4G, ninety seconds of patience}}. If the app runs, drive it with your browser or simulator tool and time it with the project's audit-ux journey if there is one; otherwise walk the spec.
-Per step: what they see, decide, type, wait for, and what could make them leave. Totals: steps, decisions, inputs, wait, and time to first wow against the time-to-value in RULES.md §Budgets.
+Map the path from first contact ({{ENTRY: landing page, store install, shared link or invite}}) to {{?MOMENT_OF_VALUE}} (.offthemode/PRODUCT.md), walking it as {{?PERSON}} on {{?DEVICE}} with {{CONTEXT: one hand, flaky 4G, ninety seconds of patience}}. If the app runs, drive it with your browser or simulator tool and time it with the project's audit-ux journey if there is one; otherwise walk the spec.
+Per step: what they see, decide, type, wait for, and what could make them leave. Totals: steps, decisions, inputs, wait, and time to first wow against the time to value in PRODUCT.md §Experience promises.
 Redesign to hit the budget, naming the mechanism behind every cut: defer (account after value), infer (locale, currency, intent from the entry point or pasted content), default (the 80% option, changeable in context), preload (sample or imported data), parallelize (start work during the previous step).
 Show the new path, the new totals and each cut's technical consequences. After my go, append each consequence to .offthemode/DECISIONS.md with the PRODUCT.md line it serves.
 ```

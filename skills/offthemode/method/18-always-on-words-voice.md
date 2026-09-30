@@ -17,7 +17,7 @@ Banned: hype copy ({{HYPE_WORDS, e.g. seamless, effortless, unlock, supercharge,
 - Buttons are verb + object and predict the result: "Export 3 clips". Destructive confirms name the consequence: "Delete 12 files" / "Keep files".
 - Errors: what happened, why if known, what to do next. Never blame, never clear what the person typed.
 - Empty states: what this space holds and why it matters, plus one action.
-- Loading: nothing before indicator_delay_ms (RULES.md §Budgets); after progress_copy_ms, say exactly what is happening ("Rendering 4 pages").
+- Loading: nothing for the first moment, then a line saying exactly what is happening ("Rendering 4 pages"); indicator_delay_ms and progress_copy_ms in RULES.md §Budgets set the timing when the product holds them.
 ```
 
 A grade 6 to 8 reading level means text an 11 to 14 year old reads without effort; it is about speed of reading, not about talking down. Intl is the built-in formatter in JavaScript that writes numbers, dates, currency and plurals correctly for each locale; every platform has an equivalent. Using it means "1 file" and "2 files" are never glued together by hand.

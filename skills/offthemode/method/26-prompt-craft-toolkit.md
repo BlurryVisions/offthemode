@@ -1,6 +1,6 @@
 ## Prompt Craft Toolkit
 
-The Laws state the principles. These are the moves that put them to work, each with the mechanism that makes it effective and a template. Templates not shown on this sheet live in the guide for that kind of work. Save any you use twice in `.offthemode/prompts/` (see Prompt Library).
+The Laws state the principles. These are the moves that put them to work, each with the mechanism that makes it effective and a template. Templates not shown in this guide live in the guide for that kind of work. Save any you use twice in `.offthemode/prompts/` (see Prompt Library).
 
 | Move | Mechanism | Template |
 |---|---|---|
@@ -18,11 +18,11 @@ The Laws state the principles. These are the moves that put them to work, each w
 | Escalation ladder | Being stuck is a problem of context, scope or signal, rarely of intelligence | Hypotheses Before Fixes (P6 · Core Build & Iteration) |
 
 ```prompt title="Interview Me First"
-Before any plan or code, interview me about {{FEATURE}}. Rounds of at most 5 numbered questions, max 3 rounds, ordered by how much the answer changes architecture or UX, each with your default and what breaks if it is wrong. Stop when no remaining question would change the plan. Record the answers as D-### entries in .offthemode/DECISIONS.md.
+Before any plan or code, interview me about {{FEATURE}}. Batched, numbered questions, ordered by how much the answer changes architecture or UX, each with your recommended answer and what breaks if it is wrong; more rounds if needed. Ask only what would change the plan, and stop when no remaining question would. Then show me the answers as D-### entries for .offthemode/DECISIONS.md, and add them on my go.
 ```
 
 ```prompt title="Confirm Before Building"
-Before changing anything, list what you believe about {{TASK}}: data shapes, current behavior, user expectations, environment. Mark each VERIFIED (file:line) or HYPOTHESIS, written as "I think X, because Y". Confirm every hypothesis before building on it: check the code or docs, and ask me about the rest. Build only on what is verified.
+Before changing anything, list what you believe about {{TASK}}: data shapes, current behavior, user expectations, environment. Mark each VERIFIED (file:line) or HYPOTHESIS, written as "I think X, because Y". Confirm every hypothesis before building on it: check the code or docs, and ask me about the rest. Show me the list and your plan, and wait for my go. Build only on what is verified.
 ```
 
 ```prompt title="Constraint Stack"
@@ -46,7 +46,7 @@ If I confirm it applies beyond this task, propose one line for .offthemode/DESIG
 ```
 
 ```prompt title="Rubric First"
-Before designing {{SURFACE}} ({{onboarding | chart | editor | landing | OTHER}}), write 3-5 criteria for this kind of surface in .offthemode/DESIGN.md. For each: what weak (1) and strong (3) look like, and which reference shows each. Include: the primary action is obvious at a glance; nothing that doesn't serve the job; the signature moment, if it lives here; {{?PERF_BUDGET}}. Wait for my go, then build to it.
+Before designing {{SURFACE}} ({{onboarding, chart, editor, landing or OTHER}}), write the criteria that decide quality for this kind of surface, each certain to matter here and not already covered by DESIGN.md §Rubric, and show them to me. For each: what weak (1) and strong (3) look like, and which reference shows each. Include: the primary action is obvious at a glance; nothing that doesn't serve the job; the signature moment, if it lives here; {{?PERF_BUDGET}}. Wait for my go, then add them to .offthemode/DESIGN.md and build to them.
 ```
 
 ```prompt title="Checkpoint Plan"

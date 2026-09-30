@@ -6,11 +6,11 @@ Normal sessions stay free-form. You say what you want in plain words; the files 
 
 1. **Open a session.** Your AI loads `.offthemode/RULES.md` and `.offthemode/STATE.md`, so it knows the standards and where things stand. If its first answer doesn't know, see How to add it.
 2. **Say what you want.** One concern at a time: a feature, a fix, a screen.
-3. **It opens the guide.** RULES.md §Guides maps each kind of work to a guide; your AI opens the matching one before planning, once per session.
-4. **It talks first.** It says what it understood, what it will change and what it isn't sure of, as hypotheses ("I think X, because Y"). Correct it, or say go. A one-line fix gets one line; work that touches data, contracts or many files gets a real plan.
-5. **It builds, in order.** The core concept comes first, following CHECKLIST.md, held to RULES.md.
+3. **It opens the guide.** RULES.md §Guides maps each kind of work to a guide; your AI opens the matching one before planning, once per session. For a change inside what exists, the guide's working rules are enough.
+4. **It talks first.** It says what it understood, what it will change and what it isn't sure of, as hypotheses ("I think X, because Y"), and confirms each one before building on it. A small fix (a typo, a one-line change) gets one line and goes ahead; anything bigger waits for your go, with a real plan when it touches data, contracts or many files.
+5. **It builds in build order.** CHECKLIST.md lists the fragments in the order they depend on each other, core first, and your AI follows that order, held to RULES.md. You can still ask for anything at any time; listrevisit catches up.
 6. **It verifies before it says done.** The checks pass, the thing actually ran, and screens were looked at on phone, tablet and wide widths.
-7. **It records the work.** STATE.md is rewritten with where things stand, decisions go to DECISIONS.md, a finished checklist item gets its evidence, and a correction you had to make twice becomes a new line in RULES.md.
+7. **It records the work.** STATE.md is rewritten with where things stand, decisions go to DECISIONS.md, your AI names the checklist item the work closes (listrevisit records the mark and the evidence), and a correction you had to make twice becomes a proposed line in RULES.md §Project specifics, added on your go.
 8. **Review in a fresh session** when the change matters: a second AI session asked to review, with no memory of building it.
 
 > **Why:** A fresh session with an up-to-date STATE.md picks up where the last one stopped, with none of the stale context. So end a session when a piece of work ends, not when the window runs out.

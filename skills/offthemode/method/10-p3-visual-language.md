@@ -2,7 +2,17 @@
 
 > **Output:** `.offthemode/DESIGN.md` (taste, principles, system, bans, rubric), references in `.offthemode/design/`, a locked `src/styles/tokens.css` (plus `tokens/tokens.json` for native apps), a `/specimen` page that renders every state, and four checks in RULES.md §Commands: screenshots, the computed-style audit, `scripts/check-bans.sh` and `scripts/diverge-diff.sh`.
 
-No product screen gets built before the tokens are locked and the specimen exists. Tokens are named values (colour, type, space, radius, motion) that components use instead of raw numbers; the specimen is one page that renders the whole visual language. This is where "complex inside, simple outside" becomes visible: restraint, hierarchy and motion make a dense system read as one calm surface with one obvious next move.
+<!-- offthemode:rules -->
+### Working rules (for a change inside an existing product)
+- Build with the design tokens and components that already exist. No raw colour, size, spacing or duration values: a value the tokens can't express is a token proposal shown to the user, never an inline number.
+- If DESIGN.md exists, follow its principles and bans. If there is none, follow the current styles, and list any value in the touched files that bypasses the tokens.
+- One primary action per screen. Every touched screen keeps its empty, loading, error, offline and no-permission states.
+- Nothing that could sit on any other product unchanged. If the change drifts toward a stock layout or a component library's default look, stop and say so.
+- Look at every touched screen at each of screenshot_sizes (RULES.md §Budgets), light and dark, with the screenshot and audit commands in RULES.md §Commands where they exist.
+- Open the whole guide when the product has no tokens yet, to add or change a token, to set a visual direction or a signature moment, or to redesign a whole surface. Offer that as its own step; never start it inside a small change.
+<!-- /offthemode:rules -->
+
+On a new product, the tokens are locked and the specimen exists before the first product screen is built; on an existing one, work inside the tokens it has and rework them as a step of their own. Tokens are named values (colour, type, space, radius, motion) that components use instead of raw numbers; the specimen is one page that renders the whole visual language. This is where "complex inside, simple outside" becomes visible: restraint, hierarchy and motion make a dense system read as one calm surface with one obvious next move.
 
 > **Rule:** Prove a direction on the product's hardest real screen (the dense core surface), never on a landing page. A direction that only works on a hero is a poster, not a language.
 
@@ -21,11 +31,11 @@ Taste is yours, not the product's, so carry §Taste and the folder to your next 
 ```prompt title="Taste Extraction"
 .offthemode/design/taste/ holds about 20 things I love (love-*) and 20 I can't stand (hate-*), each with one line of why. Motion items are frame strips with duration and easing notes.
 1. For each item: the ONE decision that makes me react, and what it costs. Do not describe the image.
-2. Eight personal principles as falsifiable sentences, each traced to 2+ loves and contradicted by 1+ hate ("type carries hierarchy; colour only ever means state" is a principle; "clean and bold" is not).
+2. My personal principles as falsifiable sentences, each traced to 2+ loves and contradicted by 1+ hate ("type carries hierarchy; colour only ever means state" is a principle; "clean and bold" is not). Keep only the ones my items really support.
 3. My recurring moves in type, colour, motion, density and copy.
 4. Which traits of my hates the generic AI look shares, and which traits of my loves the anti-slop look shares. Both are modes I can fall into.
-5. Five tensions between things I love. This is where a product gets its edge: a direction that resolves one of them is already off the mode.
-Then interview me in rounds of at most 5 numbered questions on the tensions and on anything I contradicted, each with your read as the default.
+5. The tensions between things I love. This is where a product gets its edge: a direction that resolves one of them is already off the mode.
+Then interview me with batched, numbered questions on the tensions and on anything I contradicted, each with your read as the recommended answer, in more rounds if needed.
 Show me the draft of .offthemode/DESIGN.md §Taste (under 60 lines) and write it after my go. If an earlier §Taste exists, end with the diff: what I stopped loving, what is new, which principle got sharper.
 ```
 
@@ -67,8 +77,8 @@ Change nothing. After my go, log each kept trait's reason in .offthemode/DECISIO
 2. Run Extract Principles. It reads §Taste, so the principles are yours before they are this product's.
 3. **You** give each of three directions an external anchor from the moodboard and one forbidden trait, before anything is generated.
 4. Set up the screenshot scripts (The screenshot loop), then build each direction in its own fresh AI session that cannot see the others. Each touches only its own direction file and `/lab/a`, `/lab/b` or `/lab/c` routes, so the three combine without conflicts.
-5. Check divergence after the fact: `scripts/diverge-diff.sh` flags any pair sharing more than half its knob values, and a fresh critic session judges from screenshots only.
-6. In a separate critic session, ask for one base and at most two grafts. You choose. Averaging all three brings the mode back.
+5. Check divergence after the fact: `scripts/diverge-diff.sh` flags any pair sharing more than half its knob values (the handful of token values, such as hues, type ratio and radius, that every other token derives from), and a fresh critic session judges from screenshots only.
+6. In a separate critic session, ask for one base and at most two grafts (single ideas taken from the other directions into the base). You choose. Averaging all three brings the mode back.
 7. Run Saturation Check, lock tokens v1 and build the specimen. After that, every screen is assembly, not invention.
 
 With git, give each direction its own branch and merge the three into a `lab` branch. If your tool can run isolated helpers in their own checkout (Claude Code subagents with a worktree can), they handle step 4 for you.
@@ -78,19 +88,19 @@ With git, give each direction its own branch and merge the three into a `lab` br
 ```prompt title="Extract Principles From References"
 Act as a design director with a type designer's eye. .offthemode/design/refs/ holds {{N}} reference images (motion references as frame strips), each with a note. Product: {{?PRODUCT_ONE_LINER}}. Person: {{?PERSON}}. Moment of value: {{?MOMENT_OF_VALUE}} (all from .offthemode/PRODUCT.md). Taste: .offthemode/DESIGN.md §Taste.
 Do not describe the images. Per reference: the ONE decision that makes it work, what it costs, and why it works perceptually.
-Then synthesize 6-8 principles for this product. Each is a falsifiable sentence, not an adjective; traced to references by filename and to a §Taste principle or tension; expressed in type, colour, layout, motion and copy; paired with its failure mode (how an AI would misapply it into cliche).
+Then synthesize the principles for this product, keeping only those the references really support and the product's job needs. Each is a falsifiable sentence, not an adjective; traced to references by filename and to a §Taste principle or tension; expressed in type, colour, layout, motion and copy; paired with its failure mode (how an AI would misapply it into cliche).
 Also list: shared traits that are only current fashion or appear in §Saturated (dropped); 3 tensions between references to resolve; what NONE of the references do that this product's job demands. Never copy a layout, logo or signature element.
 Show me the result, then write it to .offthemode/DESIGN.md §Principles after my go.
 ```
 
 ```prompt title="Three Divergent Directions"
-Direction {{A | B | C}} of three for {{?PRODUCT_NAME}}. This is a fresh session. The other directions exist elsewhere; do not look for them.
+Direction {{A, B or C}} of three for {{?PRODUCT_NAME}}. This is a fresh session. The other directions exist elsewhere; do not look for them.
 Anchor, assigned by me: {{REF_FILE in .offthemode/design/refs/}}; take {{WHAT_TO_TAKE}}. Forbidden trait: {{TRAIT}}.
 Read .offthemode/DESIGN.md §Taste, §Principles, §Bans and §Saturated. The §Already used table is a ban list: share at most one attribute (column) with any row.
 First reply with a two-word name, a one-sentence thesis naming the metaphor, the density and the colour strategy, and the knob values you plan. Build after my go.
-Deliver: src/styles/directions/{{a | b | c}}.css using the tokens.css variable names; /lab/{{a | b | c}}/core ({{?HARDEST_SCREEN}} on edge-case data: long names, empty, max rows, error) and /lab/{{a | b | c}}/entry ({{?SECOND_SCREEN}}); a working signature moment; light and dark.
-Constraints: no HARD ban and no DEFAULT-OFF ban; one primary action per surface; real copy in the product's voice; no new dependency without a reason. Touch only the direction file and /lab/{{a | b | c}}.
-Finish: run {{?SHOTS_CMD}} on both routes and write .offthemode/design/directions/{{a | b | c}}.md: thesis, bet, weakest point, the §Taste tension it resolves. Do not compare yourself to anything and do not recommend.
+Deliver: src/styles/directions/{{a, b or c}}.css using the tokens.css variable names; /lab/{{a, b or c}}/core ({{?HARDEST_SCREEN}} on edge-case data: long names, empty, max rows, error) and /lab/{{a, b or c}}/entry ({{?SECOND_SCREEN}}); a working signature moment; light and dark.
+Constraints: no HARD ban and no DEFAULT-OFF ban; one primary action per surface; real copy in the product's voice; no new dependency without a reason. Touch only the direction file and /lab/{{a, b or c}}.
+Finish: run {{?SHOTS_CMD}} on both routes and write .offthemode/design/directions/{{a, b or c}}.md: thesis, bet, weakest point, the §Taste tension it resolves. Do not compare yourself to anything and do not recommend.
 ```
 
 ```file path="scripts/diverge-diff.sh"
@@ -203,7 +213,7 @@ The dark block appears twice on purpose. The media query serves the system setti
   --cols: 12; --gutter: var(--space-6); --margin: clamp(var(--space-4), 5vw, var(--space-24));
   --rail: {{RAIL_WIDTH}};             /* optional label column; 0 disables */
   --content-max: {{CONTENT_MAX}};
-  --touch-min: 44px;                  /* web touch target; owned here, RULES.md §Budgets points at it */
+  --touch-min: {{TOUCH_MIN | 44px, or delete this line}};   /* web touch target, only if this product holds one; the audits check it while this line exists */
 }
 
 /* dark: surfaces rise by lightness, not shadow. Two identical copies: the media query serves the OS setting, the attribute serves the toggle and screenshot runs. Edit both. */
@@ -268,7 +278,7 @@ Three filled-in directions, as illustration only. **Never reuse them.** AI tools
 ```prompt title="Build the Specimen Page"
 tokens.css is locked at v1. Build /specimen, one page rendering the whole visual language:
 1. Type: every scale step with its token, size, leading and tracking; a paragraph at measure; tabular vs proportional numerals; mono.
-2. Colour: every token as a swatch with its oklch value, its WCAG contrast ratio against bg, surface-1 and surface-2, and APCA Lc as a second opinion, light and dark side by side. Every ink/surface and on-accent/accent pair meets the text contrast in .offthemode/RULES.md §Budgets (the large-text ratio at WCAG large sizes); {{?AUDIT_CMD}} fails the run when one doesn't.
+2. Colour: every token as a swatch with its oklch value, its WCAG contrast ratio against bg, surface-1 and surface-2, and APCA Lc as a second opinion, light and dark side by side. If .offthemode/RULES.md §Budgets holds contrast keys, every ink/surface and on-accent/accent pair meets contrast_text (contrast_large at WCAG large sizes), and {{?AUDIT_CMD}} fails the run when one doesn't.
 3. Space, radii (with their concentric inner values), lines and elevation as rulers. Motion: every duration x easing and spring as a replayable demo beside its reduced-motion variant.
 4. Components in ALL states (default, hover, focus-visible, pressed, disabled, loading, error, empty): buttons (primary, secondary, quiet), input, select, checkbox, switch, tabs, menu, dialog, sheet, toast, tooltip, table row, list item, skeleton, empty state.
 5. Data: a line, bar, area and table on large realistic data with the --data-* tokens and the highlight rule, direct labels, and designed empty, partial and loading chart states; shoot it with the colour-blind passes too.
@@ -294,8 +304,8 @@ An AI writing CSS is guessing at pixels, and its confidence reflects how plausib
 
 ```prompt title="Screenshot and Audit Scripts"
 Write two scripts in this project's stack (Playwright for web; simulator or emulator tools for native) and add both to .offthemode/RULES.md §Commands. Show me the plan first; write them after my go.
-shots ROUTES: per route, at phone, tablet and wide sizes (web: 390x844, 820x1180, 1440x900), a full-page shot in light and in dark at 2x density, touch emulated under 768 px. Force the theme two ways, the system colour scheme plus data-theme on the root element set before page scripts run, so the dark shot really is dark. Wait for [data-ready] and document.fonts.ready, never network idle; disable animations. Save shots/ROUTE-WIDTH-THEME.png. With VISION=deuteranopia,protanopia, add light shots through Chrome's Emulation.setEmulatedVisionDeficiency. Exit 1 if a light and dark pair is byte-identical: the theme is not switching.
-audit ROUTES: same sizes and themes. Collect every custom property declared on :root (media queries included) and resolve each through a hidden probe element for color, padding, font-size, font-family, transition-duration and box-shadow; those computed values are the only allowed ones. On every visible element outside [data-audit-skip], check text colour, size and face, background, padding, gaps, corner radius, shadow and transition duration against that set, ignoring 0, none, auto and transparent. Also flag text contrast against the nearest opaque background below the RULES.md §Budgets ratios (WCAG AA: 4.5:1; 3:1 from 24 px, or 18.66 px bold), interactive elements under --touch-min, and same-size sibling baselines in a row that differ by 1-3 px. Report the share of the first viewport filled with --accent. Print up to 40 findings per route, size and theme (element, property, value). Exit 1 on any finding.
+shots ROUTES: per route, at each size in screenshot_sizes (RULES.md §Budgets), a full-page shot in light and in dark at 2x density, touch emulated under 768 px. Force the theme two ways, the system colour scheme plus data-theme on the root element set before page scripts run, so the dark shot really is dark. Wait for [data-ready] and document.fonts.ready, never network idle; disable animations. Save shots/ROUTE-WIDTH-THEME.png, and add shots/ to .gitignore: shots are rebuilt on every run, and the ones worth keeping go to tests/baselines/. With VISION=deuteranopia,protanopia, add light shots through Chrome's Emulation.setEmulatedVisionDeficiency. Exit 1 if a light and dark pair is byte-identical: the theme is not switching.
+audit ROUTES: same sizes and themes. Collect every custom property declared on :root (media queries included) and resolve each through a hidden probe element for color, padding, font-size, font-family, transition-duration and box-shadow; those computed values are the only allowed ones. On every visible element outside [data-audit-skip], check text colour, size and face, background, padding, gaps, corner radius, shadow and transition duration against that set, ignoring 0, none, auto and transparent. Also flag, when RULES.md §Budgets holds those keys, text contrast against the nearest opaque background below contrast_text (contrast_large from large_text_px, or large_bold_text_px when bold); and always flag interactive elements under --touch-min when the tokens define it, and same-size sibling baselines in a row that differ by 1-3 px. Report the share of the first viewport filled with --accent. Print up to 40 findings per route, size and theme (element, property, value). Exit 1 on any finding.
 ```
 
 Stills show neither easing nor interruption, and a model cannot watch a video file. So the `audit-ux` script (Always-On · Verification Loop) asserts the motion facts: which properties animate, durations against their tokens, and whether a re-triggered animation continues from where it is. Feel gets a frame strip the model can read, and the final call stays yours.
@@ -307,12 +317,12 @@ ffmpeg -y -i shots/video/{{CLIP}}.webm -vf "fps=30,scale=360:-1,tile=12x3" -fram
 ```
 
 ```prompt title="Screenshot Critique Loop"
-Loop on {{ROUTE}}, at most {{MAX_ROUNDS}} rounds (default 3):
+Loop on {{ROUTE}}, one round at a time:
 1. Run {{?SHOTS_CMD}} {{ROUTE}} and {{?AUDIT_CMD}} {{ROUTE}}. Fix every audit finding first: those are facts (off-token values, contrast, baseline drift, undersized targets), not taste.
 2. Get a Design Critic review of the new shots from a session that did not build them, twice with the order swapped. If you cannot start one, stop and ask me to run it and paste the findings back.
-3. Fix the top 5 findings by impact, with tokens and component styles only.
+3. Fix the critic's findings, highest impact first, with tokens and component styles only.
 4. Re-shoot, re-audit and diff: improved, regressed.
-Before round 1, show me the audit findings and what you plan to fix; after my go, run the rounds without asking again. Stop when the audit is clean and the .offthemode/DESIGN.md §Rubric ship bar is met, or the rounds run out. Then list what remains for my taste call. Never say it "looks great"; report wins, losses and ties.
+Before round 1, show me the audit findings, what you plan to fix and roughly what a round costs; after my go, run the rounds without asking again. Stop when the audit is clean and the .offthemode/DESIGN.md §Rubric ship bar is met, or when a round flips no loss (more rounds would go in circles). Then list what remains for my taste call. Never say it "looks great"; report wins, losses and ties.
 ```
 
 Vague feedback gets ignored or overcorrected; pixel-level feedback gets fixed. "Too cluttered" becomes "7 equal-weight toolbar buttons: keep Run as primary, move 5 to overflow, delete Refresh (auto-refresh exists)". "Looks generic" becomes "the 3-card row is the tell: make it one sequence where each item shows the real output it describes".
@@ -385,17 +395,17 @@ Never: {{}}
 |---|---|---|---|---|---|---|
 | {{PRODUCT}} | {{}} | {{}} | {{}} | {{}} | {{}} | {{}} |
 
-### Principles (this product; falsifiable; 6-8; from Extract Principles)
+### Principles (this product; falsifiable; only what the references support; from Extract Principles)
 1. {{PRINCIPLE}} · refs {{FILES}} · from §Taste {{PRINCIPLE_OR_TENSION}} · fails when {{FAILURE_MODE}}
 Dropped as fashion: {{}} · Tensions to resolve: {{}} · What no reference does that the job demands: {{}}
 
 ### System
 - Tokens: src/styles/tokens.css (web), tokens/tokens.json (all platforms). No raw colour, size or duration in components; a new value is a token proposal, never an inline value.
 - Type: display {{FONT_DISPLAY}} for {{DISPLAY_USES}}; text {{FONT_TEXT}}; mono {{FONT_MONO | none}} for {{MONO_USES}}; label treatment {{CASE_TRACKING_STEP}}. Hierarchy: size, weight, space, then colour.
-- Colour: strategy {{scarce accent | colour-led | photographic | OTHER}}; neutrals {{tinted to hue N | achromatic, because}}; accent roles {{ROLES}}; one accent role per viewport outside the signature moment.
+- Colour: strategy {{scarce accent, colour-led, photographic or OTHER}}; neutrals {{tinted to hue N, or achromatic because WHY}}; accent roles {{ROLES}}; one accent role per viewport outside the signature moment.
 - Layout: grid model {{GRID_MODEL}}; the primary action sits at {{PRIMARY_ACTION_POSITION}} and carries data-primary; disclosure rules {{DISCLOSURE_RULES}}.
 - Motion: {{MOTION_PERSONALITY}}; interactive = springs, system = duration tokens; actions done more than {{N}} times per session get no animation.
-- Waiting (from the P2 feel test): {{stream | show the work | optimistic}} for {{OPERATIONS}}.
+- Waiting (from the P2 feel test): {{stream, show the work or optimistic}} for {{OPERATIONS}}.
 - Signature moment: {{SIGNATURE_MOMENT}} · trigger {{TRIGGER}} · budget {{PERF_BUDGET}} · fallback {{FALLBACK}}
 - Platform: web {{WEB_NOTES}} · iOS {{IOS_NOTES}} · Android {{ANDROID_NOTES}}. In system chrome, native feel beats brand; in content, brand wins.
 
@@ -454,7 +464,7 @@ Apply each reason to cases the list does not name. HARD: zero information in any
 | cmdk, Sonner and Vaul at their default styling | shadcn/ui wraps them, so the default is the average |
 
 ### Rubric (judged pairwise by a fresh critic session, never scored absolutely)
-Anchors: .offthemode/design/rubric/CRITERION-1.png, -2 and -3; until you have them, hate images stand in for 1s and love images for 3s. Each judgement runs twice with the order swapped; runs that disagree are a tie.
+Anchors: .offthemode/design/rubric/CRITERION-1.png, -2 and -3; until you have them, hate images stand in for the 1-anchor and love images for the 3-anchor. Each judgement runs twice with the order swapped; runs that disagree are a tie.
 Ship bar: beats the 2-anchor on every criterion, and the 3-anchor on 2 (Distinctiveness) and 8 (Signature moment). Pixel facts belong to the audit script, not to this rubric. Add rows from 11 for criteria specific to this product's surfaces.
 | # | Criterion | A 1-anchor shows | A 3-anchor shows |
 |---|---|---|---|
@@ -477,7 +487,7 @@ Ship bar: beats the 2-anchor on every criterion, and the 3-anchor on 2 (Distinct
 
 - [ ] DESIGN.md §Taste exists, from Taste Extraction or carried over from your last product, and is less than six months old
 - [ ] 30+ references, half from outside software, motion references as frame strips
-- [ ] 6-8 falsifiable principles in DESIGN.md §Principles, traced to references and to §Taste
+- [ ] Falsifiable principles in DESIGN.md §Principles, each traced to references and to §Taste
 - [ ] Three directions from anchors you assigned, each built in its own fresh session; divergence checked by `diverge-diff.sh` and a fresh critic
 - [ ] One base plus at most two grafts, each with a reason in DECISIONS.md; Saturation Check run
 - [ ] Tokens v1 locked (plus DTCG JSON for native); `/specimen` covers every state, both themes, data and reduced motion, and meets the §Rubric ship bar

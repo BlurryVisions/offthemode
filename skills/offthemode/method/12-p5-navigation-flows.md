@@ -2,15 +2,24 @@
 
 > **Output:** `.offthemode/ROUTES.md` (route map, URL state, journeys, filled state inventory, palette commands), journeys as state machines, a dev-only state switcher, tested deep links, a clickable skeleton that passes Walk Every Flow with zero blockers, and a passed Five-Person Test.
 
+<!-- offthemode:rules -->
+### Working rules (for a change inside an existing product)
+- Any view a person would refresh, bookmark or share keeps its state in the URL. Back and reload return to the same place.
+- A new or changed screen covers every state in the ROUTES.md state inventory (first-run, empty, loading, partial, error, offline, no permission), each with one next action.
+- Every tap gets visible feedback, inside feedback_ms when RULES.md §Budgets holds it.
+- Update ROUTES.md in the same change as the route.
+- Open the whole guide to add a primary destination, change how the product's places connect (the information architecture), or add a core journey.
+<!-- /offthemode:rules -->
+
 Get the whole product working as a shell before the core does anything. In a complex product, this is where internal complexity either gets absorbed or leaks onto the person. Navigate by nouns, put every state in the URL, model journeys as state machines, and walk the whole product as a clickable shell before any core logic exists, built against the mock server from P4.
 
 > **Trap:** The default IA (information architecture: the destinations and how they connect) is the SaaS average: a sidebar with Dashboard, Analytics, Projects, Settings. "Dashboard" is a smell, because it names the fact that nobody decided what goes there. Every primary destination should be a noun your person would say out loud.
 
-Rank the entities by how often your person touches each one times its value, and promote 3-5 to primary destinations. Everything else is reached through a parent, search or the command palette. Verbs are actions on objects, never menu items.
+Rank the entities by how often your person touches each one times its value, and promote to primary destinations only the ones at the top that the person reaches for in most sessions. Everything else is reached through a parent, search or the command palette. Verbs are actions on objects, never menu items.
 
 If a person would refresh, bookmark or share a view, it lives in the URL: filters, sort, tabs, selection, route-backed modals. Opening an object pushes a history entry, and changing a filter replaces the current one. Back closes a modal before it leaves the page. Scroll gets restored, and focus moves to the main heading.
 
-Every tap gets feedback inside the feedback budget in RULES.md §Budgets. Prefetch on intent (hover, focus, touch-start), seed detail views from the cached list item, and move fetches into route loaders so requests can't waterfall (wait on each other one after another).
+Every tap gets visible feedback, inside feedback_ms when RULES.md §Budgets holds it. Prefetch on intent (hover, focus, touch-start), seed detail views from the cached list item, and move fetches into route loaders so requests can't waterfall (wait on each other one after another).
 
 ```prompt title="IA From Domain Model"
 Derive the IA of {{?PRODUCT_NAME}} from its domain, not a generic app layout. Inputs: {{SCHEMA_PATH}}, .offthemode/PRODUCT.md, .offthemode/GLOSSARY.md.
@@ -34,7 +43,7 @@ ROUTES: {{PRODUCT_NAME}} · source of truth for navigation; a route change updat
 | /{{object}}s/:id/edit | Route-backed sheet | editor | none | push; back closes | same as web | /{{object}}s/:id |
 
 ### Core journeys
-J1 {{JOURNEY}}: first run to {{MOMENT_OF_VALUE}} in {{N}} interactions, inside the time to value in RULES.md §Budgets. Driven by e2e/journeys/j1.{{ext}}.
+J1 {{JOURNEY}}: first run to {{MOMENT_OF_VALUE}} in {{N}} interactions, inside the time to value in PRODUCT.md §Experience promises. Driven by e2e/journeys/j1.{{ext}}.
 ~~~mermaid
 stateDiagram-v2
   [*] --> {{STATE_A}}
@@ -96,17 +105,17 @@ Walk {{?APP_URL}} with {{BROWSER_TOOL}} as a first-time user and as a power user
 2. Click every link and primary action; record dead ends (404s, no-op buttons, placeholder links, screens with no way forward or back).
 3. Back after each navigation restores place, scroll and URL state; route-backed modals close instead of leaving.
 4. Change every filter, tab and sort, reload, and open the URL in a fresh context: the view must reproduce.
-5. Run the core journeys keyboard-only and touch-only, at each of {{?VIEWPORTS}}, throttled and offline. Timing comes from {{?AUDIT_CMD}} (the audit-ux journey), not from watching: one tool round-trip is slower than the feedback budget.
+5. Run the core journeys keyboard-only and touch-only, at each of {{?SCREENSHOT_SIZES: screenshot_sizes in RULES.md §Budgets}}, throttled and offline. Timing comes from {{?AUDIT_CMD}} (the audit-ux journey), not from watching: one tool round-trip is slower than the feedback budget.
 6. Force every state via the switcher; screenshot each.
 Report Route | Check | Expected | Actual | Screenshot | Severity (blocker, friction, polish). End with the three changes that remove the most friction on the path to {{?MOMENT_OF_VALUE}}. Wait for my go.
 ```
 
 ```prompt title="Five-Person Test"
-Write a test script for journey {{JOURNEY_ID, default J1}} in .offthemode/ROUTES.md, to run on the clickable skeleton with 5 people who are neither me nor on the team.
+Write a test script for journey {{JOURNEY_ID | J1}} in .offthemode/ROUTES.md, to run on the clickable skeleton with 5 people who are neither me nor on the team.
 1. Screener: who counts as {{?PERSON}} (situation, tools used today, how often they do the job), and who is out.
 2. One scenario in their words, with none of our UI terms or GLOSSARY nouns, and 3 tasks, the first ending at {{?MOMENT_OF_VALUE}}.
 3. What I measure: time to the moment of value, first-click correctness per task, pauses of three seconds or more (where, and what they said), and the words they use for our nouns. They think aloud; I never help beyond "what would you do?".
 After I paste the notes, output: Task | Success | Time | Pause points | Their word vs the GLOSSARY term. Then the 3 changes that remove the most hesitation, each tried first as a subtraction, default or inference before any new UI, plus GLOSSARY and copy edits wherever their words differ from ours. Wait for my go before changing anything.
 ```
 
-> **Rule:** The gate passes when at least 4 of 5 reach the moment of value unaided, inside the time to value in RULES.md §Budgets. Below that, make the three changes and test five new people, never the same five. Then update the evidence in PRODUCT.md: Person, Job and Moment are now observed, not hypotheses, and their rows in RISKS.md can be retired.
+> **Rule:** The gate passes when at least 4 of 5 reach the moment of value unaided, inside the time to value in PRODUCT.md §Experience promises. Below that, make the three changes and test five new people, never the same five. Then update the evidence in PRODUCT.md: Person, Job and Moment are now observed, not hypotheses, and their rows in RISKS.md can be retired.

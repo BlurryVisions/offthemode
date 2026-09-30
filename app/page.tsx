@@ -1,11 +1,12 @@
 import { AddTabs } from "@/components/AddTabs";
-import { commands, MCP_URL, REPO_URL } from "@/lib/content";
+import { commands, MCP_URL, REPO_URL, SITE_URL } from "@/lib/content";
 
 const cursorLink = `cursor://anysphere.cursor-deeplink/mcp/install?name=offthemode&config=${Buffer.from(JSON.stringify({ url: MCP_URL })).toString("base64")}`;
 const vscodeLink = `vscode:mcp/install?${encodeURIComponent(JSON.stringify({ name: "offthemode", type: "http", url: MCP_URL }))}`;
+const skillsZip = `${SITE_URL}/skills/offthemode-skills.zip`;
 
 const TOUCHES: Record<string, string> = {
-  offthemode: "Only the .offthemode/ folder",
+  offthemode: "The .offthemode/ folder, plus one line you approve so your tool loads it",
   listrevisit: "The checklist",
   reassess: "Nothing: it reports",
   commentrevisit: "Code comments only",
@@ -26,7 +27,7 @@ const byUse = [...commands].sort((a, b) => SEQUENCE.indexOf(a.name) - SEQUENCE.i
 const ORDER = [
   ["Rules", "The standard every change is held to"],
   ["Plan", "The vision and the core concept, before any code"],
-  ["Look and feel", "If there's a UI: references, tokens, nothing average"],
+  ["Look and feel", "If there's a UI: references, a color and type system, nothing average"],
   ["Backend and hosting", "Strong from the first commit, ready to go live"],
   ["Navigation", "Every screen and every state, walkable end to end"],
   ["The core", "Built fragment by fragment, each one proven"],
@@ -67,7 +68,8 @@ export default function Home() {
             <p className="lede">
               Off the Mode makes Claude, Cursor or any AI coding tool plan first, build in the right order, and hold an
               elite bar: clean code, fast screens, nothing that looks like every other app. It lives outside your
-              project. Your project only gets one folder.
+              project. Your project gets the <span className="inline">.offthemode/</span> folder, plus one line you
+              approve so your tool loads it.
             </p>
             <div className="actions">
               <a className="btn btn--solid" href="#add">Add it to your tool</a>
@@ -161,7 +163,11 @@ export default function Home() {
               <span className="label">Add it</span>
               <h2 className="title" id="add-title">Pick your tool</h2>
             </div>
-            <AddTabs mcpUrl={MCP_URL} cursorLink={cursorLink} vscodeLink={vscodeLink} repoUrl={REPO_URL} zips={zips} />
+            <p className="intro">
+              Two ways in. The link: your tool reaches it over MCP, the standard way AI tools connect to outside tools,
+              and updates arrive on their own. The skills: files on your machine, no server.
+            </p>
+            <AddTabs mcpUrl={MCP_URL} skillsZip={skillsZip} cursorLink={cursorLink} vscodeLink={vscodeLink} repoUrl={REPO_URL} zips={zips} />
           </div>
         </section>
 
@@ -177,8 +183,11 @@ export default function Home() {
                 <p>Your sessions stay free-form. Nothing forces the checklist on you; the revisits catch up when you ask.</p>
               </div>
               <div className="promise">
-                <h3>One folder, nothing else</h3>
-                <p>Everything lives in <span className="inline">.offthemode/</span>. Your code only changes when you ask your AI to change it.</p>
+                <h3>One folder, plus one line</h3>
+                <p>
+                  Everything lives in <span className="inline">.offthemode/</span>, plus one line you approve so your tool
+                  loads it. Your code only changes when you ask your AI to change it.
+                </p>
               </div>
               <div className="promise">
                 <h3>Never sees your code</h3>
@@ -198,7 +207,7 @@ export default function Home() {
           <span>Off the Mode · MIT licence</span>
           <a href={REPO_URL}>GitHub</a>
           <a href="/method">The method</a>
-          <a href="/mcp">MCP endpoint</a>
+          <span>The link: <span className="url">{MCP_URL}</span></span>
         </div>
       </footer>
     </>

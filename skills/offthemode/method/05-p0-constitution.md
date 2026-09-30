@@ -1,6 +1,16 @@
 ## P0 · Constitution
 
-> **Output:** `.offthemode/RULES.md` filled in for this project and loaded by your AI tool at the start of every session, `.offthemode/STATE.md` with the first next step written down, and `.offthemode/DECISIONS.md` with an entry for each stack choice.
+> **Output:** `.offthemode/RULES.md` filled in for this project and loaded by your AI tool at the start of every session, with §Safety holding the day-one security rules; `.offthemode/STATE.md` with the first next step written down; and `.offthemode/DECISIONS.md` with an entry for each stack choice.
+
+<!-- offthemode:rules -->
+### Working rules (for a change inside an existing product)
+- Hold every change to RULES.md as it stands. Don't rewrite it as a side effect of another task.
+- The project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) stay as they are: never move, merge or rewrite them. The one auto-load line is the only addition, made on the user's go.
+- Before deciding anything, search DECISIONS.md, so a settled choice is not argued again.
+- A correction given once goes in STATE.md §Corrections seen once, with the date. Given a second time, propose one line for RULES.md §Project specifics with its reason, and add it on the user's go.
+- When a piece of work ends, rewrite STATE.md (present tense, no history) and append any decision to DECISIONS.md.
+- Open the whole guide to set up or redo the rules, wire the auto-load, or prune RULES.md.
+<!-- /offthemode:rules -->
 
 The constitution is everything your AI knows before you type a word, so every prompt you send is multiplied by it. In Off the Mode it is three files. RULES.md holds the standards every change is held to. STATE.md says where things stand right now. DECISIONS.md records what was chosen, what was rejected and why.
 
@@ -12,32 +22,33 @@ The constitution is everything your AI knows before you type a word, so every pr
 |---|---|---|
 | `RULES.md` | Every session, automatically | The standards, the commands, the map of guides |
 | `STATE.md` | Every session, automatically | The present: what works, what is next, what is unverified |
-| The matching guide | Before planning or doing that kind of work, once per session | The technique for that work; RULES.md §Guides says which guide |
+| The matching guide | Before planning or doing that kind of work, once per session: its working rules for a change inside an existing product, the whole guide when a phase starts or its structure changes | The technique for that work; RULES.md §Guides says which guide |
 | `PRODUCT.md` | Before any product or experience decision | Vision, core concept, person, job, refusals, feeling |
 | `DECISIONS.md` | Searched before anything is decided again | Every choice with its reason |
 | `CHECKLIST.md`, `GLOSSARY.md`, and docs such as `DESIGN.md` or `SKELETON.md` | When the work touches them | Fragments, names, deeper detail |
 
-Only the first two load every session. Everything else is named by its path and opened when relevant. Guides come from the get_method tool or the skill's method/ folder.
+Only the first two load every session. Everything else is named by its path and opened when relevant. Guides come from the get_method tool or the offthemode skill's method/ folder (see Where the guides come from, in How to add it).
 
 > **Rule:** Depth that only one kind of work needs belongs in a guide or a doc, not in RULES.md. A rule about button states costs attention in every database session. RULES.md points to where the depth lives, and the depth loads only when the work needs it.
 
 ### What goes in RULES.md
 
-Start from the RULES.md template (from get_template or the skill's templates/ folder). It arrives with twelve sections and sound defaults. The offthemode command fills in the parts that belong to your project. This sheet explains what makes each part work.
+Start from the RULES.md template (from get_template or the skill's templates/ folder). It arrives with its sections and sound defaults. The offthemode command fills in the parts that belong to your project. This guide explains what makes each part work.
 
 | Section | What makes it good | Example line |
 |---|---|---|
-| This project | One line on what it is and for whom; platforms; the stack pinned with versions and a reason for each; the boundaries between parts; two to four non-negotiables | "The core loop works offline and syncs later." |
-| How to work | How doubt is handled, which changes stop for your go, how questions are asked | "Schema, auth, payments, a public contract or a new dependency: stop and ask." |
+| This project | One line on what it is and for whom; platforms; the stack pinned with versions, each with its reason in DECISIONS.md; the project's own rule files, listed as still in force | "Other rule files that stay in force: AGENTS.md." |
+| Project specifics | Rules only this project needs: the stack's known traps, data rules, security boundaries, the boundaries between parts. Kept apart from the Off the Mode standards and never repeating the project's own rule files. A line stays only if it is certain to apply, is not something an AI does anyway, and is costly if missed | "The core loop works offline and syncs later, because the person edits on the train." |
+| How to work | How doubt is handled, when to wait for your go, how questions are asked | "Anything beyond a small fix: show the plan and wait for my go." |
 | Guides | Each kind of work this project will see, mapped to the guide to open first | "Any screen or visual change: open the Visual Language guide." |
 | Product first | How every proposal ties back to the person and job in PRODUCT.md | "If a request contradicts a PRODUCT.md refusal, quote the line before acting." |
 | Depth | Where facts come from: specs, platform docs, the installed source, not tutorials or memory | "Before using a library API, open the installed version's types and cite file:line." |
 | Code | Standards with reasons, and bans paired with what to do instead | "Parse external input at the boundary, then trust the types: one place validates." |
 | Look and feel | Pointers to PRODUCT.md §Feeling and DESIGN.md, and the test for generic output | "If what you are about to make could sit on any other product unchanged, stop and say so." |
-| Safety | What must never happen, whatever the task | "Authorization is enforced at the data layer, never only in the UI." |
+| Safety | What must never happen, whatever the task: the day-one security rules, and a pointer to SECURITY.md once it is written (see P7 · Security Hardening) | "Authorization is checked on the server for every action, never only in the UI." |
 | Efficiency | Scripts over eyeballing, shared briefs, short results | "Anything measurable is measured by a script, not judged by eye." |
-| Budgets | The numbers: speed, size, contrast, touch target sizes | "First useful result within 2 s of a cold start on a mid-range phone." |
-| Commands | The exact commands, ready to copy, and the viewports to check | "Fast check: `pnpm check` (types, lint, unit tests)." |
+| Budgets | The numbers, in one json block the check scripts read. The template ships the file and function size limits and the screenshot sizes; a speed, contrast or touch-size key is added only when this product should hold one (Accessibility & Performance Budgets lists common keys) | `"max_file_lines": 400` |
+| Commands | The exact commands, ready to copy | "Fast check: `pnpm check` (types, lint, unit tests)." |
 | Done means verified | What must be true before anything is called done | "UI changes are looked at on phone, tablet and wide widths, light and dark." |
 
 > **Trap:** On a new project the stack comes out of the vision and skeleton work (P1). Leave the stack fields as open hypotheses until then, and never let your AI guess a stack just to fill the template. On an existing project, your AI reads the stack, commands and conventions from the code and shows where each one came from.
@@ -48,7 +59,7 @@ These are also the parts most often missing.
 
 1. **Opinions with reasons.** "No raw hex colors, because the design system must stay editable in one place" also stops raw spacing values, because your AI can apply the reason to cases the rule never named. A rule without a reason is followed only where it literally applies.
 2. **Bans paired with what to do instead.** A bare ban leaves your AI with the next most likely option, which is often the same mistake in a new form. Write the replacement next to the ban.
-3. **A doubt policy split by how reversible the change is.** Never build on an assumption: your AI writes the doubt as a hypothesis ("I think X, because Y") and confirms it in the code, the docs or by asking. Small, reversible choices it makes with a stated default and tells you about. Hard-to-reverse ones (schema, auth, payments, a public contract, a new dependency, and any paths you list for this project) stop for your go. Questions arrive batched and numbered, at most five per round, each with a recommended default, so you can reply "1 ok, 2 b, 3 yours".
+3. **A doubt policy that never builds on a guess, and one rule for when to wait.** Your AI writes every doubt as a hypothesis ("I think X, because Y") and confirms it in the code, the docs or by asking before anything rests on it, however small or reversible the choice. When to wait is one rule: a small fix (a typo, a one-line change) gets one line on what will change and goes ahead; anything bigger is shown as a plan and waits for your go. A go covers what the plan showed. If the work turns out to need more, and always before a schema, auth, payment, public-contract or dependency change the plan didn't show, it stops and asks again. Questions arrive batched and numbered, each with a recommended answer, so you can reply "1 ok, 2 b, 3 yours"; more rounds follow if needed.
 4. **A definition of done that includes seeing the result.** Checks pass, the thing actually ran, screens were looked at on phone, tablet and wide widths, and there are no new console errors. "Should work" is not done.
 
 #### Code standards, each with its reason
@@ -85,28 +96,27 @@ Add the common traps of your own stack the same way, each with its replacement a
 
 ### Load it every session
 
-Setup (the offthemode command) wires RULES.md and STATE.md into your tool's auto-load, the files it reads into every session on its own, so both are in context before your first message. It shows you the exact lines first and adds them after you say go. To check the wiring, or to do it by hand:
+Setup (the offthemode command) wires RULES.md and STATE.md into your tool's auto-load, the files it reads into every session on its own, so both are in context before your first message. It adds one line, and only that: it shows you the exact line first and adds it after you say go. To check the wiring, or to do it by hand:
 
 | Tool | Where | What to add |
 |---|---|---|
-| Claude Code | `CLAUDE.md` at the project root | Two lines: `@.offthemode/RULES.md` and `@.offthemode/STATE.md` |
-| Cursor | `.cursor/rules/offthemode.mdc` | A rule with `alwaysApply: true` (below) |
-| Codex, and any tool that reads `AGENTS.md` | `AGENTS.md` at the project root | One line: "At the start of every session, read .offthemode/RULES.md and .offthemode/STATE.md and follow them." |
-| Tools with their own always-on instructions file | That file (in VS Code, `.github/copilot-instructions.md`) | The same one line |
+| Claude Code | `CLAUDE.md` at the project root | One line: `Read @.offthemode/RULES.md and @.offthemode/STATE.md before any change.` |
+| Cursor | `.cursor/rules/offthemode.mdc` | A rule with `alwaysApply: true` holding the same line (below) |
+| Codex, and any tool that reads `AGENTS.md` | `AGENTS.md` at the project root | The same line |
+| Gemini CLI | `GEMINI.md` at the project root | The same line |
+| Tools with their own always-on instructions file | That file (in VS Code, `.github/copilot-instructions.md`) | The same line |
 
-If the file already exists, the lines go at the top and everything else stays. For Cursor, the settings block between the `---` lines at the top of the file (its frontmatter) is what makes the rule apply to every session.
+If the file already exists, the line goes at the top and everything else stays as it is. For Cursor, the settings block between the `---` lines at the top of the file (its frontmatter) is what makes the rule apply to every session.
 
 ```file path=".cursor/rules/offthemode.mdc"
 ---
 description: Off the Mode standing rules and current state
 alwaysApply: true
 ---
-At the start of every session, read .offthemode/RULES.md and .offthemode/STATE.md and follow them.
-@.offthemode/RULES.md
-@.offthemode/STATE.md
+Read @.offthemode/RULES.md and @.offthemode/STATE.md before any change.
 ```
 
-> **Rule:** In Claude Code, a line in CLAUDE.md that starts with @ is an import: the file loads at launch, every session. A plain path is read only when relevant. Imports organize, they do not shrink, because everything imported loads. Import RULES.md and STATE.md and nothing else. The most common cause of ignored rules is a CLAUDE.md that @-imports the whole docs folder.
+> **Rule:** In Claude Code, an `@path` in CLAUDE.md is an import: the file loads at launch, every session. A path without the @ is read only when relevant. Imports organize, they do not shrink, because everything imported loads. Import RULES.md and STATE.md and nothing else. The most common cause of ignored rules is a CLAUDE.md that @-imports the whole docs folder.
 
 When you connect through the MCP link, the server also repeats the instruction to load both files as a standing instruction, so the habit holds even before the auto-load is wired. If your tool has no auto-load at all, paste the Session Start prompt below at the top of each session.
 
@@ -151,12 +161,12 @@ The offthemode command drafts these files for you. Use this prompt to redo the r
 ```prompt title="Draft the Rules"
 Set up the standing rules for {{PROJECT_NAME}}: .offthemode/RULES.md, .offthemode/STATE.md and .offthemode/DECISIONS.md. Start from the templates (get_template, or the skill's templates/ folder), and read .offthemode/PRODUCT.md if it exists.
 First read the project and fill in what you can: {{?STACK}}, {{?COMMANDS}}, {{?CONVENTIONS}}. Show each thing you found with the file it came from.
-Then interview me, in rounds of at most 5 numbered questions, each with your recommended answer and a one-line reason. Cover, in order: what it is and the moment of value; non-negotiables; platforms, stack and versions; the boundaries between parts and where the core sits; which changes must stop for my go; the traps of this stack, each with its replacement; the budgets; the exact check, lint-one-file, dev, screenshot, audit and end-to-end commands, and the viewports. Stop an area when you could predict my answer to a new question in it.
+Then interview me with batched, numbered questions, each with your recommended answer and a one-line reason, in more rounds if needed. Ask only what the project can't tell you. Cover, in order: what it is and the moment of value; non-negotiables; platforms, stack and versions; the boundaries between parts and where the core sits; any area where a change always needs its own go, even inside an approved plan; the traps of this stack, each with its replacement; the file and function size limits and the screenshot sizes (the template's defaults, for me to confirm); the exact check, lint-one-file, dev, screenshot, audit and end-to-end commands. Suggest no speed, contrast or touch-size numbers; add one to §Budgets only if I ask. Stop an area when you could predict my answer to a new question in it.
 Then draft:
-- RULES.md: every section filled for this project, every standard with its reason, every ban with what to do instead, §Guides mapped to the kinds of work this project will see. Delete any line you would follow correctly without being told. About 150 lines at most.
+- RULES.md: every section of the template filled for this project, every standard with its reason, every ban with what to do instead, §Guides mapped to the kinds of work this project will see. §This project lists the project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) as still in force; they are never moved, merged or rewritten, and the auto-load line is the only addition. §Project specifics holds only what those files don't already cover, and a line stays only if it is certain to apply, is not something an AI does anyway, and is costly if missed. Delete any line you would follow correctly without being told. About 150 lines at most.
 - STATE.md: the present, and item 1 of Next with its done-check.
 - DECISIONS.md: one entry per stack choice, with rejected alternatives and why not.
-- The auto-load wiring for {{TOOL}}, so RULES.md and STATE.md load every session.
+- The auto-load line for {{TOOL}}, so RULES.md and STATE.md load every session: the only change outside .offthemode/.
 Tag anything I did not confirm [hypothesis], and confirm it with me before relying on it. Show me each file and exactly what you will create or change. Write nothing until I say go, then tell me what you wrote.
 ```
 
@@ -167,10 +177,10 @@ New session. .offthemode/RULES.md and .offthemode/STATE.md should be in your con
 Reply with:
 1. Where things stand, in two sentences, in your own words.
 2. The step you will do now and its done-check.
-3. The plan in at most 7 bullets: the files you will touch, the guide you will open (RULES.md §Guides), and the DECISIONS.md entries and RULES.md lines that constrain it.
+3. The plan in at most 7 bullets: the files you will touch, the guide you will open (RULES.md §Guides; its working rules are enough for a change inside what exists), and the DECISIONS.md entries and RULES.md lines that constrain it.
 4. How you will verify: the commands, and the screens at phone, tablet and wide widths.
-5. Numbered questions with your recommended defaults, or "no questions".
-Small, reversible steps: proceed unless I object. Anything RULES.md §How to work says needs my go: wait for "go".
+5. Your hypotheses ("I think X, because Y") and numbered questions, each with your recommended answer, or "no questions".
+Then follow RULES.md §How to work: a small fix (a typo, a one-line change) goes ahead after one line saying what will change; anything else waits for my "go". Nothing is built on a hypothesis until it is confirmed.
 ```
 
 When a piece of work ends, paste this so the next session starts where this one stopped.
@@ -179,7 +189,7 @@ When a piece of work ends, paste this so the next session starts where this one 
 End the session, in this order:
 1. Rewrite .offthemode/STATE.md from scratch: present tense, no history, under 40 lines. A fresh session with no chat context must be able to start item 1 of Next, so name the files, the commands and the done-check.
 2. Append a DECISIONS.md entry for every decision made this session. There should be no silent ones; if you find one, list it as a hypothesis for me to confirm.
-3. Sort every correction I gave. First time: add it to the corrections-seen-once list in STATE.md. Second time: propose one RULES.md line, imperative and specific, with its reason. A matter of taste: propose a line for .offthemode/DESIGN.md or PRODUCT.md §Feeling. A flaw in a prompt I pasted: propose the fixed prompt. A rule broken again although it is already in RULES.md: propose a check (a lint rule, a test or a script in §Commands).
+3. Sort every correction I gave. First time: add it to the corrections-seen-once list in STATE.md. Second time: propose one line for RULES.md §Project specifics, imperative and specific, with its reason. A matter of taste: propose a line for .offthemode/DESIGN.md or PRODUCT.md §Feeling. A flaw in a prompt I pasted: propose the fixed prompt. A rule broken again although it is already in RULES.md: propose a check (a lint rule, a test or a script in §Commands).
 4. List everything claimed but not verified as unverified in STATE.md. The next session trusts this file.
 5. Propose edits for any RULES.md line that proved wrong, stale or in conflict with another.
 6. Run {{?CHECK_CMD}}. If the project uses git, propose a commit "{{type}}: {{summary}}" with the D- ids in the body.
@@ -191,12 +201,12 @@ Do steps 1, 2 and 4 now. Reply with a five-line summary, then the proposals from
 A correction you give once is a moment. A correction you give twice is a missing rule.
 
 - **First time:** it goes in STATE.md's corrections-seen-once list, with the date.
-- **Second time:** it becomes one line in RULES.md, imperative and specific, with its reason. For example: "Before using a date API, open the installed version's types. Because: an API removed in the current major version cost three rounds to compile."
+- **Second time:** it becomes one line in RULES.md §Project specifics, imperative and specific, with its reason, added on your go. For example: "Before using a date API, open the installed version's types. Because: an API removed in the current major version cost three rounds to compile."
 - **Checkable:** once a machine can check the rule (with a lint rule, which is an automatic code check, a test or a script), add the check to §Commands and delete the prose line. The check is now the rule, and a check does not forget.
 
 | The correction was about | It goes in |
 |---|---|
-| How code is written or work is done here | RULES.md, in the matching section |
+| How code is written or work is done here | RULES.md §Project specifics |
 | Taste: the look, the tone, the feel | PRODUCT.md §Feeling or .offthemode/DESIGN.md |
 | A choice between options | DECISIONS.md |
 | A prompt that led your AI wrong | The prompt itself, fixed |

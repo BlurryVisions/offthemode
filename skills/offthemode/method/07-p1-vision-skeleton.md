@@ -2,6 +2,16 @@
 
 > **Output:** `.offthemode/PRODUCT.md` filled from its template (product first, with evidence on every claim), `.offthemode/SKELETON.md` when the project is big enough to need one, the riskiest hypotheses written into `.offthemode/RISKS.md`, and a vision that passes the predict-my-call test.
 
+<!-- offthemode:rules -->
+### Working rules (for a change inside an existing product)
+- Every new feature traces to a job in PRODUCT.md. If it serves none, ask why before planning it.
+- If the request conflicts with a PRODUCT.md line (a refusal, a tie-breaker, the moment of value), quote the line before acting.
+- Name new things in the words the users use, and propose the GLOSSARY.md §Terms entry.
+- If the change adds an entity, a surface, a data flow or a trust boundary and SKELETON.md exists, show the SKELETON.md edit in the plan and make it in the same change, on the user's go.
+- A guess about the person, the job or the moment is written as a hypothesis and confirmed before anything rests on it.
+- Open the whole guide to write or rework the vision, PRODUCT.md or SKELETON.md, to name the product, or when a feature changes the person, the job or the moment of value.
+<!-- /offthemode:rules -->
+
 Your AI cannot build the picture in your head. It can only build what the text makes unambiguous. P1 turns that picture into documents precise enough that two different AI sessions would build the same product from them. Adjectives such as "clean", "modern" or "powerful" point the AI straight at the mode, the most common version of everything, so the documents use references with extraction notes ("take the type scale, not the color"), numbers and anti-goals instead. Two parts carry the most weight: the **moment of value**, which comes with a time budget and an action budget, and **complexity absorption**, which is where "extremely complex" and "minimalist" stop fighting.
 
 ### PRODUCT.md
@@ -10,7 +20,7 @@ Setup (the offthemode command) creates PRODUCT.md from its template, which you c
 
 - **Vision.** One sentence: "For [person] who [struggle], [product] is the [frame] that [the one thing], unlike [status quo], which [why it fails them]." It forces a person, a struggle and a rival into one line.
 - **Person.** A specific person in a specific situation, with what they already have open. Their skill (novice, practitioner or expert) sets the default density. Name the tools and workarounds they use today.
-- **Jobs.** At most 3, ranked, each as "When [situation], I want to [motivation], so I can [outcome]."
+- **Jobs.** Ranked, each as "When [situation], I want to [motivation], so I can [outcome]." Keep a job only if a real person has it and it changes what gets built or cut.
 - **Moment of value.** What they see or feel, within how long of first opening the product, after at most how many steps and decisions. Say whether an account is required before it, and if so, why.
 - **Signature moment.** The one interaction people would screen-record. It gets outsized polish.
 - **Not for.** Who you deliberately disappoint, and why.
@@ -18,8 +28,8 @@ Setup (the offthemode command) creates PRODUCT.md from its template, which you c
 - **Feeling.** A table: adjective, reference (a product, object, print, film or place), take this, not this. Then the negative references: what it must never look or feel like. An adjective alone gets you the average; a reference with an extraction note gets you a decision.
 - **Complexity absorption.** A table: the hard thing inside, how the user never sees it (a default, an inference, a disclosure or undo), and the expert escape hatch. For example: sync conflicts, auto-merge with a visible history and never a dialog, a history panel.
 - **Tech consequences.** Each promise turned into what it forces in the build. "40 s from drop, no signup" means anonymous sessions, resumable uploads and streamed results.
-- **Experience promises.** The numbers the experience is held to: time to first wow; the confirm dialogs allowed, each with its reason; offline behavior (read-only, queued writes, or none, and why); how many core-journey actions update instantly, before the server answers (N of M); whether there is multiplayer or shared live state. Performance and accessibility numbers live in RULES.md §Budgets, not here.
-- **Metrics, bets and constraints.** Activation, defined; time to value under a number; a retention signal; a guardrail that must never get worse. Each bet names its job, expected effect, complexity cost and "kill if". Constraints: deadline, budget and hosting, team, data and compliance. Open questions, each with what it blocks.
+- **Experience promises.** The numbers the experience is held to: the time to the moment of value (the only place this number lives); the confirm dialogs allowed, each with its reason; offline behavior (read-only, queued writes, or none, and why); how many core-journey actions update instantly, before the server answers (N of M); whether there is multiplayer or shared live state. Any speed or accessibility number the product holds is a key in RULES.md §Budgets, not here.
+- **Metrics, bets and constraints.** Activation, defined; time to value, measured against its target in §Experience promises; a retention signal; a guardrail that must never get worse. Each bet names its job, expected effect, complexity cost and "kill if". Constraints: deadline, budget and hosting, team, data and compliance. Open questions, each with what it blocks.
 
 Tag every Person, Job and Moment line with its evidence: observed, heard or hypothesis. A hypothesis is written "I think X, because Y", and it also becomes a RISKS.md row until it is confirmed in the code, the docs or by asking. Nothing gets built on it before then.
 
@@ -77,7 +87,7 @@ flowchart LR
 
 ### Stack and non-functional requirements
 Per layer: choice + version + why + rejected + path from local to {{TARGET_HOSTING}}, each recorded as a D-### entry in DECISIONS.md.
-Performance and accessibility: RULES.md §Budgets (change the budget there, not here) · offline {{none | read-only | full sync}} · scale at 12 months {{users, rows, requests per second}} · languages {{locales, right-to-left}}
+Speed and accessibility: any keys this product holds in RULES.md §Budgets (change them there, not here) · offline {{none, read-only or full sync}} · scale at 12 months {{users, rows, requests per second}} · languages {{locales, right-to-left}}
 
 ### Threat sketch (five minutes, now, not at the end)
 Assets {{}} · actors {{anon, user, admin, other tenant, compromised client}} · authentication {{}} · authorization model {{}} · personal data fields {{}} · secrets live in {{}}
@@ -108,7 +118,7 @@ Feature and screen names follow the same rule, in the words your users already u
 Help me name {{?PRODUCT: from the thesis and core concept in PRODUCT.md}}. Talk first; don't write any file until I choose.
 1. Read PRODUCT.md (person, job, moment of value, feeling, refusals) and say in two lines what the name has to carry.
 2. Generate at least 30 candidates across six styles: evocative real words, metaphors from the product's world, invented words, compounds, borrowed words, and plain descriptive as a baseline. Avoid category-plus-buzzword compounds and the endings everyone uses (-ly, -ify, -hub, AI).
-3. Shortlist the strongest 8: short, easy to say and spell after hearing it once, distinctive in its category, evoking the feeling or the job rather than the feature, and working in {{LANGUAGES}}. For each, one line on why it survived and one risk.
+3. Shortlist every candidate that passes all of these: short, easy to say and spell after hearing it once, distinctive in its category, evoking the feeling or the job rather than the feature, and working in {{LANGUAGES}}. For each, one line on why it survived and one risk.
 4. Check the shortlist live with web search: .com and {{OTHER_DOMAINS}}, handles on {{PLATFORMS}}, the app stores, {{PACKAGE_REGISTRY | skip}}, and a trademark search in {{COUNTRIES}}. Mark each check found, taken or unclear, with its source. Never report availability from memory.
 5. Recommend 3, each with the sentence test ("I'll send it on X"). I choose; then write PRODUCT.md §Name with the name, why it fits and the checks, on my go.
 ```
@@ -124,7 +134,7 @@ Help me name {{?PRODUCT: from the thesis and core concept in PRODUCT.md}}. Talk 
 
 ```prompt title="Interrogate My Vision"
 You are my product partner and the most demanding product lead this idea will face: you have shipped category-defining products and killed far more features than you built. Find out whether I know what I am building. No code, no files yet.
-Raw vision: {{RAW_VISION: brain dump, transcript, links, screenshots}} · References and what to take from each: {{REFERENCES}} · Platforms {{web | iOS | Android | backend | data}} · Size {{weekend tool | product | complex system}}
+Raw vision: {{RAW_VISION: brain dump, transcript, links, screenshots}} · References and what to take from each: {{REFERENCES}} · Platforms {{web, iOS, Android, backend or data}} · Size {{weekend tool, product or complex system}}
 What exists already: {{?WHAT_EXISTS: read from the code, the README and .offthemode/; "nothing" for a new project}}
 
 Round 1, in order:
@@ -136,7 +146,7 @@ Round 1, in order:
 6. The strongest case that this should not exist, or should be a feature of something else.
 7. Evidence: for person, job and moment, what I have observed, what I have heard, and what is still a hypothesis to confirm.
 
-Then interview me in rounds of at most 5 numbered questions, each with your recommended answer. Each round attacks the weakest of person, job, moment, the one thing, refusals; say which. Reject vague answers ("users", "easy", "powerful", "all-in-one", "seamless") and re-ask sharper. Never suggest features; if I do, ask which job it serves and what it displaces. Stop when you can state the product in one sentence and predict what I would cut.
+Then interview me with batched, numbered questions, each with your recommended answer, in as many rounds as it takes. Each round attacks the weakest of person, job, moment, the one thing, refusals; say which. Reject vague answers ("users", "easy", "powerful", "all-in-one", "seamless") and re-ask sharper. Never suggest features; if I do, ask which job it serves and what it displaces. Stop when you can state the product in one sentence and predict what I would cut.
 Finally show me a draft of .offthemode/PRODUCT.md that follows its template (get_template or the skill's templates/ folder), with an evidence tag on every Person, Job and Moment line. Write each unconfirmed item as a hypothesis, "I think X, because Y"; unsettled items go to open questions, never invented. End with the 3 hypotheses most likely to be wrong and the cheapest one-day test for each, each written as a RISKS.md row. Write the files only after I say go.
 ```
 
@@ -156,14 +166,14 @@ Read .offthemode/PRODUCT.md and .offthemode/GLOSSARY.md, and for an existing pro
 - Derive surfaces from the domain model and journeys; cut any surface no journey step requires, or justify it. One primary action each.
 - Tag capabilities Core, Supporting or Generic; spend creativity only on Core.
 - Stack per layer: choice + version + why + rejected; it must meet RULES.md §Budgets and the PRODUCT.md experience promises and reach {{TARGET_HOSTING}} cleanly; draft each as a D-### entry for DECISIONS.md. If the experience promises trip the sync rule, mark the data layer [open] pending a P2 sync spike.
-- Threat sketch: assets, actors, trust boundaries, top 5 abuse cases with day-one mitigations.
-- Tag every item [decided], [hypothesis] or [open]. End with the 3-5 riskiest hypotheses, weighted toward the core, as RISKS.md rows with proposed spikes.
+- Threat sketch: assets, actors, trust boundaries, and every abuse case that could really happen to this product, worst first, each with its day-one mitigation.
+- Tag every item [decided], [hypothesis] or [open]. End with the riskiest hypotheses, weighted toward the core and worst first, as RISKS.md rows with proposed spikes.
 - Flag anything in PRODUCT.md this skeleton cannot satisfy instead of quietly bending it.
 ```
 
 ```prompt title="Pre-Mortem"
 It is {{N}} months after launch and {{PROJECT_NAME}} has failed. Read .offthemode/PRODUCT.md and .offthemode/SKELETON.md.
-Write 6-10 distinct causes as short, concrete stories, covering product (nobody reached the moment of value, or the Person was imagined), experience (complexity leaked, or it looked like everything else), core feasibility (quality, latency, cost), architecture (local-to-hosted, scale, data model, sync), security and abuse, cost and operations, and my own process.
+Write every distinct cause you can make concrete, each as a short story, covering product (nobody reached the moment of value, or the Person was imagined), experience (complexity leaked, or it looked like everything else), core feasibility (quality, latency, cost), architecture (local-to-hosted, scale, data model, sync), security and abuse, cost and operations, and my own process.
 Per cause: early warning signal, likelihood 1-5, impact 1-5, the cheapest test now, what changes in PRODUCT or SKELETON if it is real. A risk that applies to every startup is not allowed.
 Show the RISKS.md rows you would add, mark the ones needing a P2 spike, and list proposed PRODUCT and SKELETON edits. Change nothing until I say go; then write the RISKS.md rows and leave the PRODUCT and SKELETON edits for me to accept one by one.
 ```

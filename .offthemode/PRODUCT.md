@@ -1,15 +1,19 @@
-PRODUCT · Off the Mode · confirmed · reviewed 2026-09-29
+PRODUCT · Off the Mode · confirmed (new fields marked hypothesis wait for the author) · reviewed 2026-09-30
+The vision and the core concept. Read it before any product or UX decision. Every claim carries its evidence: observed, heard, or hypothesis.
+
+## Name
+Off the Mode · why it fits: it pulls the AI off "the mode", the most common answer in its training data · checked: live at offthemode.vercel.app and github.com/BlurryVisions/offthemode; no trademark search yet · confirmed
 
 ## Thesis
 For builders who use AI coding tools and are tired of getting the same average output, Off the Mode is the setup that makes any AI tool plan first, build in the right order and hold an elite bar, unlike prompting from scratch each time, which gets you the statistical average of the internet.
 
 ## Core concept
-One method (rules, plan, look and feel, backend, navigation, the core in fragments, security, ship) written once as instructions and templates, delivered to any AI tool by a link or a skills download, and kept honest by revisit commands. It lives outside the project; the project gets one `.offthemode/` folder.
+One method (rules, plan, look and feel, backend, navigation, the core in fragments, security, ship) written once as instructions and templates, delivered to any AI tool by a link or a skills download, and kept honest by revisit commands. It lives outside the project; the project gets one `.offthemode/` folder, plus one line the user approves so their tool loads it.
 
 ## Person, job, moment
 - Person: a builder using Claude, Cursor or another AI coding tool on a new or existing project · evidence heard (the author)
 - Jobs: 1. When I start or continue a project with an AI tool, I want it to plan like a top engineer and build in the right order, so I get a standout product instead of generic output · evidence heard
-- Moment of value: within about ten minutes of adding it, a new project has a plan and a checklist; an existing project has a plain summary, where it stands against its core concept, and a checklist with what's done · evidence assumed
+- Moment of value: within about ten minutes of adding it, a new project has a plan and a checklist; an existing project has a plain summary, where it stands against its core concept, and a checklist with what's done · evidence hypothesis (never timed with real people: CHECKLIST F5.7)
 - Signature moment: the existing-project health check
 - Not for: people who want a code library or a UI kit
 
@@ -17,14 +21,29 @@ One method (rules, plan, look and feel, backend, navigation, the core in fragmen
 - We will not block or slow a normal coding session, because the checklist is a map, not a gate.
 - We will not store or receive anyone's code, because trust is the product.
 - We will not lock anyone into one AI tool or one language.
-- We will not clutter the project: one folder only.
+- We will not clutter the project: one .offthemode/ folder, plus one line the user approves so their tool loads it (decided 2026-09-30).
+- We will not set size, speed or accessibility limits on what people build: how minimal or comprehensive a product is stays its builder's call (DECISIONS D-005, D-006).
 - Simple wording over complete wording; one source over convenient copies.
 
-## Experience promises
+## Feeling (only if the product has a UI)
+| Word | Reference (product, object, print, film, place) | Take this | Not this |
+|---|---|---|---|
+| drawn | an architect's drawing set | diazo paper in light, cyanotype in dark, redlines for change | not named yet |
+Must never look or feel like: a stock landing page or an untouched component-library look · evidence heard (the author)
+
+## Complexity we absorb
+| Hard thing inside | How the user never has to deal with it | Escape hatch for experts |
+|---|---|---|
+| a 30-guide method | the rules open the right guide's short working rules for each kind of work | the whole guide (get_method with full: true) and /method |
+| keeping a plan honest over months | four revisit commands, run when the user asks | editing .offthemode/ files by hand |
+| reading an existing codebase | setup reads the code before asking anything | answering its questions differently |
+Evidence: observed (the built commands and server), hypothesis for how it feels to use
+
+## Experience promises (the time to value lives here and nowhere else)
 | Promise | Target |
 |---|---|
-| Time to the first win | about 10 minutes |
-| Steps to add it | one paste or one click |
+| Time to the moment of value | about 10 minutes from first use, in one paste or one click plus "set up off the mode" |
+| Confirm dialogs allowed | none on the site; commands wait for a go before they write (talk first) |
 | Works offline | the skills do; the link needs the internet |
 
 ## Success and constraints

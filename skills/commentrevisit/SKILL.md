@@ -2,12 +2,11 @@
 name: commentrevisit
 description: "Clean up code comments so they are true, necessary and useful - remove stale, wrong or noisy ones and add a short why where the code can't explain itself. Use when the user says \"/commentrevisit\" or asks to tidy comments. Changes comments only, never code."
 license: MIT
-argument-hint: "[a path, or empty for the files changed on this branch]"
 ---
 
 # Off the Mode · comment revisit
 
-Scope: {{?SCOPE: the path the user names, else the files changed on this branch against the main branch, else the whole repo}}. Change comments only: never code, names, formatting or imports. Talk first, then do: explain what you found and exactly what you will create or change, wait for the user's go, then do it and say what you did.
+Scope: the path the user typed after the command; if none, the files changed on this branch against the main branch; if none, the whole repo. Change comments only: never code, names, formatting or imports. Talk first, then do: explain what you found and exactly what you will create or change, wait for the user's go, then do it and say what you did.
 
 First, scan and propose: per file, how many comments you would remove, add and fix, with two or three examples, plus any bugs the comments reveal. Wait for go before editing.
 
@@ -15,7 +14,7 @@ Remove:
 - comments that no longer match the code
 - comments that narrate what the next line obviously does
 - commented-out code (git remembers it)
-- TODO or FIXME with no checklist id; if the work is real, list it for listrevisit instead
+- TODO or FIXME with no checklist id; if the work is real, name it in your report so the listrevisit command can track it
 
 Add, only where the code can't explain itself:
 - why a workaround exists, and when it can go
@@ -31,3 +30,6 @@ After the edits, prove it: the diff contains only comment lines, and the check c
 
 ## Files
 - The user's scope, if any, is whatever they typed after the command.
+- The guides and all the templates are in the offthemode skill, next to this one: `../offthemode/method/` (`INDEX.md` lists the guides; their working rules are in `../offthemode/method/rules/`) and `../offthemode/templates/`.
+- The other commands named here are sibling skills in the same skills folder: listrevisit is `../listrevisit/SKILL.md`.
+- Install all 5 Off the Mode skills together; they read each other's files.

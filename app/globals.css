@@ -49,6 +49,8 @@ a:hover { color: var(--red); }
 ::selection { background: var(--red-wash); }
 button { font: inherit; color: inherit; cursor: pointer; }
 code, pre { font-family: var(--mono); }
+/* Read by screen readers, not shown. */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 
 .wrap { padding-inline: var(--gutter); max-width: 1180px; margin-inline: auto; }
 
@@ -80,7 +82,7 @@ code, pre { font-family: var(--mono); }
 }
 /* The redline: "the average" is struck through and corrected in red, the way a drawing gets revised. */
 .redline { position: relative; display: inline-block; white-space: nowrap; }
-.redline .struck { color: var(--ink-faint); }
+.redline .struck { color: var(--ink-soft); }
 .redline svg { position: absolute; left: -2%; top: 52%; width: 104%; height: 0.5em; overflow: visible; transform: translateY(-50%); }
 .redline path { fill: none; stroke: var(--red); stroke-width: 0.9; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 0.7s cubic-bezier(0.6, 0, 0.2, 1) 0.45s forwards; }
 .redline .fix {
@@ -144,8 +146,11 @@ td code, .inline { font-size: 0.9em; background: var(--code-bg); padding: 0.15em
 .note { font-size: 14.5px; color: var(--ink-soft); max-width: var(--measure); margin: 14px 0 0; }
 
 /* add it */
-.tabs { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid var(--line-strong); }
+/* One row that scrolls sideways: seven tabs never wrap into a row with one tab left alone. */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line-strong); overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
 .tab {
+  flex: none; white-space: nowrap;
   border: 0; background: transparent; padding: 12px 16px; margin-bottom: -1px;
   font: 500 11px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft);
   border-bottom: 2px solid transparent;
@@ -153,7 +158,7 @@ td code, .inline { font-size: 0.9em; background: var(--code-bg); padding: 0.15em
 .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--red); }
 .panel { padding: 24px 0 0; max-width: 780px; }
 .panel p { margin: 0 0 14px; }
-.panel ol { margin: 0 0 16px; padding-left: 1.3em; display: grid; gap: 6px; }
+.panel ol, .panel ul { margin: 0 0 16px; padding-left: 1.3em; display: grid; gap: 6px; }
 .field { display: flex; align-items: stretch; border: 1px solid var(--line-strong); background: var(--paper-raised); margin: 0 0 16px; }
 .field code { flex: 1; min-width: 0; padding: 12px 14px; font-size: 14px; overflow-x: auto; white-space: nowrap; }
 .field pre { flex: 1; min-width: 0; margin: 0; padding: 12px 14px; font-size: 13.5px; line-height: 1.55; overflow-x: auto; }
@@ -174,3 +179,5 @@ td code, .inline { font-size: 0.9em; background: var(--code-bg); padding: 0.15em
 
 footer { border-top: 1px solid var(--line); padding-block: 22px calc(22px + env(safe-area-inset-bottom, 0px)); font: 400 12px/1.6 var(--display); color: var(--ink-soft); }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+/* The MCP link as text: one click selects all of it, ready to copy. Opening it in a browser shows nothing useful. */
+.url { font-family: var(--mono); color: var(--ink); user-select: all; overflow-wrap: anywhere; }

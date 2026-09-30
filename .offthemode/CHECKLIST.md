@@ -1,0 +1,118 @@
+# Checklist · Off the Mode
+Last revisit: 2026-09-30 · Verified 15/50
+
+A map, not a gate. Build in any order; /listrevisit reconciles and updates this file.
+Marks: [ ] todo · [~] in progress · [x] built, not proven · [v] verified, evidence cited · [-] dropped, reason kept
+Verify: early = can be proven on its own · on completion = only an end-to-end run proves it
+
+## Vision (owned by .offthemode/PRODUCT.md; do not edit here)
+- Thesis: for builders tired of average AI output, the setup that makes any AI tool plan first, build in the right order and hold an elite bar
+- Moment of value: about 10 minutes after adding it, a new project has a plan and a checklist; an existing project has a plain summary, where it stands against its core concept, and a checklist with what's done
+- Core concept: one method written once as instructions and templates, delivered to any AI tool by a link or a skills download, kept honest by revisit commands; the project gets one .offthemode/ folder
+
+## Fragments
+
+### F1 · One source, built into every delivery · depends on: none · Verify: early
+For the person: whichever way they add it, they get the same, current method.
+- [x] F1.1 content/ builds skills/, the server's content, /method and the zips · done when: `npm run check` prints "skills/ in sync" · guide: none · evidence: scripts/build-content.mjs; check passed 2026-09-29
+- [x] F1.2 RULES.md §Guides cites only real guides · done when: `npm run check` fails on a made-up guide name · guide: always-on-verification-loop · evidence: scripts/build-content.mjs:92-97
+- [v] F1.3 the method's copies of the revisit commands are generated from content/commands, not kept by hand · done when: `npm run check` fails if BLUEPRINT.md holds a hand-written copy of a command · guide: always-on-verification-loop · evidence: `npm run check` fails with 'a hand-written copy of a command' on a prompt block titled List Revisit (negative test on a scratch copy, 2026-09-30)
+- [x] F1.4 the server's instructions and the install steps each have one source · done when: a grep finds the standing rule only in content/ and generated files, and the site, README and method list the same tools · guide: none · evidence: server instructions in content/server/instructions.md; site, README (links to the site) and the method's How to add it list the same tools
+- [x] F1.5 committed skills/ can't drift from content/ · done when: `npm run check` fails on uncommitted changes in skills/, and CI runs it on every push · guide: always-on-verification-loop · evidence: --check --committed fails on uncommitted skills/; .github/workflows/check.yml runs it; green on GitHub not seen yet
+- [ ] F1.Q Quality bars met for F1 · evidence:
+
+### F2 · The link: the MCP server hands out commands, templates and guides · depends on: F1 · Verify: early
+For the person: one pasted link and their tool has every command, and it never sees their code.
+- [x] F2.1 5 command tools, 5 prompts, get_template, get_method and resources answer · done when: `npm run test:mcp` passes against the live URL · guide: p4-backend-infra · evidence: 15/15 live, 2026-09-29
+- [x] F2.2 the server stores and logs nothing it is sent · done when: app/mcp/route.ts and lib/content.ts contain no storage or logging of arguments · guide: p7-security-hardening · evidence: app/mcp/route.ts
+- [v] F2.3 the server's instructions apply only to projects with a .offthemode/ folder · done when: every step in the instructions text is conditioned on the folder · guide: p4-backend-infra · evidence: `npm run test:mcp` · 'instructions: conditioned on .offthemode/, point to §Guides' (local, 2026-09-30)
+- [v] F2.4 no idle subscription streams on a stateless server · done when: a live subscriptions/listen call is refused at once · guide: p4-backend-infra · evidence: `npm run test:mcp` · 'subscriptions/listen 2026-07-28 · refused in 7 ms' (local, 2026-09-30)
+- [v] F2.5 a typed note survives the trip · done when: `/mcp__offthemode__listrevisit add CSV export` gives the agent the whole note, or the command text tells it to use the user's own words when the note looks cut off · guide: none · evidence: `npm run test:mcp` · 'listrevisit · says what to do with a cut-off note; no raw placeholder' (local, 2026-09-30)
+- [v] F2.6 the MCP test covers both protocol versions in use · done when: `npm run test:mcp` initializes with 2024-11-05 and 2025-06-18 · guide: always-on-verification-loop · evidence: `npm run test:mcp` · initialize 2024-11-05 ok, initialize 2025-06-18 ok (local, 2026-09-30)
+- [ ] F2.Q Quality bars met for F2 · evidence:
+
+### F3 · The skills: offline, complete, installable in every named tool · depends on: F1 · Verify: early
+For the person: no server; the folders alone run every step.
+- [x] F3.1 the all-skills zip matches skills/ · done when: an unzip of public/skills/offthemode-skills.zip diffs clean against skills/ · guide: none · evidence: live zip == skills/, 2026-09-29
+- [v] F3.2 every mention of another command or guide says where to find it · done when: a grep of skills/*/SKILL.md finds no command or guide reference without a path · guide: always-on-words-voice · evidence: skills say 'the X command' and each Files section names ../X/SKILL.md and ../offthemode/method/ (grep of skills/*/SKILL.md, 2026-09-30)
+- [v] F3.3 frontmatter uses only keys the skills spec allows · done when: `npm run check` rejects a key outside the allowlist · guide: always-on-verification-loop · evidence: `npm run check` fails with 'unknown frontmatter key' on a made-up key; no argument-hint left in skills/ (2026-09-30)
+- [x] F3.4 install paths for every tool the site names · done when: the site and skills/README give .agents/skills for Codex, Gemini CLI, Cursor and VS Code, and .claude/skills for Claude Code · guide: always-on-words-voice · evidence: C6 paths on the site and in skills/README; README points to the site instead of repeating steps
+- [ ] F3.5 each per-skill zip uploads to claude.ai · done when: a real upload of listrevisit.zip is accepted · guide: none · evidence:
+- [ ] F3.Q Quality bars met for F3 · evidence:
+
+### F4 · The guides: the right one opens, and a small change stays small · depends on: F1 · Verify: early
+For the person: their AI works to the method for each kind of work without turning a small change into a whole phase.
+- [x] F4.1 30 guides served by get_method and the skill's method/ folder · done when: `npm run check` reports 30 sheets · guide: none · evidence: check output 2026-09-29
+- [v] F4.2 each phase guide opens with short working rules for changes inside an existing product · done when: a 3-line UI change reads under 5 KB of guide text · guide: always-on-agent-orchestration · evidence: get_method p3-visual-language returns the working rules, 1.3 KB, with the way to the whole 50.6 KB guide (`npm run test:mcp`, 2026-09-30)
+- [v] F4.3 §Guides routes to expertise-injection and p0-constitution · done when: `npm run check` lists both as cited · guide: none · evidence: `npm run check`: expertise-injection and p0-constitution are not in the not-cited list (2026-09-30)
+- [x] F4.4 every number has one owner: time to value in PRODUCT.md, budgets in one json block in RULES.md §Budgets · done when: the method's own budget parser reads the block from the RULES template · guide: always-on-accessibility-performance-budgets · evidence: the RULES template's json block; the method's budget scripts read it and skip missing keys
+- [x] F4.5 security from day one is set up by setup, or the method stops promising it · done when: the P7 phase table, P0 output and RULES template §Safety say the same thing · guide: p7-security-hardening · evidence: P7 phase table, P0 output and RULES §Safety aligned by the method fix; needs a read-through to verify
+- [ ] F4.Q Quality bars met for F4 · evidence:
+
+### F5 · Setup: both doors reach the first win · depends on: F2, F3, F4 · Verify: on completion
+For the person: about ten minutes after adding it, they have a plan, or a health check, and a checklist.
+- [x] F5.1 the setup command covers both doors, talk first · done when: skills/offthemode/SKILL.md has a New and an Existing section, each with a go before writing · guide: p1-vision-skeleton · evidence: content/commands/offthemode.md
+- [x] F5.2 a path for tools that can't open the project · done when: a claude.ai chat run yields the PRODUCT.md and CHECKLIST.md text to save · guide: p1-vision-skeleton · evidence: setup has a no-file-access path; needs a claude.ai run
+- [x] F5.3 no placeholder left that nobody asked about · done when: grep "{{" on a dry run's .offthemode/ lists only blanks the user chose to leave · guide: none · evidence: setup's Questions name every field the templates leave to the user; needs a dry run
+- [x] F5.4 the status path flags files that are filled but out of date · done when: on this repo's pre-update RULES.md, status names the missing sections · guide: none · evidence: the status branch compares each file's ## headings with the template; needs a run
+- [x] F5.5 fewer waits: project specifics, the file list and the auto-load line are confirmed in one go · done when: a dry run of the existing door counts at most 3 user turns before the checklist · guide: p1-vision-skeleton · evidence: one go covers the draft, specifics, file list, auto-load line and git; needs a dry run to count turns
+- [x] F5.6 the rules fit products without a web UI · done when: a dry run on a CLI keeps no UI or server line it can't meet · guide: none · evidence: (UI), (web), (native), (server) tags with delete-when-absent in RULES; needs a CLI dry run
+- [ ] F5.7 timed with real people · done when: 3 builders, at least one per door, reach CHECKLIST.md in about 10 minutes, with the times written into PRODUCT.md · guide: none · evidence:
+- [ ] F5.Q Quality bars met for F5 · evidence:
+
+### F6 · The health check and revisits keep it honest · depends on: F5 · Verify: on completion
+For the person: whenever they ask, they learn where they stand, without being slowed down.
+- [x] F6.1 listrevisit, reassess, commentrevisit and glossaryrevisit exist in both routes · done when: test:mcp lists them and skills/ has each folder · guide: none · evidence: scripts/test-mcp.mjs; skills/
+- [v] F6.2 reassess reads the refusals, tie-breakers and experience promises that PRODUCT.md actually has · done when: every section reassess names exists in the PRODUCT template · guide: none · evidence: reassess.md reads 'refusals, tie-breakers and experience promises'; both sections exist in templates/PRODUCT.md (grep, 2026-09-30)
+- [v] F6.3 reassess asks before it runs a real input · done when: reassess.md step 4 proposes the input and waits for a go · guide: none · evidence: content/commands/reassess.md:13 proposes the input and the command, prefers test data, waits for a go (2026-09-30)
+- [x] F6.4 reassess notes reach the checklist in the setup chain · done when: in a dry run, every "note for listrevisit" from reassess appears as an item · guide: none · evidence: setup step 4 builds the checklist from PRODUCT.md plus every reassess note; needs a dry run
+- [x] F6.5 listrevisit asks for a go once · done when: a status run with a note has one wait, not two · guide: none · evidence: listrevisit shows one report and waits for one go; needs a run
+- [ ] F6.6 an eval of the instructions themselves · done when: `npm run eval` runs a scripted dry run of both doors, with 0 unfilled placeholders and the turns counted · guide: always-on-verification-loop · evidence:
+- [ ] F6.Q Quality bars met for F6 · evidence:
+
+### F7 · The website: pick your tool, add it in one step · depends on: F2, F3 · Verify: early
+For the person: they pick their tool and are done in one step, on any device.
+- [x] F7.1 six tool tabs, each with a copy value or a one-click button · done when: a screenshot of each tab shows the live link or zip · guide: p3-visual-language · evidence: components/AddTabs.tsx
+- [v] F7.2 one paste to add it in Claude Code · done when: one copyable line installs the skills, with no allow rule needed · guide: p5-navigation-flows · evidence: the Claude Code line installed all five skills, rules files included, into a test home (2026-09-30)
+- [v] F7.3 every claim on the page is true · done when: the folder promise reads "the .offthemode/ folder, plus one line you approve", and the Claude tab says what setup needs · guide: always-on-words-voice · evidence: looked at on screen 2026-09-30: 'plus one line you approve' on the page, the Claude tab says setup needs a session that can open the project folder
+- [-] F7.4 WCAG 2.2 AA contrast in both themes · dropped 2026-09-30: speed, contrast and touch-size numbers are not standing rules (D-006); the contrast fixes already made stay
+- [v] F7.5 /method readable without JavaScript and with no third-party script · done when: curl of /method shows sheet text and no cdnjs reference · guide: always-on-accessibility-performance-budgets · evidence: curl of local /method shows sheet text with scripts stripped, 0 cdnjs references (2026-09-30)
+- [x] F7.6 the closed index drawer is out of the tab order · done when: at 375 px, Tab from the top reaches the content without landing off-screen · guide: always-on-accessibility-performance-budgets · evidence: the closed index is hidden from the tab order below 1100 px, focus moves in and back (the build agent's browser check); not rerun by me
+- [-] F7.7 the home page's script weight within a budget · dropped 2026-09-30: Off the Mode sets no size limits; how minimal or comprehensive a product is stays its builder's call (DECISIONS D-005)
+- [ ] F7.Q Quality bars met for F7 · evidence:
+
+## Foundation (keep only what this product needs)
+- [x] B1 Rules and memory in place: .offthemode/RULES.md and STATE.md filled · done when: a fresh session can say what the project is and what's next, and RULES.md has every section of the current template · evidence: RULES.md filled from the current template on 2026-09-30, every section present; STATE.md rewritten; a fresh-session test not run
+- [x] B2 Ready to host: deployed on Vercel; no database, so no migrations · done when: a preview deploy starts and serves the core journey · evidence: live site 2026-09-29; deploys are manual until Vercel is linked to GitHub
+- [~] B3 (UI) Visual language locked: the drawing-set tokens in app/globals.css, shared with /method · done when: a page showing every component state passes the audit in light and dark · evidence: tokens exist; no states page yet
+- [-] B4 (UI) Every screen and state exists · dropped: two static pages, no flows and no data states
+- [v] B5 Security before launch: response headers set, no third-party script without integrity · done when: curl -I on / and /method shows the headers from the p7 guide · guide: p7-security-hardening · evidence: curl -I shows nosniff, Referrer-Policy, Permissions-Policy and CSP frame-ancestors 'none'; /method loads no third-party script (2026-09-30)
+
+## Quality bars (each fragment's .Q item checks these; numbers live in RULES.md §Budgets, commands in RULES.md §Commands)
+Delete a bar only with a one-line reason. (UI) and (native) bars go when the product has no UI or no native app.
+Correctness
+- The core journey passes end to end with real inputs · `npm run test:mcp` (end-to-end for agents: F6.6)
+- Model-driven core: the eval set passes and no case regressed · evals command (none yet: F6.6)
+- Every failure path returns a clear error; retries are safe · `npm run test:mcp`
+Speed
+- Every new dependency has a reason in DECISIONS.md
+- (UI) No layout shift on load
+- (UI) Every section looked at on phone, tablet and wide screens: grids fill their rows, nothing orphaned, clipped or overflowing
+Experience
+- (UI) The core job works by keyboard only and by touch only
+- Errors, logs and messages say what happened and what to do next
+Code
+- Types clean with zero warnings · `npm run check`
+- No dead code, unused exports or unused dependencies · dead code command (none yet)
+- One way to do each thing; no duplicate helpers
+- No commented-out code, no stray debug output, no TODO without an item id from this file
+- No file over 400 lines and no function over 60 lines without a reason written beside it
+Safety
+- Input validated at every boundary; no secret in the repo or the bundle
+Dropped: (native) frame budget, because there is no native app · (UI) empty, loading, error, offline and no-permission states, because both pages are static with no data · undo instead of confirm and state surviving reload, because nothing on the site can be changed or lost · authorization on the server, because there is no account or write action
+
+## Changes
+- 2026-09-30 · created from .offthemode/PRODUCT.md and the 2026-09-29 reassess (95 findings survived review)
+- 2026-09-30 · F7.7 dropped and the dependency bar no longer asks for a size: no size limits (D-005)
+- 2026-09-30 · F7.4 dropped and the load-time bar removed: no standing speed, contrast or touch-size rules (D-006)
+- 2026-09-30 · after the fix run: 15 items verified with the evidence cited, 14 built but not proven; F3.4's done-when no longer asks README for paths, since README points to the site (one source)

@@ -2,6 +2,15 @@
 
 > **Output:** a passed launch checklist, first-contact surfaces built as demos, `.offthemode/RUNBOOK.md` (rollback, flag kill, secret rotation, restore), three paging alerts, a weekly signal review, and a project retro that updates RULES.md and DECISIONS.md.
 
+<!-- offthemode:rules -->
+### Working rules (for a change inside an existing product)
+- Every release can be rolled back, and a risky feature ships behind a flag that can switch it off without a deploy.
+- Migrations add the new shape, move to it, then remove the old one, so a rollback never needs a down-migration.
+- Follow RUNBOOK.md if it exists, and update it in the same change when a step in it changes.
+- A first-contact page (landing, store listing, link preview) is held to the same RULES.md §Look and feel and §Budgets as product screens.
+- Open the whole guide before a first launch, to set up monitoring and alerts, or for the project retro.
+<!-- /offthemode:rules -->
+
 Hosting happened in P4. Shipping means strangers can find the product, trust it and use it legally, and you learn it is broken before they tell you.
 
 ### First contact

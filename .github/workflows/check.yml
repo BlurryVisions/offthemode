@@ -1,0 +1,23 @@
+# Keeps the committed skills/ (the GitHub install path) in step with content/ on every push and pull request.
+name: check
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Writes the git-ignored lib/content.generated.json the type check needs. It rewrites skills/ as well, so
+      # --committed, which compares with skills/ in the pushed commit, is what catches a skills/ that was not
+      # committed with its content/ change.
+      - run: npm run content
+      - run: node scripts/build-content.mjs --check --committed
+      - run: npx tsc --noEmit

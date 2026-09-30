@@ -19,4 +19,6 @@ Rules:
 Before showing it, reread every sentence as someone outside tech and rewrite any they would have to ask about. Show the new section and, if one exists, what changed and why (usually "Where we are"). Write it on the user's go.
 
 ## Files
-- Templates are in `templates/` next to this file: `templates/GLOSSARY.md`. Open one only when you are about to write that file.
+- Templates are in `templates/` next to this file: `templates/GLOSSARY.md`. Open one only when you are about to write that file or compare a filled file with it.
+- The guides and all the templates are in the offthemode skill, next to this one: `../offthemode/method/` (`INDEX.md` lists the guides; their working rules are in `../offthemode/method/rules/`) and `../offthemode/templates/`.
+- Install all 5 Off the Mode skills together; they read each other's files.

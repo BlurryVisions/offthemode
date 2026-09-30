@@ -2,6 +2,18 @@
 
 > **Output:** a deploy target recorded in `.offthemode/DECISIONS.md`; a data architecture chosen by the UX contract (request/response, or a sync engine spiked in P2); a schema with its invariants and forward-only migrations; a typed contract plus a mock server; `.env.example` and a boot-time env check; a parity table; working observability; a failure-mode table with its fix-now rows done; `.offthemode/ARCHITECTURE.md`. After this, hosting the product means pointing DNS at it.
 
+<!-- offthemode:rules -->
+### Working rules (for a change inside an existing product)
+- Read ARCHITECTURE.md first if it exists, and update it in the same change when the structure moves.
+- Schema changes go through a new, forward-only migration. Never edit one that has already run.
+- Enforce each invariant (a rule the data must always obey) at the lowest layer that can hold it: a database constraint before app code.
+- Validate input at every boundary (HTTP, webhooks, queue messages, env, vendor responses), then trust the types. Errors use the project's error catalog.
+- A mutation that charges, sends or calls a vendor must be safe to retry, with an idempotency key (one id per request, so a repeat is done only once).
+- Contract changes are additive only, unless the user approves a versioning plan.
+- A new dependency, service or environment variable gets a DECISIONS.md entry and an updated env check, on the user's go.
+- Open the whole guide to choose hosting or the data architecture, to add an entity or a service, or to change the API style.
+<!-- /offthemode:rules -->
+
 Keep the infrastructure boring so the product can be the exciting part. A strong backend early is the right call. What matters is timing: pick the deploy target in P1 or P2, using the numbers from the core spike, and build against it from the first commit. Then moving from local to hosted is a config change, not a migration.
 
 > **Why:** Left alone, an AI writes localhost-tutorial code: sessions in memory, uploads to local disk, `setTimeout` as a job queue, SQLite in dev and Postgres in prod. That is the mode, the most common answer rather than the right one. Once RULES.md §This project names the target and its physical limits ("functions die after the response", "no writable disk"), those patterns drop out of what your AI considers. RULES.md loads at the start of every session, so the limits hold every time.
@@ -63,7 +75,7 @@ Seed data comes from the Build the Seed prompt. List open questions instead of g
 |---|---|---|
 | OpenAPI (generated) | Native mobile, public API | Hand-edited specs drift; generate one side from the other |
 | tRPC | TypeScript monorepo, web + React Native | Old mobile builds break on renamed procedures |
-| GraphQL | Many screens composing overlapping data | N+1 queries, per-field authorization, hard caching |
+| GraphQL | Many screens composing overlapping data | N+1 queries (one query per item instead of one for the list), per-field authorization, hard caching |
 | Server actions | Web-only mutations | Still public endpoints; authorize each one |
 | Sync engine / reactive backend | Offline, multiplayer, mostly-instant mutations | Authorization moves into sync rules or queries; test them like endpoints |
 
@@ -87,12 +99,12 @@ Show me the contract and wait for my go. Then generate a typed client and a mock
 
 | Concern | Default | Non-negotiable |
 |---|---|---|
-| Jobs | Anything slow or touching a vendor: Inngest, Trigger.dev, Temporal, pg-boss, Graphile Worker or BullMQ | Safe to run twice, backoff with jitter, a dead-letter queue, visible queue depth |
+| Jobs | Anything slow or touching a vendor: Inngest, Trigger.dev, Temporal, pg-boss, Graphile Worker or BullMQ | Safe to run twice, backoff with jitter (retries spaced out, with a random offset so they don't all land at once), a dead-letter queue (where jobs that keep failing are parked for a person to look at), visible queue depth |
 | Caching | CDN caching for public reads; an app cache only after measuring | A named invalidation trigger for each cached value |
 | Files | S3-compatible storage, presigned direct uploads | Bytes never pass through your API; type and size checked on the server |
 | Realtime | Only if the moment of value needs it: SSE (server-sent events) for push, WebSockets for two-way, a sync engine when the contract says so | Reconnect with resume; visible connection state |
 | Auth | Web: httpOnly Secure SameSite cookies. Mobile: a short-lived access token plus a rotating refresh token in Keychain/Keystore | No tokens in localStorage or URLs |
-| Authorization | One `can(actor, action, resource)` module plus Postgres row-level security (or the sync engine's rules) | Never inferred from hidden buttons |
+| Authorization | One `can(actor, action, resource)` module plus Postgres row-level security, where the database itself returns only the rows the caller may see (or the sync engine's rules) | Never inferred from hidden buttons |
 | Rate limits | Per user and per IP at the edge; strict on auth, search and expensive routes | 429 with `Retry-After` |
 
 Row-level security (RLS) means Postgres itself checks, row by row, whether the current user may read or write. It backs up the `can()` module when app code slips.
@@ -167,13 +179,13 @@ Choose hosting for {{?PRODUCT_NAME}} from workload facts, not popularity. Every 
 Facts: clients {{CLIENTS}}; users at launch / at 12 months {{N_LAUNCH}} / {{N_12MO}}; peak RPS = DAU x sessions x requests per core journey (ROUTES.md) x peak ratio; longest job {{LONGEST_JOB}}; realtime or sync {{REALTIME_OR_SYNC}}; regions {{REGIONS}}; budget {{BUDGET}}; ops appetite {{OPS_APPETITE}}; core envelope from P2 {{?CORE_CONTRACT}}.
 1. Score serverless, edge, managed containers and VPS on: monthly cost at launch, 10x and 100x (egress, storage, seats, per-call APIs {{PAID_APIS}}); cold starts on the core journey; long-running work; WebSockets and sync servers; compute-to-DB latency; lock-in; ops burden.
 2. What breaks first at 10x (connections, a lock, a sequential scan, a vendor rate limit); DB size at 12 months; cost per active user and per core action.
-Output: the matrix with numbers; one recommendation with its strongest reason and a "revisit when"; the escape hatch (jobs behind an interface, storage behind the S3 API) that keeps a future move under a week. Record it as a D-### entry in .offthemode/DECISIONS.md and summarize it in .offthemode/ARCHITECTURE.md.
+Output: the matrix with numbers; one recommendation with its strongest reason and a "revisit when"; the escape hatch (jobs behind an interface, storage behind the S3 API) that keeps a future move under a week. Show me all of it and wait for my go; then record it as a D-### entry in .offthemode/DECISIONS.md and summarize it in .offthemode/ARCHITECTURE.md.
 ```
 
 > **Pro move:** Logs give your AI context at runtime too. Give it one command that tails structured logs and recent errors, list it in RULES.md §Commands, and add a line to RULES.md: read runtime evidence before theorizing about a bug. An AI that can observe stops guessing.
 
 ```prompt title="Failure-Mode Review"
-Review {{SCOPE}} as the engineer on call at 3am. For every dependency and core-journey step in .offthemode/ROUTES.md: what happens when it is slow (p99 x10), down, returns garbage, or succeeds twice? What does the user see (no matching state in the ROUTES.md state inventory is a finding)? Which invariant is at risk? How do we find out ("a user tells us" is a finding)? How do we recover, with the exact command?
+Review {{SCOPE}} as the engineer on call at 3am. For every dependency and core-journey step in .offthemode/ROUTES.md: what happens when it is slow (its slowest 1 in 100 calls, p99, ten times slower), down, returns garbage, or succeeds twice? What does the user see (no matching state in the ROUTES.md state inventory is a finding)? Which invariant is at risk? How do we find out ("a user tells us" is a finding)? How do we recover, with the exact command?
 Also cover: a deploy mid-request, a migration failing halfway, 1M queued jobs, secret rotation, DB connections exhausted, duplicate or out-of-order webhooks, clock skew, a sync client offline for a week, one user hammering the most expensive endpoint.
 Output: Failure | Blast radius | User sees | Detection | Recovery | Fix now / accept / later. Show me the table and wait for my go, then implement the fix-now rows, smallest first.
 ```

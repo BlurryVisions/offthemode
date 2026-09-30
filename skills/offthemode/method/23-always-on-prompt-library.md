@@ -8,7 +8,7 @@ Save one prompt per file, as `.offthemode/prompts/<name>.md`, in plain Markdown.
 
 ### Placeholders keep prompts short
 
-`{{NAME}}` is an input you give each time: the feature, the surface, the path. `{{?NAME}}` is a fact your AI works out from the project and shows with its source, for example "check command: `npm test` (RULES.md §Commands)".
+`{{NAME}}` is an input only you can give, each time: the feature, the surface, the path. `{{?NAME}}` is a fact your AI works out from the code or the docs and shows with its source, for example "check command: `npm test` (RULES.md §Commands)". `{{NAME | x}}` offers x as the recommended default, which your AI shows you to confirm and never keeps silently.
 
 Write every project fact as `{{?NAME}}`. Then you type only what really changes, and the prompt keeps working as the project changes. The Off the Mode commands work the same way: they know nothing about your project until they read `.offthemode/`.
 
@@ -18,7 +18,7 @@ Each file starts with a version line: the number, the date and why it changed. A
 
 ```file path=".offthemode/prompts/diverge.md"
 version 4 · changed {{DATE}} · why: v3 still let the generator recommend its own favourite
-3 directions for {{SURFACE}} that disagree on {{AXIS: metaphor | density | motion | navigation}}, one per reference I assign ({{REF_A}}, {{REF_B}}, {{REF_C}}). Each: name, 3-line thesis, signature moment, what it gives up, main risk. If two could merge, replace one. No code. Do not recommend; a fresh session compares them and I choose.
+3 directions for {{SURFACE}} that disagree on {{AXIS: metaphor, density, motion or navigation}}, one per reference I assign ({{REF_A}}, {{REF_B}}, {{REF_C}}). Each: name, 3-line thesis, signature moment, what it gives up, main risk. If two could merge, replace one. No code. Do not recommend; a fresh session compares them and I choose.
 Changelog: v4 references assigned by me, no recommendation (a generator grading its own options picks its favourite). v3 "if two could merge, replace one". v2 "what it gives up" (v1 had no tradeoffs, so choosing was arbitrary).
 ```
 

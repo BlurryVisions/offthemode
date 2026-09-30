@@ -1,6 +1,6 @@
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
-import { commands, templates, sheets, renderCommand, REPO_URL } from "@/lib/content";
+import { commands, templates, sheets, renderCommand, sheetText, INSTRUCTIONS } from "@/lib/content";
 
 const templateNames = Object.keys(templates) as [string, ...string[]];
 const sheetSlugs = sheets.map((s) => s.slug) as [string, ...string[]];
@@ -9,9 +9,8 @@ const handler = createMcpHandler(
   (server) => {
     for (const c of commands) {
       const arg = c.argument;
-      const inputSchema = arg
-        ? z.object({ [arg]: z.string().max(2000).optional().describe(c.argumentHint ?? arg) })
-        : z.object({});
+      const argSchema = () => z.string().max(2000).optional().describe(c.argumentHint ?? arg ?? "");
+      const inputSchema = arg ? z.object({ [arg]: argSchema() }) : z.object({});
 
       server.registerTool(
         c.name,
@@ -31,7 +30,7 @@ const handler = createMcpHandler(
         {
           title: c.title,
           description: c.description,
-          argsSchema: arg ? z.object({ [arg]: z.string().optional().describe(c.argumentHint ?? arg) }) : z.object({}),
+          argsSchema: arg ? z.object({ [arg]: argSchema() }) : z.object({}),
         },
         (args: Record<string, string | undefined>) => ({
           messages: [{ role: "user" as const, content: { type: "text" as const, text: renderCommand(c, arg ? args[arg] : undefined) } }],
@@ -55,17 +54,28 @@ const handler = createMcpHandler(
       {
         title: "Read the Off the Mode method",
         description:
-          "Returns an Off the Mode guide: planning, look and feel, backend, navigation, the core, security, shipping, and the always-on practices. Open the guide that matches the work you are about to do (the project's .offthemode/RULES.md §Guides maps work to guides), once per session. Call with no sheet for the index.",
-        inputSchema: z.object({ sheet: z.enum(sheetSlugs).optional() }),
+          "Returns an Off the Mode guide: planning, look and feel, backend, navigation, the core, security, shipping, and the always-on practices. " +
+          "Open the guide the project's .offthemode/RULES.md §Guides names for the work you are about to do, once per session. " +
+          "A phase guide returns its short working rules, for a change inside an existing product; pass full: true for the whole guide when you start that phase or change its structure. " +
+          "Call with no sheet for the index.",
+        inputSchema: z.object({
+          sheet: z.enum(sheetSlugs).optional(),
+          full: z.boolean().optional().describe("true returns the whole guide instead of its working rules"),
+        }),
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
-      async ({ sheet }: { sheet?: string }) => {
+      async ({ sheet, full }: { sheet?: string; full?: boolean }) => {
         if (!sheet) {
-          const index = sheets.map((s) => `- ${s.slug} · ${s.title}`).join("\n");
-          return { content: [{ type: "text" as const, text: `Off the Mode · the method. Fetch one sheet at a time.\n\n${index}` }] };
+          const index = sheets.map((s) => `- ${s.slug} · ${s.title}${s.rules ? " · has working rules" : ""}`).join("\n");
+          return {
+            content: [{
+              type: "text" as const,
+              text: "Off the Mode · the method. Fetch one guide at a time. A guide with working rules returns them unless you pass full: true; the others always come whole.\n\n" + index,
+            }],
+          };
         }
         const found = sheets.find((s) => s.slug === sheet);
-        return { content: [{ type: "text" as const, text: found?.content ?? `No sheet "${sheet}".` }] };
+        return { content: [{ type: "text" as const, text: found ? sheetText(found, full) : `No sheet "${sheet}".` }] };
       },
     );
 
@@ -88,13 +98,20 @@ const handler = createMcpHandler(
   },
   {
     serverInfo: { name: "offthemode", version: "0.1.0" },
-    instructions:
-      "Off the Mode makes you plan first, build in the right order and hold an elite bar. Each tool returns instructions to follow in the user's project; the project's plan and memory live in its .offthemode/ folder. " +
-      "Standing rule, even when no Off the Mode command was run: if the project has a .offthemode/ folder, read .offthemode/RULES.md and .offthemode/STATE.md before your first change in a session, and follow RULES.md. " +
-      "Before design, backend, navigation, core, security or launch work, open the matching guide with get_method (RULES.md §Guides maps the work to the guide), once per session. " +
-      "Start with the offthemode tool (set up, or status if already set up). Then, when the user asks: listrevisit (the checklist), reassess (code vs core concept), commentrevisit (comments only), glossaryrevisit (plain-words summary). " +
-      `Source: ${REPO_URL}`,
+    instructions: INSTRUCTIONS,
+    // Content changes only on redeploy, so nothing is ever published: refuse change-notification streams at once
+    // instead of holding a function open for each one.
+    maxSubscriptions: 0,
   },
 );
 
-export { handler as GET, handler as POST, handler as DELETE };
+// Someone who opens the link in a browser lands on the add section of the site, not on a raw protocol error.
+async function GET(request: Request): Promise<Response> {
+  const accept = request.headers.get("accept") ?? "";
+  if (accept.includes("text/html") && !accept.includes("text/event-stream")) {
+    return Response.redirect(new URL("/#add", request.url), 302);
+  }
+  return handler(request);
+}
+
+export { GET, handler as POST, handler as DELETE };

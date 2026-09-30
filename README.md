@@ -2,25 +2,16 @@
 
 Left alone, every AI coding tool builds the average. **Off the Mode** makes Claude, Cursor or any AI coding tool plan first, build in the right order, and hold an elite bar.
 
-It lives outside your project. Your project only gets one folder: `.offthemode/`.
+It lives outside your project. Your project gets the `.offthemode/` folder, plus one line you approve so your tool loads it.
 
 **Website:** https://offthemode.vercel.app · **The method:** https://offthemode.vercel.app/method
 
-## Add it (pick one)
+## Add it
 
-**1. The link** (any tool that supports MCP)
+Pick your tool on the website: https://offthemode.vercel.app/#add. It has the steps for Claude, Claude Code, Cursor, VS Code, Codex and any other tool that supports MCP. There are two ways in:
 
-```
-https://offthemode.vercel.app/mcp
-```
-
-- **Claude** (desktop or claude.ai): Settings → Connectors → Add custom connector → paste the link.
-- **Claude Code:** the skills (below) are the easiest route. For the link, run `claude mcp add --transport http --scope user offthemode https://offthemode.vercel.app/mcp`, then allow its tools: auto mode (the default) blocks a newly added server until you add the allow rule `mcp__offthemode` in `/permissions`.
-- **Cursor, VS Code:** one-click buttons on the website.
-
-**2. The skills** (no server)
-
-Copy the folders in [`skills/`](skills/) into your tool's skills folder. In Claude Code: `.claude/skills/` in a project, or `~/.claude/skills/` for every project. Or download them all from the website.
+- **The link** (the MCP server): add it once, and updates arrive on their own.
+- **The skills** (no server): five folders, the same as [`skills/`](skills/), installed on your machine with one paste in a terminal. Install all five together; setup hands over to the others.
 
 ## Use it
 
@@ -30,7 +21,7 @@ Then, whenever you want:
 
 | Command | What it does | What it can change |
 |---|---|---|
-| `/offthemode` | Sets up the project, or tells you where it stands | Only `.offthemode/` |
+| `/offthemode` | Sets up the project, or tells you where it stands | The `.offthemode/` folder, plus one line you approve so your tool loads it |
 | `/listrevisit [idea]` | Shows the checklist, or adds a new feature or idea to it | The checklist |
 | `/reassess` | Checks what's built against your core concept | Nothing: it reports |
 | `/commentrevisit [path]` | Cleans up code comments | Comments only |
@@ -50,12 +41,14 @@ Your normal coding sessions stay free. Nothing forces the checklist on you.
   DECISIONS.md   what was decided, and why
 ```
 
+When a guide calls for another document, it goes in `.offthemode/` too. Outside it, setup adds one line that makes your tool load the rules (in CLAUDE.md, AGENTS.md or your tool's rules file), and only after you approve it.
+
 ## Privacy
 
 The server only hands out instructions and templates. It never sees your code: your AI tool does all the reading and writing, on your machine. The only thing the server receives is the short note you type after a command.
 
 ## Improve it
 
-Everything comes from one source, [`content/`](content/). Edit there, then run `npm run content` to rebuild the skills, and `npm run check` before committing.
+Everything comes from one source, [`content/`](content/). Edit there, then run `npm run content` to rebuild the skills, and `npm run check` before committing. After a change to the site's colors, you can run `npm run audit`: it checks the color contrast of both pages, in light and dark, against WCAG AA. It is optional and not part of `npm run check`.
 
 MIT licence.

@@ -9,13 +9,13 @@ Ask an AI for "a senior developer" and you get the median senior developer. A gr
 | Persona line ("you created JS") | Weak: tone, not tradeoffs | One line at most |
 | Ranked values, opinions, refusals | Strong: constraints on every decision | An expert profile in `.offthemode/experts/`, named in RULES.md §Guides |
 | Primary sources | Strong: the authority replaces the tutorial average | The spec section and the installed package's source, listed in the profile; "cite file:line, not memory" |
-| Refusals first | Strong: failure modes enter context as things to avoid | "8 things an expert would refuse to ship here, 5 amateur mistakes; avoid all 13" |
+| Refusals first | Strong: failure modes enter context as things to avoid | "What an expert would refuse to ship here, and the amateur mistakes; avoid every one" |
 | Adversarial second context | Strong: a reviewer with no stake | A fresh AI session briefed as the harshest expert, with no memory of building it |
 | First-principles derivation | Medium-strong: stops tutorial copying | "Derive from constraints (what must be true, minimal state, where truth lives), then name a pattern" |
 
 ### Expert profiles
 
-A profile is a short sheet of judgment for one hard domain. It lives in `.offthemode/experts/`, one file per domain, and it is optional: write one when a domain is hard enough that the average answer would hurt the product. Each profile gets one line in RULES.md §Guides that names the work that loads it, so your AI opens it before planning or doing that work, the same way it opens a guide. For example: `Any user-facing change: .offthemode/experts/product.md` and `Web UI, CSS, routing, client state: .offthemode/experts/web-platform.md and .offthemode/experts/react.md`.
+A profile is a short page of judgment for one hard domain. It lives in `.offthemode/experts/`, one file per domain, and it is optional: write one when a domain is hard enough that the average answer would hurt the product. Each profile gets one line in RULES.md §Guides that names the work that loads it, so your AI opens it before planning or doing that work, the same way it opens a guide. For example: `Any user-facing change: .offthemode/experts/product.md` and `Web UI, CSS, routing, client state: .offthemode/experts/web-platform.md and .offthemode/experts/react.md`.
 
 > **Rule:** Split universal from framework. `web-platform.md` holds what is true of the web; a framework profile holds what is true of React, SwiftUI or Compose. Version pins and local exceptions go in the profile's header line, with the reason. Write `product.md` first, because its refusals are what enforce "simple outside".
 
@@ -62,8 +62,8 @@ The profiles below are starting points. Copy the ones that fit your project into
 ```file path=".offthemode/experts/backend.md"
 **Expert: backend and distributed systems.** Load for API, data model, jobs, infra.
 **Values (ranked):** 1. Correct under failure beats fast on the happy path; every call can time out, retry and duplicate. 2. The data model is the product; constraints live in the database, not only app code. 3. Boring technology until a measurement says otherwise.
-**Opinions:** Postgres by default; a table plus cron before a queue, a queue before a new service; every mutation idempotent (key, or natural key + upsert); events leave through a transactional outbox, never dual writes; timeouts on every call, retries with backoff and jitter inside a budget; expand/contract migrations; money in integer minor units; UTC; errors as RFC 9457 problem details; one request ID through every log line; when the UX contract demands instant, offline or multiplayer, evaluate a sync engine before hand-building optimistic caches.
-**Refuse to ship:** unbounded queries; N+1 in a hot path; retries on non-idempotent operations; secrets in code or logs; catch-log-continue; authorization only in the UI.
+**Opinions:** Postgres by default; a table plus cron before a queue, a queue before a new service; every mutation idempotent, meaning safe to run twice (key, or natural key + upsert); events leave through a transactional outbox (written to a table in the same transaction as the change, then sent by a worker), never dual writes (saving and sending as two separate steps, where one can fail alone); timeouts on every call, retries with backoff and jitter inside a budget; expand/contract migrations; money in integer minor units; UTC; errors as RFC 9457 problem details; one request ID through every log line; when the UX contract demands instant, offline or multiplayer, evaluate a sync engine before hand-building optimistic caches.
+**Refuse to ship:** unbounded queries; N+1 queries in a hot path (one query per row of a list instead of one for the whole list); retries on non-idempotent operations; secrets in code or logs; catch-log-continue; authorization only in the UI.
 **Amateur tells:** microservices before team boundaries exist; an unreviewed ORM-generated schema; "indexes later".
 **Primary sources:** PostgreSQL docs; RFC 9110; RFC 9457; Kleppmann, Designing Data-Intensive Applications; Google SRE book.
 ```
@@ -82,8 +82,8 @@ For a domain with no starting profile (your core engine, a framework, a hard lib
 Build an expert profile for {{DOMAIN}} ({{CORE_TECH}}, used in {{STACK}} for {{PRODUCT_TYPE}}). Target: the judgment of the people who designed and maintain {{CORE_TECH}}, as expressed in their specs, design docs, RFCs, changelogs and source; not tutorial consensus.
 1. Primary sources: cite only ones you are certain exist, mark others [VERIFY]; read local sources first ({{LOCAL_PATHS}}).
 2. Values, ranked, each with the reason that follows from how the technology works.
-3. 8-12 opinions as "do X, because Y, instead of Z"; at least 3 a typical senior developer would push back on, with the argument.
-4. 5-8 refuse-to-ship patterns the core team would reject in review, each with its replacement.
+3. Opinions as "do X, because Y, instead of Z". Keep one only if it is certain to apply to this stack, is not what a typical senior developer does anyway, and is costly to get wrong. Mark those a typical senior developer would push back on, with the argument; a profile with none has not left the average.
+4. Refuse-to-ship patterns the core team would reject in review, each with its replacement, kept by the same test.
 5. Amateur tells, tie-breakers, review questions.
 Every line must be checkable against code. Ban "clean code" and "best practices". At most 120 lines. Use the header line of the other profiles in .offthemode/experts/, with pins and local exceptions for {{?STACK_VERSIONS: from the package manifest or lockfile}}.
 Show me the profile, the path .offthemode/experts/{{domain}}.md, and the one line you would add to RULES.md §Guides saying which work loads it. End with the 3 opinions you are least sure of. Write the files only after I say go.

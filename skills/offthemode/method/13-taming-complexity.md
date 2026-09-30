@@ -2,6 +2,15 @@
 
 > **Output:** `.offthemode/COMPLEXITY.md` (budget, verbs, disclosure map, settings ledger, audit log), a power layer for experts, and a regular cycle of audit, subtract and re-audit, run by a second, fresh AI session.
 
+<!-- offthemode:rules -->
+### Working rules (for a change inside an existing product)
+- A new capability starts where the system does it for the person (inferred, defaulted, automated) if it can, and otherwise behind the palette, a shortcut or an advanced panel. It reaches the default screen only on evidence.
+- Every net-new visible control says why the system can't infer or default it.
+- One primary action per surface. Hover may reveal a shortcut, never the only way to an action.
+- If COMPLEXITY.md exists, keep the touched surface inside its budget.
+- Open the whole guide when a surface feels crowded, when it goes over its budget, or for the regular audit.
+<!-- /offthemode:rules -->
+
 Complexity is conserved. Tesler's law says every product has some complexity that cannot be removed, only moved. What can't be removed gets carried by the system or by the person. A complex product has a lot of it, so the job is deciding who carries it: the system first, and the person only when they ask.
 
 | Layer | What lives here | Example |
@@ -84,9 +93,9 @@ Over budget is a bug; exceptions go in the Audit log with a reason and an expiry
 Paste the audit into a new session, not the one that built the screens.
 
 ```prompt title="Complexity Audit"
-You are reviewing screens you did not build and have no memory of building. Audit rendered screens, not code; read .offthemode/PRODUCT.md and .offthemode/COMPLEXITY.md first. Screens {{ROUTES | "the core flow"}} at each of {{?VIEWPORTS}}, each in empty, loading, error and populated states (via the state switcher), measured on the L1 state.
+You are reviewing screens you did not build and have no memory of building. Audit rendered screens, not code; read .offthemode/PRODUCT.md and .offthemode/COMPLEXITY.md first. Screens {{ROUTES | "the core flow"}} at each of {{?SCREENSHOT_SIZES: screenshot_sizes in RULES.md §Budgets}}, each in empty, loading, error and populated states (via the state switcher), measured on the L1 state.
 Per surface: (1) count, do not estimate: distinct actions (the counting rule in COMPLEXITY.md), required decisions, mandatory inputs, competing emphasis, nav destinations; show the score against budget; (2) blur test on a blurredVision render: what stands out? If it is not the primary action, or two things compete, name them; (3) elements that belong in another layer (L0/L2/L3); (4) dead ends, confirms that should be undo, settings that should be defaults, hover-only actions, decoration carrying no information.
-Output one table, worst overage first: surface, score/budget, top 3 offenders with evidence. Fix nothing and recommend no moves; the Subtraction Pass chooses them. Append the scores to the Audit log.
+Output one table, worst overage first: surface, score/budget, top 3 offenders with evidence. Fix nothing and recommend no moves; the Subtraction Pass chooses them. Then wait for my go before appending the scores to the Audit log in COMPLEXITY.md.
 ```
 
 ```prompt title="Subtraction Pass"
@@ -105,7 +114,7 @@ Before a screen exists, fill its Disclosure map row. Assign each capability to e
 ```prompt title="Power-User Layer"
 Build the power layer for {{?PRODUCT_NAME}} without touching default surfaces. Read the verbs table and the L3 column in .offthemode/COMPLEXITY.md.
 1. Command palette (Cmd/Ctrl+K on web, a search sheet on mobile): every verb x noun, plus jump-to-any-object; fuzzy match, recents first, shortcut beside each command, acts on the selection, runs inline.
-2. Shortcuts: single keys for the top 5-10 verbs outside text fields, modifiers otherwise, a "?" overlay; no conflicts with OS, browser or assistive-tech bindings.
+2. Shortcuts: single keys for the verbs people use most, outside text fields, modifiers otherwise, a "?" overlay; no conflicts with OS, browser or assistive-tech bindings.
 3. Bulk ops: shift-click ranges, Cmd/Ctrl-click, select all in view; one undo reverts the batch.
 4. After a user repeats a slow path {{3}} times, show its shortcut once, inline and dismissible.
 Zero additions to L1 beyond a palette hint; every command reachable without a keyboard. Show me the command list and the shortcut map first and wait for my go. When it is built, test the core job keyboard-only and report the time against the mouse path.

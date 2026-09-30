@@ -6,7 +6,7 @@ Off the Mode has five commands. `offthemode` sets up a project or shows its stat
 
 Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the link in Claude Code) or just say them: "reassess the project".
 
-> **Rule:** Every command talks first. It explains what it found and exactly what it will change, waits for your go, then does it and tells you what it did. `reassess` changes nothing, so its report is the whole result.
+> **Rule:** Every command talks first. It explains what it found and exactly what it will change, waits for your go, then does it and tells you what it did. `reassess` changes nothing: its report is the result, and the only go it asks for is before it runs a real input through the core.
 
 | Command | Its one job | Touches |
 |---|---|---|
@@ -17,7 +17,7 @@ Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the
 
 `listrevisit` is covered in Living Checklist. The other three:
 
-**`reassess` reads the code, not the docs.** Docs describe intentions; the code is what exists. It compares the code with the core concept in PRODUCT.md: what serves it, what drifted from it, what is missing, and what was built that serves no job at all. When the core can run, it pushes one real input through the whole chain, which is the only honest check for a product that proves itself end to end. It edits nothing, the checklist included. If it finds work to capture, it gives you the exact note to pass to `listrevisit`.
+**`reassess` reads the code, not the docs.** Docs describe intentions; the code is what exists. It compares the code with the core concept in PRODUCT.md: what serves it, what drifted from it, what is missing, and what was built that serves no job at all. When the core can run, it proposes one real input and the exact command, using test or seed data so nothing real is sent, charged or changed, and after your go pushes it through the whole chain: the only honest check for a product that proves itself end to end. It edits nothing, the checklist included. If it finds work to capture, it gives you the exact note to pass to `listrevisit`.
 
 **`commentrevisit` edits comments and nothing else.** It removes comments that lie (the code changed, the comment didn't), comments that narrate what the next line obviously does, commented-out code, and TODOs with no checklist id. It adds a short why where the code can't explain itself: a workaround, an invariant (a condition the code must always keep true), a magic number, a security decision. It proves it touched only comments: the diff (the list of changed lines) holds no code changes, and the checks still pass. When a comment reveals a bug, it reports the bug instead of fixing it.
 
@@ -26,39 +26,56 @@ Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the
 For a tool where the commands aren't set up, these prompts do the same jobs by hand.
 
 ```prompt title="Reassess Against the Core Concept"
-Reassess what has been built against the core concept. Report only: edit nothing, .offthemode/CHECKLIST.md included.
-1. Read the core concept, person, job, moment of value, refusals and experience promises in .offthemode/PRODUCT.md. Then read the code itself for what exists: routes and screens, handlers and jobs, the data model, and the core pipeline end to end. Docs are intent; code is fact.
+# Off the Mode · reassess
+
+Reassess what has been built against the core concept. Report only: edit nothing, the checklist included. Talk first, then do: explain what you found and exactly what you will create or change, wait for the user's go, then do it and say what you did.
+
+1. Read the core concept, person, jobs, moment of value, refusals, tie-breakers and experience promises in `.offthemode/PRODUCT.md`. Then read the code itself for what exists: routes and screens, handlers and jobs, the data model, and the core pipeline end to end. Docs are intent; code is fact.
 2. For each piece of the core concept: built, partial or missing, citing files. Where the code does something different from the concept, say what it does and what the concept says.
-3. Find drift: code that serves no job in PRODUCT.md, complexity the concept doesn't need, anything a refusal forbids, architecture that works against the concept (a flow the concept calls instant that the code makes wait, for example), and core pieces that exist only as stubs, mocks or hardcoded data.
-4. If the core can run, push one real input through the whole chain and note where it breaks or degrades.
-Reply in at most 30 lines: alignment in one line (on course | drifting | off course) with the reason; then the gaps by severity, each with its evidence (file, function or run), the smallest change that realigns it, and, if it belongs in the checklist, the exact note to pass to listrevisit.
+3. Find drift: code that serves no job in PRODUCT.md, complexity the concept doesn't need, anything a refusal or tie-breaker rules out, architecture that works against the concept or breaks an experience promise (a flow slower than the time-to-value target, a confirm dialog the promises don't allow, no offline use where it is promised), and core pieces that exist only as stubs, mocks or hardcoded data.
+4. If the core can run, propose one real input and the exact command you will run to push it through the whole chain, preferring test or seed data to live data so nothing real is sent, charged or changed. Wait for the user's go, then run it and note where it breaks or degrades.
+
+Reply in at most 30 lines: alignment in one line (on course · drifting · off course) with the reason; then the gaps by severity, each with its evidence (file, function or run), the smallest change that realigns it, and, if it belongs in the checklist, the exact note for the listrevisit command.
 ```
 
 ```prompt title="Comment Revisit"
-Comment revisit on {{?SCOPE: the path I name, else the files changed on this branch against the main branch, else the whole repo}}. Change comments only: never code, names, formatting or imports.
+# Off the Mode · comment revisit
+
+Scope: the path the user typed after the command; if none, the files changed on this branch against the main branch; if none, the whole repo. Change comments only: never code, names, formatting or imports. Talk first, then do: explain what you found and exactly what you will create or change, wait for the user's go, then do it and say what you did.
+
+First, scan and propose: per file, how many comments you would remove, add and fix, with two or three examples, plus any bugs the comments reveal. Wait for go before editing.
+
 Remove:
 - comments that no longer match the code
 - comments that narrate what the next line obviously does
 - commented-out code (git remembers it)
-- TODO or FIXME with no checklist id; if the work is real, list it for listrevisit instead
+- TODO or FIXME with no checklist id; if the work is real, name it in your report so the listrevisit command can track it
+
 Add, only where the code can't explain itself:
 - why a workaround exists, and when it can go
 - the invariant a block protects
 - where a magic number comes from
 - why a security-sensitive choice was made
+
 Fix docstrings on public interfaces that describe old behaviour.
+
 Rules: one short line beats a paragraph; never say what well-named code already says; keep each file's existing comment style. If a comment reveals a bug (it says X, the code does Y), don't touch the code: report it.
-First show me, per file, what you will remove, add and fix, and wait for my go.
-Then prove it: the diff contains only comment lines, and {{?CHECK_CMD}} still passes. Report removed, added and fixed counts per file, plus any bugs found.
+
+After the edits, prove it: the diff contains only comment lines, and the check command from `.offthemode/RULES.md` still passes. Report removed, added and fixed counts per file, plus any bugs found.
 ```
 
 ```prompt title="Glossary Revisit"
-Glossary revisit: write or update the "In plain words" section of .offthemode/GLOSSARY.md, a summary of this project for people, not AI tools. Leave the Terms list untouched.
-Sources: .offthemode/PRODUCT.md for the intent; .offthemode/CHECKLIST.md and the code for what actually works today. Never describe planned work as working.
+# Off the Mode · glossary revisit
+
+Write or update the "## In plain words" section of `.offthemode/GLOSSARY.md`: a summary of this project for people, not agents. Leave "## Terms" untouched.
+
+Sources: `.offthemode/PRODUCT.md` for the intent; `.offthemode/CHECKLIST.md` and the code for what actually works today. Never describe planned work as working.
+
 Rules:
 - Anyone can understand it: a new teammate, an investor, a relative. Short sentences, everyday words.
 - No technical words: no stack, framework, database, API, model or architecture names. If a product word is unavoidable, explain it under "Words you'll hear".
 - Say what people can do, never how it's built.
 - Under 300 words, so it fits on one screen.
-Before writing, reread every sentence as someone outside tech and rewrite any they would have to ask about. Show me the draft, or if the section exists, what changed and why (usually what works today). Wait for my go, then write it.
+
+Before showing it, reread every sentence as someone outside tech and rewrite any they would have to ask about. Show the new section and, if one exists, what changed and why (usually "Where we are"). Write it on the user's go.
 ```

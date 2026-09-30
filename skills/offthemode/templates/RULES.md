@@ -1,4 +1,4 @@
-RULES · {{?PROJECT_NAME}} · read before working. The standards every change is held to. Lines with {{placeholders}} are filled at setup; the rest is the Off the Mode floor.
+RULES · {{?PROJECT_NAME}} · read before working. The standards every change is held to. Lines with {{placeholders}} are filled at setup; the rest is the Off the Mode floor. A line or budget tagged (UI), (web), (native) or (server) is deleted when the product has no such part.
 
 ## This project
 - What it is: {{?THESIS}} (the full vision is in .offthemode/PRODUCT.md)
@@ -12,15 +12,16 @@ Rules only this project needs, each saying what to do and why, kept apart from t
 ## How to work
 - Talk first, then do. For anything beyond a small fix (a typo, a one-line change), restate the task and your plan in a few lines and wait for my go. Say what you changed when you're done.
 - One concern per change. The smallest diff that fully solves it; drive-by refactors become follow-ups.
-- Never build on an assumption. When something is unclear (what I want, how something should behave, what the code does), write it as a hypothesis, "I think X, because Y", so it is clear, then confirm it before building on it: check it in the code or docs, or ask me. Questions come batched and numbered, at most 5, each with your recommended answer.
-- Read STATE.md when you start. When a real piece of work ends, rewrite STATE.md (now, next, in flight) and add any decision to DECISIONS.md.
+- Never build on an assumption. When something is unclear (what I want, how something should behave, what the code does), write it as a hypothesis, "I think X, because Y", so it is clear, then confirm it before building on it: check it in the code or docs, or ask me. Questions come batched and numbered, most important first, each with your recommended answer, in more rounds if needed, until nothing left would change the plan.
+- Read STATE.md when you start. When a real piece of work ends, rewrite STATE.md (now, next, in flight, unverified), add a correction I gave for the first time to its Corrections seen once, and add any decision to DECISIONS.md. A correction given twice becomes a proposed line in Project specifics.
 - Sessions stay free. Never force the checklist; /listrevisit catches up afterwards.
 
 ## Guides (open the matching one before the work; once per session is enough)
-Off the Mode has a guide for each kind of work. Before you plan or do work of that kind, open its guide now, in this reply, not as a later step (the get_method tool with the name below, or the file ending in that name in the offthemode skill's method/ folder) and follow it. Skip this for a one-line fix.
+Off the Mode has a guide for each kind of work. Before you plan or do work of that kind, open its guide now, in this reply, not as a later step, and follow it. For a change inside an existing product, open the guide's working rules: the get_method tool with the name below, or the file ending in that name in the offthemode skill's method/rules/ folder. Open the whole guide when you start that phase or change its structure: get_method with full: true, or the file in method/. A guide with no working rules (no file in method/rules/) always comes whole. Skip this for a one-line fix.
 | Before you... | Open |
 |---|---|
 | shape the product or plan a new feature | product-first-doctrine, p1-vision-skeleton |
+| plan or review a large or risky change | expertise-injection |
 | name the product, a feature or a screen | p1-vision-skeleton, always-on-words-voice |
 | prove something risky before building on it | p2-core-spike |
 | design or change a screen, component, style or motion | p3-visual-language |
@@ -30,6 +31,7 @@ Off the Mode has a guide for each kind of work. Before you plan or do work of th
 | build or rework a core fragment | p6-core-build-iteration |
 | touch login, permissions, user input, uploads, secrets, payments or AI features | p7-security-hardening |
 | launch, release or set up monitoring | p8-ship-operate |
+| change RULES.md, or end a piece of work | p0-constitution |
 | write words people will read | always-on-words-voice |
 | write or change tests and checks | always-on-verification-loop |
 | create seed or demo data | always-on-real-data |
@@ -41,7 +43,7 @@ Off the Mode has a guide for each kind of work. Before you plan or do work of th
 ## Product first
 - No feature without a job from PRODUCT.md. A task that traces to no person, job or moment of value: ask why before building it.
 - Complex inside, simple outside: infer, default, reveal depth on demand, undo instead of confirm. Never hand the user a decision the system could make.
-- If a request contradicts a refusal or principle in PRODUCT.md, quote the line before acting.
+- If a request contradicts a refusal or tie-breaker in PRODUCT.md, quote the line before acting.
 
 ## Depth
 - Work like the people who designed the tools: specs, official docs, and the installed version's source and types. Not tutorials, not memory. Cite file:line when library behaviour matters.
@@ -55,15 +57,15 @@ Off the Mode has a guide for each kind of work. Before you plan or do work of th
 - Names come from GLOSSARY.md §Terms: one word per concept across code, UI and copy.
 - Comments say why, never what. No commented-out code, no stray debug output, no TODO without a checklist id.
 
-## Look and feel (only if the product has a UI)
+## Look and feel (UI)
 - Nothing that could sit on any other product unchanged. If a screen looks like the average (a stock landing layout, an untouched component-library look, blue-purple gradients, emoji as icons, a font chosen because it is the default), stop and say so.
 - Stunning comes from restraint: typography, spacing, motion and one signature moment. Never from decoration.
 - One primary action per screen. Every screen has empty, loading, error, offline and no-permission states.
 - Visual values come from one set of design tokens, never hard-coded.
-- Layout is checked section by section at phone, tablet and wide widths, not just the first screen. Grids use a column count their items fill (8 items: 4+4 or 2x4, never 7+1); nothing sits alone in a row, nothing is clipped.
+- Layout is checked section by section at each of screenshot_sizes in §Budgets, not just the first screen. Grids use a column count their items fill (8 items: 4+4 or 2x4, never 7+1); nothing sits alone in a row, nothing is clipped.
 
 ## Safety
-- Authorization is checked on the server for every action, never only in the UI.
+- (server) Authorization is checked on the server for every action, never only in the UI.
 - No secret in the repo, the client bundle or the logs.
 
 ## Efficiency (spend tokens on results, not on repetition)
@@ -74,16 +76,19 @@ Off the Mode has a guide for each kind of work. Before you plan or do work of th
 - Many agents, one reading: every agent starts with the scout's brief word for word (the shared start is read from cache at a fraction of the price) and its own task after it. Start one first and the rest once it is running, so they read the cache instead of all writing it. Agents return short, structured results.
 - Keep sessions short: when a piece of work ends, update STATE.md and start fresh. A long session re-reads its whole history on every reply.
 - Open a method sheet or template only when you need it.
-- For big runs, say roughly what they will cost before starting, then go.
+- For big runs, say roughly what they will cost and wait for my go.
 
-## Budgets (the only place these numbers live)
-- Load: main content visible within {{LCP_MS | 2500}} ms on a mid-tier phone; feedback to any tap or click within {{FEEDBACK_MS | 100}} ms.
-- Weight: at most {{JS_KB_PER_PAGE}} KB of script per page, gzipped.
-- Accessibility: WCAG 2.2 AA contrast; touch targets at least 44 pt on iOS, 48 dp on Android, 24 px for pointer-only UI.
-- {{PROJECT_SPECIFIC_BUDGET | delete this line}}
+## Budgets (numbers the product is held to; time to value is in PRODUCT.md §Experience promises)
+Scripts read the json below, and every other file names a key (such as max_file_lines), never its number. Off the Mode sets no speed, weight or accessibility numbers: add a key only when this product should hold one, for example load time or contrast (the always-on-accessibility-performance-budgets guide lists common keys and values). screenshot_sizes is (UI).
+```json
+{
+  "max_file_lines": {{MAX_FILE_LINES | 400}}, "max_fn_lines": {{MAX_FN_LINES | 60}},
+  "screenshot_sizes": ["390x844", "820x1180", "1440x900"]
+}
+```
 
 ## Commands (fill once the toolchain exists; the revisit commands run these)
-check `{{?CHECK_CMD}}` · full check `{{?CHECK_FULL_CMD}}` · run `{{?DEV_CMD}}` · end-to-end `{{?E2E_CMD}}` · evals `{{?EVAL_CMD | none}}` · dead code `{{?DEADCODE_CMD}}` · bundle size `{{?BUNDLE_CMD | none}}` · audit `{{?AUDIT_CMD | none}}`
+check `{{?CHECK_CMD}}` · full check `{{?CHECK_FULL_CMD}}` · run `{{?DEV_CMD}}` · end-to-end `{{?E2E_CMD}}` · evals `{{?EVAL_CMD | none}}` · dead code `{{?DEADCODE_CMD}}` · audit `{{?AUDIT_CMD | none}}`
 
 ## Done means verified
 Checks pass, the thing actually ran, and UI changes were looked at on screen. "Should work" is not done: say what you verified and how.

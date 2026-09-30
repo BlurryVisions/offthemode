@@ -1,6 +1,6 @@
 ## Mobile Addendum
 
-Every phase of the method still applies on mobile. This sheet covers what changes on a phone. Add a line to RULES.md §Guides that maps mobile work to it, so your AI opens it before planning any screen, flow or release.
+Every phase of the method still applies on mobile. This guide covers what changes on a phone. Add a line to RULES.md §Guides that maps mobile work to it, so your AI opens it before planning any screen, flow or release.
 
 | Phase | What changes |
 |---|---|

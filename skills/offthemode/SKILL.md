@@ -6,46 +6,51 @@ license: MIT
 
 # Off the Mode · set up
 
-Off the Mode makes you plan first, build in order and hold an elite bar. It keeps this project's plan and memory in one folder, `.offthemode/`, and changes nothing else in the repo unless the user says yes.
+Off the Mode makes you plan first, build in order and hold an elite bar. It keeps this project's plan and memory in the `.offthemode/` folder, plus one line the user approves so their tool loads it. Setup never installs packages or changes application code.
 
 Talk first, then do: explain what you found and exactly what you will create or change, wait for the user's go, then do it and say what you did. Never build on an assumption: write anything unclear as a hypothesis ("I think X, because Y") and confirm it first.
 
-Placeholders in the templates: `{{NAME}}` is something only the user can tell you; `{{?NAME}}` is something you work out from the code or the docs, showing where it came from.
+Template placeholders: `{{NAME}}` only the user can answer; `{{?NAME}}` you work out from the code or docs, saying where from; `{{NAME | x}}` x is the recommended default, shown to the user to confirm, never kept silently.
 
-If `.offthemode/` already exists, don't start over: summarise STATE.md and CHECKLIST.md in a few lines, list any of the six files that are missing or still an unfilled template, and offer to fill them on the user's go.
+If `.offthemode/` exists, don't start over: summarise STATE.md and CHECKLIST.md in a few lines, name each of the six files that is missing or unfilled and each `## ` section of the current template a filled file lacks, and offer to add them on the user's go.
+
+If you can't read or write the project's files (a plain chat), say so, and show each file's full text for the user to save in `.offthemode/`. For an existing project, first ask them to paste the README and key files, or to open the project in a coding tool.
 
 ## Pick the door
 - **New project:** no application code yet (only config, a README, or nothing).
 - **Existing project:** there is application code.
 Say which door you picked and why, in one line.
 
+## Questions (both doors)
+Ask only what the code and docs can't answer: batched, numbered, each with your recommended answer, more rounds if needed. Cover every field the templates leave to the user: person and jobs, moment of value, core concept, the name and its checks (naming: the p1-vision-skeleton guide), who it's not for, refusals and tie-breakers, feeling and references (UI only), complexity we absorb, experience promises, success and guardrail, constraints (platforms, stack, deadline, budget, team, data), the file and function size limits (the template defaults, to confirm), and what's next. Suggest no speed, weight or accessibility numbers for RULES.md §Budgets; add one only if the user asks for it.
+
 ## New project
-1. Interview the user about the vision, in rounds of at most 5 numbered questions, each with your recommended default: who it's for, the one job it does, the moment of value, the core concept, the name (or whether to find one; see the naming part of the p1-vision-skeleton guide), what it must never become, references for the look and feel (only if it has a UI), and constraints (platforms, stack preferences, deadline).
-2. Draft PRODUCT.md in the chat, not in a file yet, following the template. Write every guess as a hypothesis.
-3. Once they confirm or correct it, list the files you will create (PRODUCT.md, GLOSSARY.md, RULES.md with what you know and commands left for when the toolchain exists, STATE.md, DECISIONS.md), one line each, and create them in `.offthemode/` on their go.
-4. Build the checklist by following the listrevisit instructions (the checklist doesn't exist yet, so listrevisit builds it).
+1. Interview the user about the vision (see Questions).
+2. Show the one-go message, with the PRODUCT.md draft following the template and RULES.md with what you know (its commands wait for the toolchain).
+3. On go, create the files, then build the checklist with the listrevisit command's steps.
 
 ## Existing project
-1. Read the code before asking anything: the README, dependency files, entry points, routes or screens, the data model, the core flow, tests, config, and any existing agent rules (AGENTS.md, CLAUDE.md, .cursor/rules, other rule folders). Existing rules are never moved, merged or edited (see Writing RULES.md, below).
-2. Tell the user, in plain words, what you understand: what the product is, who it's for, the core concept as the code shows it, what works, and what looks unfinished. Ask only what the code can't tell you (intent, audience, what's next), in numbered rounds of up to 5.
-3. Once they confirm, list the files you will create in `.offthemode/` (PRODUCT.md as the product is meant to be, with evidence; GLOSSARY.md; RULES.md with the commands you found; STATE.md; DECISIONS.md), one line each, and create them on their go.
-4. Follow the reassess instructions to report how the code compares with the core concept, then the listrevisit instructions to build the checklist, with what's already built marked [x].
+1. Read the code before asking anything: the README, dependency files, entry points, routes or screens, the data model, the core flow, tests, config, and any existing rule files (AGENTS.md, CLAUDE.md, .cursor/rules, other rule folders).
+2. Tell the user in plain words what you understand: what the product is, who it's for, the core concept as the code shows it, what works and what looks unfinished. Ask the Questions in the same message.
+3. Show the one-go message, with the PRODUCT.md draft as the product is meant to be, with evidence, and RULES.md with the commands you found.
+4. On go, create the files. Run the reassess command's steps, then the listrevisit command's steps to build the checklist from PRODUCT.md plus every note in the report. Show the report and the fragments together, asking for the real-input run and the fragments' ok in one message. Record the report's summary under the checklist's ## Changes.
 
-## Writing RULES.md (both doors)
-Draft its Project specifics from what is already knowable, and show them for confirmation: the chosen stack's known traps (check each against the docs or source of the versions actually used, never from memory), data rules that follow from the domain (for example money in whole cents, every query scoped to the account), security boundaries, and, in an existing project, what the code already relies on. Keep a line only if it is certain to apply, not something an AI does anyway, and costly if missed; each says what to do and why. Every line is read in every session, so each must earn its place.
+## The one go (both doors)
+In one message, show: the PRODUCT.md draft; RULES.md Project specifics; the files you will create in `.offthemode/`, one line each; the exact auto-load line and its file; and whether `.offthemode/` goes in git (recommended, so the team shares it). Wait for one go, then do all of it.
 
-If the project already has rules, they stay exactly where they are: never move, merge or edit them, because they are that project's refined knowledge and stay apart from what Off the Mode adds. List them in RULES.md §This project as still in force; they win over RULES.md on project specifics. Draft Project specifics only for what they don't already cover. If one directly contradicts an Off the Mode standard, show both and ask which wins, and record the answer in DECISIONS.md.
+## Writing RULES.md
+Draft Project specifics from what is knowable now: the stack's known traps (check each against the docs or source of the versions actually used, never memory), data rules the domain implies (money in whole cents, every query scoped to the account), security boundaries and, in an existing project, what the code relies on. Keep a line only if it is certain to apply, not something an AI does anyway, and costly if missed, since every line is read in every session; each says what to do and why.
 
-## Both doors, last step
-- Make RULES.md and STATE.md load in every session. Ask first, then use the tool's own auto-load, adding to existing content, never replacing it: Claude Code, `@.offthemode/RULES.md` and `@.offthemode/STATE.md` on their own lines in CLAUDE.md; Cursor, `.cursor/rules/offthemode.mdc` with `alwaysApply: true` saying to read both files before any change; tools that read AGENTS.md, one line there saying the same. Say which file you changed.
-- Ask whether `.offthemode/` should be committed (recommended, so the whole team shares it) or kept out of git.
-- End with what you created and the next 3 steps.
+The project's existing rule files are its refined knowledge: never move, merge or rewrite them; the only addition is the auto-load line, on the user's go. List them in RULES.md §This project as still in force; they win on project specifics, so write Project specifics only for what they don't cover. If one contradicts an Off the Mode standard, show both, ask which wins and record it in DECISIONS.md.
 
-Never during setup: install packages or change application code. Outside `.offthemode/`, change only what the user approved: the auto-load line.
+## Auto-load
+Add to existing content, never replace it. Claude Code: in CLAUDE.md, as plain text, `Read @.offthemode/RULES.md and @.offthemode/STATE.md before any change.` Cursor: that line in `.cursor/rules/offthemode.mdc` with `alwaysApply: true`. Tools that read AGENTS.md, or have their own always-on file (VS Code: `.github/copilot-instructions.md`): that line there.
 
-## After setup
-Tell the user in two lines: sessions stay free-form, with RULES.md and STATE.md loaded and the matching guide opened for each kind of work; and listrevisit, reassess, commentrevisit and glossaryrevisit are there whenever they want a check.
+## Last step (both doors)
+Once the checklist exists, write GLOSSARY.md "In plain words" by the glossaryrevisit command's rules (the setup go covers it). End with what you created and the next 3 steps, then two lines: sessions stay free-form, with RULES.md and STATE.md loaded and each kind of work opening its guide; the listrevisit, reassess, commentrevisit and glossaryrevisit commands run whenever they want a check.
 
 ## Files
-- Templates are in `templates/` next to this file: `templates/PRODUCT.md`, `templates/RULES.md`, `templates/GLOSSARY.md`, `templates/STATE.md`, `templates/DECISIONS.md`, `templates/CHECKLIST.md`. Open one only when you are about to write that file.
-- The full method is in `method/`, one file per sheet; start with `method/INDEX.md` and open only the sheet for the phase you are in.
+- Templates are in `templates/` next to this file: `templates/PRODUCT.md`, `templates/RULES.md`, `templates/GLOSSARY.md`, `templates/STATE.md`, `templates/DECISIONS.md`, `templates/CHECKLIST.md`. Open one only when you are about to write that file or compare a filled file with it.
+- The guides are in `method/`, one file per guide; `method/INDEX.md` lists them. For a change inside an existing product, open the guide's working rules in `method/rules/`. Open the whole guide in `method/` when you start that phase or change its structure. A guide with no file in `method/rules/` always comes whole.
+- The other commands named here are sibling skills in the same skills folder: commentrevisit is `../commentrevisit/SKILL.md`, glossaryrevisit is `../glossaryrevisit/SKILL.md`, listrevisit is `../listrevisit/SKILL.md`, reassess is `../reassess/SKILL.md`.
+- Install all 5 Off the Mode skills together; they read each other's files.

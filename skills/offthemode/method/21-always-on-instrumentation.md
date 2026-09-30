@@ -5,7 +5,7 @@
 Product first means PRODUCT.md names a moment of value. If you can't measure people reaching it, you are iterating on vibes. Analytics bolted on later come out with inconsistent names and no link to the questions you actually had. The north star is the one event that means a person got the value the product exists for; every other event explains the path to it.
 
 ```file path=".offthemode/TRACKING.md"
-TRACKING: {{PRODUCT_NAME}} · north star {{MOMENT_OF_VALUE_EVENT}} (the moment of value in PRODUCT.md) · activation = % of new users reaching it within {{WINDOW}} · time to value = median ms from signup_completed to the north star, target in PRODUCT.md
+TRACKING: {{PRODUCT_NAME}} · north star {{MOMENT_OF_VALUE_EVENT}} (the moment of value in PRODUCT.md) · activation = % of new users reaching it within {{WINDOW}} · time to value = median ms from signup_completed to the north star, target in PRODUCT.md §Experience promises
 - Names: object_action, past tense, snake_case (report_exported), objects from GLOSSARY.md. Every event answers a named question; no question, no event.
 - No personal data in properties (no email, name, phone, free text). Money, sign-in and entitlement events fire on the server, because ad blockers drop events sent from the browser.
 - Non-essential analytics wait for consent where the law requires it; honor Global Privacy Control. Code calls only the typed track() wrapper, never a vendor SDK.
@@ -33,7 +33,7 @@ export function track<E extends keyof Events>(event: E, props: Events[E]): void 
 ```
 
 ```prompt title="Instrument This Feature"
-Before writing code for {{FEATURE}}, propose 3 to 7 events answering {{QUESTIONS}}: name (object_action, glossary terms), exact trigger, typed properties, and the question each answers. Reject events that answer no question and properties that could hold personal data.
+Before writing code for {{FEATURE}}, propose the events that answer {{QUESTIONS}}, one per question worth answering: name (object_action, glossary terms), exact trigger, typed properties, and the question each answers. Reject events that answer no question and properties that could hold personal data.
 Show me the list and wait for my go. Then add the events to .offthemode/TRACKING.md and the Events type, implement them through track() only, and test that each fires exactly once with the right properties on the happy path.
 ```
 
