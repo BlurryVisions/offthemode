@@ -13,7 +13,7 @@ One method (rules, plan, look and feel, backend, navigation, the core in fragmen
 ## Person, job, moment
 - Person: a builder using Claude, Cursor or another AI coding tool on a new or existing project · evidence heard (the author)
 - Jobs: 1. When I start or continue a project with an AI tool, I want it to plan like a top engineer and build in the right order, so I get a standout product instead of generic output · evidence heard
-- Moment of value: within about ten minutes of adding it, a new project has a plan and a checklist; an existing project has a plain summary, where it stands against its core concept, and a checklist with what's done · evidence hypothesis (never timed with real people: CHECKLIST F5.7)
+- Moment of value: within about ten minutes of adding it, a new project has a plan and a checklist; an existing project has a plain summary, where it stands against its core concept, and a checklist with what's done · on a large codebase it takes longer, because setup reads more and may run several agents · evidence observed once (Supersense trial, 2026-09-30 to 10-01 (an existing backend and frontend codebase): 39 active minutes and 5 setup replies before CHECKLIST.md, 6 multi-agent runs); the 10 minutes on a small project is still a hypothesis
 - Signature moment: the existing-project health check
 - Not for: people who want a code library or a UI kit
 
@@ -21,7 +21,7 @@ One method (rules, plan, look and feel, backend, navigation, the core in fragmen
 - We will not block or slow a normal coding session, because the checklist is a map, not a gate.
 - We will not store or receive anyone's code, because trust is the product.
 - We will not lock anyone into one AI tool or one language.
-- We will not clutter the project: one .offthemode/ folder, plus one line the user approves so their tool loads it (decided 2026-09-30).
+- We will not clutter the project: one .offthemode/ folder, plus one line the user approves so their tool loads it (decided 2026-09-30). A line in the project's own rule files changes only when the user approves a fix for a conflict or an out-of-date fact (D-008).
 - We will not set size, speed or accessibility limits on what people build: how minimal or comprehensive a product is stays its builder's call (DECISIONS D-005, D-006).
 - Simple wording over complete wording; one source over convenient copies.
 
@@ -42,7 +42,7 @@ Evidence: observed (the built commands and server), hypothesis for how it feels 
 ## Experience promises (the time to value lives here and nowhere else)
 | Promise | Target |
 |---|---|
-| Time to the moment of value | about 10 minutes from first use, in one paste or one click plus "set up off the mode" |
+| Time to the moment of value | about 10 minutes on a small project, longer on a large codebase; one paste or one click, then "set up off the mode" |
 | Confirm dialogs allowed | none on the site; commands wait for a go before they write (talk first) |
 | Works offline | the skills do; the link needs the internet |
 

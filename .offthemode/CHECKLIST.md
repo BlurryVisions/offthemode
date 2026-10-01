@@ -1,5 +1,5 @@
 # Checklist · Off the Mode
-Last revisit: 2026-09-30 · Verified 27/50
+Last revisit: 2026-10-01 · Verified 29/50
 
 A map, not a gate. Build in any order; /listrevisit reconciles and updates this file.
 Marks: [ ] todo · [~] in progress · [x] built, not proven · [v] verified, evidence cited · [-] dropped, reason kept
@@ -7,7 +7,7 @@ Verify: early = can be proven on its own · on completion = only an end-to-end r
 
 ## Vision (owned by .offthemode/PRODUCT.md; do not edit here)
 - Thesis: for builders tired of average AI output, the setup that makes any AI tool plan first, build in the right order and hold an elite bar
-- Moment of value: about 10 minutes after adding it, a new project has a plan and a checklist; an existing project has a plain summary, where it stands against its core concept, and a checklist with what's done
+- Moment of value: about 10 minutes after adding it on a small project (longer on a large codebase), a new project has a plan and a checklist; an existing project has a plain summary, where it stands against its core concept, and a checklist with what's done
 - Core concept: one method written once as instructions and templates, delivered to any AI tool by a link or a skills download, kept honest by revisit commands; the project gets one .offthemode/ folder
 
 ## Fragments
@@ -50,14 +50,14 @@ For the person: their AI works to the method for each kind of work without turni
 - [ ] F4.Q Quality bars met for F4 · evidence:
 
 ### F5 · Setup: both doors reach the first win · depends on: F2, F3, F4 · Verify: on completion
-For the person: about ten minutes after adding it, they have a plan, or a health check, and a checklist.
+For the person: soon after adding it (about ten minutes on a small project), they have a plan, or a health check, and a checklist.
 - [x] F5.1 the setup command covers both doors, talk first · done when: skills/offthemode/SKILL.md has a New and an Existing section, each with a go before writing · guide: p1-vision-skeleton · evidence: content/commands/offthemode.md
 - [x] F5.2 a path for tools that can't open the project · done when: a claude.ai chat run yields the PRODUCT.md and CHECKLIST.md text to save · guide: p1-vision-skeleton · evidence: setup has a no-file-access path; needs a claude.ai run
-- [x] F5.3 no placeholder left that nobody asked about · done when: grep "{{" on a dry run's .offthemode/ lists only blanks the user chose to leave · guide: none · evidence: setup's Questions name every field the templates leave to the user; needs a dry run
+- [v] F5.3 no placeholder left that nobody asked about · done when: grep "{{" on a dry run's .offthemode/ lists only blanks the user chose to leave · guide: none · evidence: Supersense trial (end to end, 2026-10-01): grep of its .offthemode/ finds no blank left; the one hit was the RULES template's own header text, reworded since
 - [x] F5.4 the status path flags files that are filled but out of date · done when: on this repo's pre-update RULES.md, status names the missing sections · guide: none · evidence: the status branch compares each file's ## headings with the template; needs a run
-- [x] F5.5 fewer waits: project specifics, the file list and the auto-load line are confirmed in one go · done when: a dry run of the existing door counts at most 3 user turns before the checklist · guide: p1-vision-skeleton · evidence: one go covers the draft, specifics, file list, auto-load line and git; needs a dry run to count turns
+- [~] F5.5 fewer waits: project specifics, the file list and the auto-load line are confirmed in one go · done when: a dry run of the existing door counts at most 3 user turns before the checklist · guide: p1-vision-skeleton · evidence: Supersense trial: 5 setup replies before the checklist (start, 3 answers, one go), plus 3 to resume after spend-limit stops; not met
 - [x] F5.6 the rules fit products without a web UI · done when: a dry run on a CLI keeps no UI or server line it can't meet · guide: none · evidence: (UI), (web), (native), (server) tags with delete-when-absent in RULES; needs a CLI dry run
-- [ ] F5.7 timed with real people · done when: 3 builders, at least one per door, reach CHECKLIST.md in about 10 minutes, with the times written into PRODUCT.md · guide: none · evidence:
+- [~] F5.7 timed with real people · done when: 3 builders, at least one per door, reach CHECKLIST.md within the time PRODUCT.md §Experience promises sets for their project's size, with the times written into PRODUCT.md · guide: none · evidence: 1 of 3: Supersense trial, 2026-09-30 to 10-01 (a large existing codebase, where PRODUCT.md sets no number): 39 active minutes and 5 setup replies before CHECKLIST.md, 6 multi-agent runs
 - [ ] F5.Q Quality bars met for F5 · evidence:
 
 ### F6 · The health check and revisits keep it honest · depends on: F5 · Verify: on completion
@@ -65,7 +65,7 @@ For the person: whenever they ask, they learn where they stand, without being sl
 - [x] F6.1 listrevisit, reassess, commentrevisit and glossaryrevisit exist in both routes · done when: test:mcp lists them and skills/ has each folder · guide: none · evidence: scripts/test-mcp.mjs; skills/
 - [x] F6.2 reassess reads the refusals, tie-breakers and experience promises that PRODUCT.md actually has · done when: every section reassess names exists in the PRODUCT template · guide: none · evidence: on-completion fragment: stays unverified until its end-to-end run (F6.4, F6.6); reassess.md reads 'refusals, tie-breakers and experience promises', both in the PRODUCT template
 - [x] F6.3 reassess asks before it runs a real input · done when: reassess.md step 4 proposes the input and waits for a go · guide: none · evidence: on-completion fragment: stays unverified until its end-to-end run; content/commands/reassess.md:13 proposes the input and waits for a go
-- [x] F6.4 reassess notes reach the checklist in the setup chain · done when: in a dry run, every "note for listrevisit" from reassess appears as an item · guide: none · evidence: setup step 4 builds the checklist from PRODUCT.md plus every reassess note; needs a dry run
+- [v] F6.4 reassess notes reach the checklist in the setup chain · done when: in a dry run, every "note for listrevisit" from reassess appears as an item · guide: none · evidence: Supersense trial (end to end, 2026-10-01): the reassess summary is under ## Changes and its drift points became items (sql_guard, alerts, connections)
 - [x] F6.5 listrevisit asks for a go once · done when: a status run with a note has one wait, not two · guide: none · evidence: listrevisit shows one report and waits for one go; needs a run
 - [ ] F6.6 an eval of the instructions themselves · done when: `npm run eval` runs a scripted dry run of both doors, with 0 unfilled placeholders and the turns counted · guide: always-on-verification-loop · evidence:
 - [ ] F6.Q Quality bars met for F6 · evidence:
@@ -119,3 +119,4 @@ Dropped: (native) frame budget, because there is no native app · (UI) empty, lo
 - 2026-09-30 · F1.5 verified by the first CI run on GitHub
 - 2026-09-30 · revisit: 13 items verified with the checks cited; F6.2 and F6.3 back to [x], since an on-completion fragment stays unverified until its end-to-end run; untracked: CI actions moved from v4 to v7
 - 2026-09-30 · F3.5 to [x]: descriptions cut to claude.ai's 200-character limit and a build check added; the real upload waits for a personal account
+- 2026-10-01 · Supersense trial recorded: F5.3 and F6.4 verified end to end; F5.5 measured at 5 replies (not met); F5.7 1 of 3; the time promise now depends on project size (D-009)

@@ -103,7 +103,7 @@ export default function Home() {
                   <li>It reads your code and tells you, in plain words, what it thinks the project is. You confirm.</li>
                   <li>It checks the code against your core concept and builds the checklist, with what&apos;s done already marked.</li>
                 </ol>
-                <p className="win"><b>First win</b>Where you really stand, in about ten minutes.</p>
+                <p className="win"><b>First win</b>Where you really stand: about ten minutes on a small project, longer on a big one.</p>
               </div>
             </div>
           </div>

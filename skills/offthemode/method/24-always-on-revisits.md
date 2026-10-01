@@ -75,7 +75,7 @@ Rules:
 - Anyone can understand it: a new teammate, an investor, a relative. Short sentences, everyday words.
 - No technical words: no stack, framework, database, API, model or architecture names. If a product word is unavoidable, explain it under "Words you'll hear".
 - Say what people can do, never how it's built.
-- Under 300 words, so it fits on one screen.
+- Under 300 words, so it fits on one screen. Count them with a command (such as wc -w) where you can run one, not by eye.
 
 Before showing it, reread every sentence as someone outside tech and rewrite any they would have to ask about. Show the new section and, if one exists, what changed and why (usually "Where we are"). Write it on the user's go.
 ```

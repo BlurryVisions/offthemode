@@ -36,12 +36,12 @@ Ask only what the code and docs can't answer: batched, numbered, each with your 
 4. On go, create the files. Run the reassess command's steps, then the listrevisit command's steps to build the checklist from PRODUCT.md plus every note in the report. Show the report and the fragments together, asking for the real-input run and the fragments' ok in one message. Record the report's summary under the checklist's ## Changes.
 
 ## The one go (both doors)
-In one message, show: the PRODUCT.md draft; RULES.md Project specifics; the files you will create in `.offthemode/`, one line each; the exact auto-load line and its file; and whether `.offthemode/` goes in git (recommended, so the team shares it). Wait for one go, then do all of it.
+In one message, show: the PRODUCT.md draft; RULES.md Project specifics; the files you will create in `.offthemode/`, one line each; the exact auto-load line and its file; any rule-file fixes; and whether `.offthemode/` goes in git (recommended, so the team shares it). Wait for one go, then do all of it.
 
 ## Writing RULES.md
 Draft Project specifics from what is knowable now: the stack's known traps (check each against the docs or source of the versions actually used, never memory), data rules the domain implies (money in whole cents, every query scoped to the account), security boundaries and, in an existing project, what the code relies on. Keep a line only if it is certain to apply, not something an AI does anyway, and costly if missed, since every line is read in every session; each says what to do and why.
 
-The project's existing rule files are its refined knowledge: never move, merge or rewrite them; the only addition is the auto-load line, on the user's go. List them in RULES.md §This project as still in force; they win on project specifics, so write Project specifics only for what they don't cover. If one contradicts an Off the Mode standard, show both, ask which wins and record it in DECISIONS.md.
+Existing rule files are the project's refined knowledge and win on project specifics: never move or merge them. List them in RULES.md §This project as in force; write Project specifics only for what they don't cover. A line that is out of date or contradicts the code, another rule or an Off the Mode standard: show it (file:line) with the fix in the one go; record it in DECISIONS.md.
 
 ## Auto-load
 Add to existing content, never replace it. Claude Code: in CLAUDE.md, as plain text, `Read @.offthemode/RULES.md and @.offthemode/STATE.md before any change.` Cursor: that line in `.cursor/rules/offthemode.mdc` with `alwaysApply: true`. Tools that read AGENTS.md, or have their own always-on file (VS Code: `.github/copilot-instructions.md`): that line there.

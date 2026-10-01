@@ -1,9 +1,9 @@
-RULES · {{?PROJECT_NAME}} · read before working. The standards every change is held to. Lines with {{placeholders}} are filled at setup; the rest is the Off the Mode floor. A line or budget tagged (UI), (web), (native) or (server) is deleted when the product has no such part.
+RULES · {{?PROJECT_NAME}} · read before working. The standards every change is held to. Lines with placeholders in double curly braces are filled at setup; the rest is the Off the Mode floor. A line or budget tagged (UI), (web), (native) or (server) is deleted when the product has no such part.
 
 ## This project
 - What it is: {{?THESIS}} (the full vision is in .offthemode/PRODUCT.md)
 - Stack: {{?STACK}} · Platforms: {{?PLATFORMS}}
-- The project's own rule files, still in force and never moved: {{?EXISTING_RULE_FILES | none}}. They win over this file on project specifics.
+- The project's own rule files, still in force and never moved: {{?EXISTING_RULE_FILES | none}}. They win over this file on project specifics; a line in them changes only on my go, recorded in DECISIONS.md.
 
 ## Project specifics
 Rules only this project needs, each saying what to do and why, kept apart from the Off the Mode standards below and never repeating the project's own rule files. Written at setup from the plan (the stack's known traps, data rules, security boundaries), and added to when a correction has to be given twice. Keep a line only if it is certain to apply, not something an AI does anyway, and costly if missed.

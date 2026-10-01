@@ -41,7 +41,7 @@ Your normal coding sessions stay free. Nothing forces the checklist on you.
   DECISIONS.md   what was decided, and why
 ```
 
-When a guide calls for another document, it goes in `.offthemode/` too. Outside it, setup adds one line that makes your tool load the rules (in CLAUDE.md, AGENTS.md or your tool's rules file), and only after you approve it.
+When a guide calls for another document, it goes in `.offthemode/` too. Outside it, setup adds one line that makes your tool load the rules (in CLAUDE.md, AGENTS.md or your tool's rules file), and only after you approve it. If a line in your own rule files is out of date or conflicts, it shows you the fix and changes it only after you approve that too.
 
 ## Privacy
 

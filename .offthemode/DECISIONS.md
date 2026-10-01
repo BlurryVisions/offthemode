@@ -31,3 +31,13 @@ Because: the author judged them small worries that reassess and review surface w
 Context: /method loaded marked from a CDN in the browser, so it showed no text without JavaScript and ran a third-party script (CHECKLIST F7.5) · Decision: scripts/render-method.mjs renders BLUEPRINT.md with marked, a devDependency (MIT, no dependencies of its own), when the content builds; the page ships plain HTML and loads no outside script
 Rejected: keeping the CDN script (no text without JavaScript, another host on every visit); our own Markdown parser (tables, nested lists and fences are far more than 50 lines to get right)
 Because: the page reads without JavaScript and trusts no other host, and it is the library the page already used, so the output stays the same · Revisit if: marked's output changes in a way the page can't absorb; removing it means writing a renderer for the method's Markdown
+
+### D-008 · Setup may fix lines in a project's own rule files, on the user's go · 2026-10-01 · decided
+Context: in the Supersense trial, setup found rule lines that conflicted with each other or with the code, and the author approved fixing them · Decision: existing rule files still stay where they are, win on project specifics and are never moved or merged; a line that is out of date or conflicts with the code, another rule or an Off the Mode standard is shown with its fix, changed only on the user's go, and recorded in the project's DECISIONS.md
+Rejected: never editing them at all (it left known-wrong rules in force)
+Because: the author approved exactly these fixes in the trial · Revisit if: a user reports a rule changed without their go
+
+### D-009 · The time promise depends on project size; setup is not limited to one session · 2026-10-01 · decided
+Context: the Supersense trial took 39 active minutes and 6 multi-agent runs, against a promise of about 10 minutes · Decision: the promise is about 10 minutes on a small project and longer on a large codebase; setup may use as many agents as the job needs
+Rejected: forcing setup into one session to protect the 10 minutes
+Because: the author wants it to deliver, not to be fast at the cost of depth · Revisit if: small projects also miss the 10 minutes

@@ -3,7 +3,7 @@ RULES · Off the Mode · read before working. The standards every change is held
 ## This project
 - What it is: a prompt-engineering setup that makes any AI coding tool plan first, build in the right order and hold an elite bar, delivered as a website, a hosted MCP server and a skills pack (the full vision is in .offthemode/PRODUCT.md)
 - Stack: Next.js 16 on Vercel, TypeScript, mcp-handler 2 with the MCP SDK v2, zod 4, marked at build time · Platforms: web
-- The project's own rule files, still in force and never moved: AGENTS.md (CLAUDE.md imports it). They win over this file on project specifics.
+- The project's own rule files, still in force and never moved: AGENTS.md (CLAUDE.md imports it). They win over this file on project specifics; a line in them changes only on my go, recorded in DECISIONS.md.
 
 ## Project specifics
 Rules only this project needs, each saying what to do and why, kept apart from the Off the Mode standards below and never repeating the project's own rule files. Written at setup from the plan (the stack's known traps, data rules, security boundaries), and added to when a correction has to be given twice. Keep a line only if it is certain to apply, not something an AI does anyway, and costly if missed.
@@ -12,7 +12,7 @@ Rules only this project needs, each saying what to do and why, kept apart from t
 - Every word a user reads is plain: short sentences, no jargon, because the builders who read it are not all engineers.
 - The website and /method share one visual language, the drawing set: diazo paper in light, cyanotype in dark, redlines for change.
 - Every control is reachable by keyboard, and a closed panel stays out of the tab order.
-- Each command's rendered text stays under the MCP test's 6000-character guard (offthemode is at 5987), so a status check stays cheap: tighten wording before adding it.
+- Each command's rendered text stays under the MCP test's 6000-character guard (offthemode is at 5992), so a status check stays cheap: tighten wording before adding it.
 
 ## How to work
 - Talk first, then do. For anything beyond a small fix (a typo, a one-line change), restate the task and your plan in a few lines and wait for my go. Say what you changed when you're done.
