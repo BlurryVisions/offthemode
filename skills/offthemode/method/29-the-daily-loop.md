@@ -17,12 +17,13 @@ Normal sessions stay free-form. You say what you want in plain words; the files 
 
 ### When to run each command
 
-Every command talks first: it explains what it found and exactly what it will change, waits for your go, then does it and says what it did.
+Every command that can change your project talks first: it explains what it found and exactly what it will change, waits for your go, then does it and says what it did. `listview` writes nothing in the project, so it opens its page at once.
 
 | Command | Run it |
 |---|---|
 | `offthemode` | Once per project, to set it up; later, any time you want the status |
 | `listrevisit` | To see what's next, or when a new feature or idea comes up, so it lands in the right place on the checklist |
+| `listview` | Whenever you want the whole project at a glance, as a page in your browser |
 | `reassess` | After every few pieces of work, before a milestone, or whenever the product feels like it is drifting from the core concept |
 | `commentrevisit` | Before a merge, or when comments feel stale |
 | `glossaryrevisit` | After a milestone, or before you show the project to someone |

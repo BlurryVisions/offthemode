@@ -2,7 +2,7 @@
 
 Left alone, every AI coding tool returns the mode of its training data, meaning the most common answer: the most common stack, the most common landing page, the most common happy-path code. Off the Mode pulls your AI off that average. It is a prompt-engineering setup that makes your AI plan first, build in order and hold an elite bar on your project, new or existing: web, mobile, backend or data, a weekend build or a complex product. It works with any AI coding tool, including Claude, Cursor, VS Code, Windsurf and Codex. Add it by pasting https://offthemode.vercel.app/mcp into your tool, or by putting the skills pack in your tool's skills folder.
 
-In your project it adds the `.offthemode/` folder, plus one line you approve so your tool loads it. Setup writes six core files there: PRODUCT.md (what you are building and for whom), RULES.md (the standards every change is held to), CHECKLIST.md (the core, split into fragments), GLOSSARY.md (the product in plain words), STATE.md (where things stand) and DECISIONS.md (what was decided and why). Some guides add an optional document to the same folder when their work needs one; How to add it lists them all. Your AI loads RULES.md and STATE.md at the start of every session, and you keep working free-form. Five commands do the upkeep: `offthemode`, `listrevisit`, `reassess`, `commentrevisit` and `glossaryrevisit`. Every command talks first: it tells you what it found and exactly what it will change, waits for your go, then does it and says what it did.
+In your project it adds the `.offthemode/` folder, plus one line you approve so your tool loads it. Setup writes six core files there: PRODUCT.md (what you are building and for whom), RULES.md (the standards every change is held to), CHECKLIST.md (the core, split into fragments), GLOSSARY.md (the product in plain words), STATE.md (where things stand) and DECISIONS.md (what was decided and why). Some guides add an optional document to the same folder when their work needs one; How to add it lists them all. Your AI loads RULES.md and STATE.md at the start of every session, and you keep working free-form. Six commands do the upkeep: `offthemode`, `listrevisit`, `reassess`, `commentrevisit`, `glossaryrevisit` and `listview`. Every command that can change your project talks first: it tells you what it found and exactly what it will change, waits for your go, then does it and says what it did. `listview` changes nothing in it, so it opens its page at once.
 
 You do not read this method front to back. Each guide covers one kind of work. RULES.md §Guides maps each kind of work to its guide, and your AI opens the matching guide before it plans or does that work. Each phase guide starts with short working rules: for a change inside an existing product, your AI opens just those; it opens the whole guide when it starts that phase or changes what the phase built. How to add it says where the guides come from. You can read any guide yourself: The Pipeline shows the order, and Product-First Doctrine shows the lens used at every step.
 
@@ -2618,13 +2618,13 @@ Changelog: v4 references assigned by me, no recommendation (a generator grading 
 
 ## Always-On · Revisits
 
-> **Output:** four on-demand commands that each touch only what they own: `listrevisit` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md` only on your go, `commentrevisit` edits code comments only, and `glossaryrevisit` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`.
+> **Output:** four on-demand commands that each touch only what they own: `listrevisit` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md` only on your go, `commentrevisit` edits code comments only, and `glossaryrevisit` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`; plus `listview`, which opens the folder as one page in your browser and writes nothing in the project.
 
-Off the Mode has five commands. `offthemode` sets up a project or shows its status. The other four are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else.
+Off the Mode has six commands. `offthemode` sets up a project or shows its status, and `listview` shows it as a page. The other four are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else.
 
 Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the link in Claude Code) or just say them: "reassess the project".
 
-> **Rule:** Every command talks first. It explains what it found and exactly what it will change, waits for your go, then does it and tells you what it did. `reassess` changes no code and no other file: its report is the result. It asks for a go before it runs a real input through the core, and before it saves the report.
+> **Rule:** Every command that can change your project talks first. It explains what it found and exactly what it will change, waits for your go, then does it and tells you what it did. `reassess` changes no code and no other file: its report is the result. It asks for a go before it runs a real input through the core, and before it saves the report. `listview` is the one command that acts at once: it writes nothing in the project, so typing it is the go.
 
 | Command | Its one job | Touches |
 |---|---|---|
@@ -2632,8 +2632,9 @@ Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the
 | `reassess` | Compares what has actually been built with the core concept | Only its own report, `.offthemode/REASSESS.md`, if you say so |
 | `commentrevisit [path]` | Makes code comments true, necessary and useful | Comments only, never code |
 | `glossaryrevisit` | Keeps a plain-words summary of the project that anyone can understand | The "In plain words" part of `.offthemode/GLOSSARY.md` |
+| `listview` | Opens your project as a page in your browser | Nothing in your project: one temporary page |
 
-`listrevisit` is covered in Living Checklist. The other three:
+`listrevisit` is covered in Living Checklist. The others:
 
 **`reassess` reads the code, not the docs.** Docs describe intentions; the code is what exists. It compares the code with the core concept in PRODUCT.md: what serves it, what drifted from it, what is missing, and what was built that serves no job at all. When the core can run, it proposes one real input and the exact command, using test or seed data so nothing real is sent, charged or changed, and after your go pushes it through the whole chain: the only honest check for a product that proves itself end to end. It edits nothing else, the checklist included. At the end it offers to save the report to `.offthemode/REASSESS.md`, replacing the last one; the first line gives the date and whether the project is on course, drifting or off course. If it finds work to capture, it gives you the exact note to pass to `listrevisit`.
 
@@ -2641,9 +2642,9 @@ Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the
 
 **`glossaryrevisit` is for people, not AI tools.** The top of `.offthemode/GLOSSARY.md` says what the project is, who it's for, what problem it solves, what works today and what's coming, in words anyone understands. No stack, no jargon, no feature lists: you could read it aloud to a relative or open a pitch with it. "Working today" comes from the code and the checklist, not from the plan, so it stays honest. The Terms list below it is left alone.
 
-**See it as a page.** `listrevisit`, `reassess` and `glossaryrevisit` end with the link to the view, a page that shows the `.offthemode/` folder at a glance: the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess. The page reads the files in your browser and sends nothing anywhere.
+**`listview` shows the folder as a page.** The view shows `.offthemode/` at a glance: the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess. `listview` gets you there in one step: your AI tool runs one command line that joins the notes with the view page into one temporary file and opens it in your browser. Nothing is uploaded and nothing in the project is written. The page is a snapshot, so run `listview` again after the notes change. With the skills, the page comes from the listview skill's folder, so it works offline. In a tool that can't run commands, open https://offthemode.vercel.app/view and pick the `.offthemode` folder: the page reads the files in your browser and sends nothing anywhere, and Chrome remembers the folder for next time. `listrevisit`, `reassess` and `glossaryrevisit` end with both ways:
 
-See it as a page: https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 For a tool where the commands aren't set up, these prompts do the same jobs by hand.
 
@@ -2652,6 +2653,8 @@ For a tool where the commands aren't set up, these prompts do the same jobs by h
 <!-- offthemode:command commentrevisit -->
 
 <!-- offthemode:command glossaryrevisit -->
+
+<!-- offthemode:command listview -->
 
 ## Mobile Addendum
 
@@ -2779,7 +2782,7 @@ Some classics are simply a law broken, and The Laws cover them: adjective soup, 
 
 ## How to add it
 
-Off the Mode comes from one public repo, https://github.com/BlurryVisions/offthemode, in three forms: this website, a hosted MCP server, and a skills pack. MCP (Model Context Protocol) is the standard way AI tools connect to outside tools. Paste one link into your AI tool and it gets the five commands, the guides and the file templates. Or install the skills pack, and the same commands, guides and templates live as files on your machine, with no server.
+Off the Mode comes from one public repo, https://github.com/BlurryVisions/offthemode, in three forms: this website, a hosted MCP server, and a skills pack. MCP (Model Context Protocol) is the standard way AI tools connect to outside tools. Paste one link into your AI tool and it gets the six commands, the guides and the file templates. Or install the skills pack, and the same commands, guides and templates live as files on your machine, with no server.
 
 This guide is the one source for the install steps; the website and the README follow it.
 
@@ -2799,13 +2802,13 @@ Then say "set up off the mode" in a Claude session that can open your project fo
 
 #### Claude Code
 
-The easiest way is the skills. This one line, pasted into a terminal, installs all five for every project:
+The easiest way is the skills. This one line, pasted into a terminal, installs all six for every project:
 
 ```bash
 curl -fsSL https://offthemode.vercel.app/skills/offthemode-skills.zip -o /tmp/offthemode-skills.zip && unzip -o /tmp/offthemode-skills.zip -x README.md -d ~/.claude/skills
 ```
 
-The skills are files on your machine, so they work in auto mode, Claude Code's default, with no extra step. The commands are then `/offthemode`, `/listrevisit`, `/reassess`, `/commentrevisit` and `/glossaryrevisit`.
+The skills are files on your machine, so they work in auto mode, Claude Code's default, with no extra step. The commands are then `/offthemode`, `/listrevisit`, `/listview`, `/reassess`, `/commentrevisit` and `/glossaryrevisit`.
 
 Or use the link. Run this once; `--scope user` makes it available in every project on your machine:
 
@@ -2852,7 +2855,7 @@ Windsurf, Zed, Cline and other tools that speak MCP over HTTP: add a remote serv
 
 #### Skills pack
 
-The skills are the same commands, guides and templates as plain files, so nothing is fetched while you work. All five belong together: setup follows the listrevisit and reassess instructions, and the guides live in the offthemode skill. Put the folders where your tool loads skills:
+The skills are the same commands, guides and templates as plain files, so nothing is fetched while you work. All six belong together: setup follows the listrevisit and reassess instructions, the guides live in the offthemode skill, and the view page in the listview skill. Put the folders where your tool loads skills:
 
 | Tool | For one project | For every project |
 |---|---|---|
@@ -2865,7 +2868,7 @@ For Claude Code, the one line above installs them. For the other tools, use this
 mkdir -p ~/.agents/skills && curl -fsSL https://offthemode.vercel.app/skills/offthemode-skills.zip -o /tmp/offthemode-skills.zip && unzip -o /tmp/offthemode-skills.zip -x README.md -d ~/.agents/skills
 ```
 
-You can also download the zip from the website, or copy the folders from `skills/` in the repo. The Claude app (desktop or claude.ai) takes one skill per upload, which is the only reason each skill also has its own zip on the website: upload all five.
+You can also download the zip from the website, or copy the folders from `skills/` in the repo. The Claude app (desktop or claude.ai) takes one skill per upload, which is the only reason each skill also has its own zip on the website: upload all six.
 
 | | The link (MCP) | The skills |
 |---|---|---|
@@ -2927,9 +2930,9 @@ Code a guide calls for, such as design tokens, scripts and tests, is ordinary pr
 
 Say "set up off the mode" again on a project that is already set up and you get its status: where things stand, and what's next on the checklist.
 
-To read the folder without opening each file, use the view: setup, `listrevisit`, `reassess` and `glossaryrevisit` end with its link. It shows the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess on one page, read in your browser.
+To read the folder without opening each file, type `/listview` or say "list view": it opens the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess as one page in your browser, and writes nothing in the project. Or open the view at https://offthemode.vercel.app/view and pick the `.offthemode` folder; Chrome remembers it for next time. Either way the files are read on your machine and nothing is uploaded. Setup, `listrevisit`, `reassess` and `glossaryrevisit` end with both:
 
-See it as a page: https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 > **Pro move:** Commit `.offthemode/` with your code. Every teammate and every AI session, in any tool, then works from the same product, rules and state.
 
@@ -2950,7 +2953,7 @@ Before any work in this project, read .offthemode/RULES.md and .offthemode/STATE
 ### Remove it
 
 1. Remove the auto-load line setup added to your tool's instructions file.
-2. Remove the connection: in Claude, Settings, then Connectors; in Claude Code, `claude mcp remove --scope user offthemode`; in Codex, the `[mcp_servers.offthemode]` block in `~/.codex/config.toml`; in Cursor, VS Code and other tools, their MCP settings; for the skills, delete the five folders.
+2. Remove the connection: in Claude, Settings, then Connectors; in Claude Code, `claude mcp remove --scope user offthemode`; in Codex, the `[mcp_servers.offthemode]` block in `~/.codex/config.toml`; in Cursor, VS Code and other tools, their MCP settings; for the skills, delete the six folders.
 3. Delete `.offthemode/`, or keep it. It is plain Markdown about your product, and it stays useful without any tool.
 
 Code that was written along the way, such as tokens, scripts and tests, is ordinary project code. Keep it or remove it as you would any other.
@@ -2974,12 +2977,13 @@ Normal sessions stay free-form. You say what you want in plain words; the files 
 
 ### When to run each command
 
-Every command talks first: it explains what it found and exactly what it will change, waits for your go, then does it and says what it did.
+Every command that can change your project talks first: it explains what it found and exactly what it will change, waits for your go, then does it and says what it did. `listview` writes nothing in the project, so it opens its page at once.
 
 | Command | Run it |
 |---|---|
 | `offthemode` | Once per project, to set it up; later, any time you want the status |
 | `listrevisit` | To see what's next, or when a new feature or idea comes up, so it lands in the right place on the checklist |
+| `listview` | Whenever you want the whole project at a glance, as a page in your browser |
 | `reassess` | After every few pieces of work, before a milestone, or whenever the product feels like it is drifting from the core concept |
 | `commentrevisit` | Before a merge, or when comments feel stale |
 | `glossaryrevisit` | After a milestone, or before you show the project to someone |

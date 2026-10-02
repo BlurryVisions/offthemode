@@ -170,7 +170,9 @@ td code, .inline { font-size: 0.9em; background: var(--code-bg); padding: 0.15em
 }
 .copy:hover, .copy[data-done="true"] { background: var(--ink); color: var(--paper); }
 .buttons { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }
-.zips { display: flex; flex-wrap: wrap; gap: 8px 18px; font: 400 14px/1.6 var(--mono); margin: 0 0 16px; }
+/* One link per skill, six of them: 2x3 on a phone, 3+3 wider, so no link sits alone in a row. */
+.zips { display: grid; grid-template-columns: repeat(2, max-content); gap: 8px 18px; font: 400 14px/1.6 var(--mono); margin: 0 0 16px; }
+@media (min-width: 560px) { .zips { grid-template-columns: repeat(3, max-content); } }
 
 /* promises */
 .promises { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px 32px; }

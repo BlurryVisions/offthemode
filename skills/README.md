@@ -2,7 +2,7 @@
 
 Generated from `content/` by `scripts/build-content.mjs`. Edit `content/`, never these files.
 
-The 5 folders belong together: `offthemode` sets up a project and runs the others, and the others read the guides and templates inside `offthemode/`. Put all of them in your tool's skills folder:
+The 6 folders belong together: `offthemode` sets up a project and runs the others, the revisits read the guides and templates inside `offthemode/`, and `listview/` holds the view page. Put all of them in your tool's skills folder:
 
 - Claude Code: `.claude/skills/` in a project, or `~/.claude/skills/` for every project.
 - Codex, Gemini CLI, Cursor and VS Code: `.agents/skills/` in a project, or `~/.agents/skills/` for every project.
@@ -22,6 +22,7 @@ mkdir -p ~/.agents/skills && curl -fsSL https://offthemode.vercel.app/skills/off
 - `commentrevisit` · Comment Revisit
 - `glossaryrevisit` · Glossary Revisit
 - `listrevisit` · List Revisit
+- `listview` · List View
 - `offthemode` · Set up Off the Mode
 - `reassess` · Reassess Against the Core Concept
 

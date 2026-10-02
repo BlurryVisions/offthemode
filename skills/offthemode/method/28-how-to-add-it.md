@@ -1,6 +1,6 @@
 ## How to add it
 
-Off the Mode comes from one public repo, https://github.com/BlurryVisions/offthemode, in three forms: this website, a hosted MCP server, and a skills pack. MCP (Model Context Protocol) is the standard way AI tools connect to outside tools. Paste one link into your AI tool and it gets the five commands, the guides and the file templates. Or install the skills pack, and the same commands, guides and templates live as files on your machine, with no server.
+Off the Mode comes from one public repo, https://github.com/BlurryVisions/offthemode, in three forms: this website, a hosted MCP server, and a skills pack. MCP (Model Context Protocol) is the standard way AI tools connect to outside tools. Paste one link into your AI tool and it gets the six commands, the guides and the file templates. Or install the skills pack, and the same commands, guides and templates live as files on your machine, with no server.
 
 This guide is the one source for the install steps; the website and the README follow it.
 
@@ -20,13 +20,13 @@ Then say "set up off the mode" in a Claude session that can open your project fo
 
 #### Claude Code
 
-The easiest way is the skills. This one line, pasted into a terminal, installs all five for every project:
+The easiest way is the skills. This one line, pasted into a terminal, installs all six for every project:
 
 ```bash
 curl -fsSL https://offthemode.vercel.app/skills/offthemode-skills.zip -o /tmp/offthemode-skills.zip && unzip -o /tmp/offthemode-skills.zip -x README.md -d ~/.claude/skills
 ```
 
-The skills are files on your machine, so they work in auto mode, Claude Code's default, with no extra step. The commands are then `/offthemode`, `/listrevisit`, `/reassess`, `/commentrevisit` and `/glossaryrevisit`.
+The skills are files on your machine, so they work in auto mode, Claude Code's default, with no extra step. The commands are then `/offthemode`, `/listrevisit`, `/listview`, `/reassess`, `/commentrevisit` and `/glossaryrevisit`.
 
 Or use the link. Run this once; `--scope user` makes it available in every project on your machine:
 
@@ -73,7 +73,7 @@ Windsurf, Zed, Cline and other tools that speak MCP over HTTP: add a remote serv
 
 #### Skills pack
 
-The skills are the same commands, guides and templates as plain files, so nothing is fetched while you work. All five belong together: setup follows the listrevisit and reassess instructions, and the guides live in the offthemode skill. Put the folders where your tool loads skills:
+The skills are the same commands, guides and templates as plain files, so nothing is fetched while you work. All six belong together: setup follows the listrevisit and reassess instructions, the guides live in the offthemode skill, and the view page in the listview skill. Put the folders where your tool loads skills:
 
 | Tool | For one project | For every project |
 |---|---|---|
@@ -86,7 +86,7 @@ For Claude Code, the one line above installs them. For the other tools, use this
 mkdir -p ~/.agents/skills && curl -fsSL https://offthemode.vercel.app/skills/offthemode-skills.zip -o /tmp/offthemode-skills.zip && unzip -o /tmp/offthemode-skills.zip -x README.md -d ~/.agents/skills
 ```
 
-You can also download the zip from the website, or copy the folders from `skills/` in the repo. The Claude app (desktop or claude.ai) takes one skill per upload, which is the only reason each skill also has its own zip on the website: upload all five.
+You can also download the zip from the website, or copy the folders from `skills/` in the repo. The Claude app (desktop or claude.ai) takes one skill per upload, which is the only reason each skill also has its own zip on the website: upload all six.
 
 | | The link (MCP) | The skills |
 |---|---|---|
@@ -148,9 +148,9 @@ Code a guide calls for, such as design tokens, scripts and tests, is ordinary pr
 
 Say "set up off the mode" again on a project that is already set up and you get its status: where things stand, and what's next on the checklist.
 
-To read the folder without opening each file, use the view: setup, `listrevisit`, `reassess` and `glossaryrevisit` end with its link. It shows the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess on one page, read in your browser.
+To read the folder without opening each file, type `/listview` or say "list view": it opens the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess as one page in your browser, and writes nothing in the project. Or open the view at https://offthemode.vercel.app/view and pick the `.offthemode` folder; Chrome remembers it for next time. Either way the files are read on your machine and nothing is uploaded. Setup, `listrevisit`, `reassess` and `glossaryrevisit` end with both:
 
-See it as a page: https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 > **Pro move:** Commit `.offthemode/` with your code. Every teammate and every AI session, in any tool, then works from the same product, rules and state.
 
@@ -171,7 +171,7 @@ Before any work in this project, read .offthemode/RULES.md and .offthemode/STATE
 ### Remove it
 
 1. Remove the auto-load line setup added to your tool's instructions file.
-2. Remove the connection: in Claude, Settings, then Connectors; in Claude Code, `claude mcp remove --scope user offthemode`; in Codex, the `[mcp_servers.offthemode]` block in `~/.codex/config.toml`; in Cursor, VS Code and other tools, their MCP settings; for the skills, delete the five folders.
+2. Remove the connection: in Claude, Settings, then Connectors; in Claude Code, `claude mcp remove --scope user offthemode`; in Codex, the `[mcp_servers.offthemode]` block in `~/.codex/config.toml`; in Cursor, VS Code and other tools, their MCP settings; for the skills, delete the six folders.
 3. Delete `.offthemode/`, or keep it. It is plain Markdown about your product, and it stays useful without any tool.
 
 Code that was written along the way, such as tokens, scripts and tests, is ordinary project code. Keep it or remove it as you would any other.

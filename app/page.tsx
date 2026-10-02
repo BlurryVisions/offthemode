@@ -11,6 +11,7 @@ const TOUCHES: Record<string, string> = {
   reassess: "Only its own report, if you say so",
   commentrevisit: "Code comments only",
   glossaryrevisit: "The plain-words summary",
+  listview: "Nothing in your project: one temporary page",
 };
 const WHAT: Record<string, string> = {
   offthemode: "Sets up your project, new or existing, or tells you where it stands",
@@ -18,10 +19,11 @@ const WHAT: Record<string, string> = {
   reassess: "Checks what's built against your core concept",
   commentrevisit: "Removes stale or noisy comments, adds a why where code can't explain itself",
   glossaryrevisit: "Refreshes a summary of the project anyone can understand",
+  listview: "Opens your project as a page in your browser",
 };
 const ARG: Record<string, string> = { listrevisit: " [idea]", commentrevisit: " [path]" };
-// The order people meet them in: set up first, then the revisits from most to least used.
-const SEQUENCE = ["offthemode", "listrevisit", "reassess", "commentrevisit", "glossaryrevisit"];
+// The order people meet them in: set up first, then the rest from most to least used.
+const SEQUENCE = ["offthemode", "listrevisit", "listview", "reassess", "commentrevisit", "glossaryrevisit"];
 const byUse = [...commands].sort((a, b) => SEQUENCE.indexOf(a.name) - SEQUENCE.indexOf(b.name));
 
 const ORDER = [
@@ -136,7 +138,7 @@ export default function Home() {
           <div className="wrap">
             <div className="head">
               <span className="label">Commands</span>
-              <h2 className="title" id="commands">Five commands, each with one job</h2>
+              <h2 className="title" id="commands">Six commands, each with one job</h2>
             </div>
             <div className="tablewrap">
               <table>

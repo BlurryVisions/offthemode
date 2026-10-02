@@ -16,4 +16,4 @@ Reply in at most 30 lines: alignment in one line (on course · drifting · off c
 
 Then offer to save the report. On the user's go, write it to `.offthemode/REASSESS.md`, replacing any earlier one: first line `REASSESS · <YYYY-MM-DD> · <on course | drifting | off course>`, then the report as shown.
 
-End with this line: See it as a page: https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+End with this line: See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).

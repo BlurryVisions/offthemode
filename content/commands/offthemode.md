@@ -30,7 +30,7 @@ Ask only what the code and docs can't answer: batched, numbered, each with your 
 3. On go, create the files, then build the checklist with the listrevisit command's steps.
 
 ## Existing project
-1. Read the code before asking anything: the README, dependency files, entry points, routes or screens, the data model, the core flow, tests, config and any existing rule files (AGENTS.md, CLAUDE.md, .cursor/rules, other rule folders).
+1. Read the code before asking anything: the README, dependency files, entry points, routes or screens, the data model, the core flow, tests, config and any existing rule files (AGENTS.md, CLAUDE.md, .cursor/rules and others).
 2. Tell the user in plain words what you understand: what the product is, who it's for, the core concept as the code shows it, what works and what looks unfinished. Ask the Questions in the same message.
 3. Show the one-go message, with the PRODUCT.md draft as the product is meant to be, with evidence, and RULES.md with the commands you found.
 4. On go, create the files. Run the reassess command's steps, then listrevisit's to build the checklist from PRODUCT.md and every note in the report. Show the report and the fragments in one message, asking for the real-input run, the report's save and the fragments' ok. Record the report's summary under the checklist's ## Changes.
@@ -47,4 +47,4 @@ Existing rule files are the project's refined knowledge and win on project speci
 Add to existing content, never replace it. Claude Code: in CLAUDE.md, as plain text, `Read @.offthemode/RULES.md and @.offthemode/STATE.md before any change.` Cursor: that line in `.cursor/rules/offthemode.mdc` with `alwaysApply: true`. Tools that read AGENTS.md, or have their own always-on file (VS Code: `.github/copilot-instructions.md`): that line there.
 
 ## Last step (both doors)
-Once the checklist exists, write GLOSSARY.md "In plain words" by the glossaryrevisit command's rules (the setup go covers it). End with what you created, the next 3 steps and three lines: sessions stay free-form, with RULES.md and STATE.md loaded and each kind of work opening its guide; listrevisit, reassess, commentrevisit and glossaryrevisit run whenever they want a check; See it as a page: https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+Once the checklist exists, write GLOSSARY.md "In plain words" by glossaryrevisit's rules (the setup go covers it). End with what you created, the next 3 steps and three lines: sessions stay free-form, with RULES.md and STATE.md loaded and each kind of work opening its guide; listrevisit, reassess, commentrevisit and glossaryrevisit run whenever they want a check; See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).

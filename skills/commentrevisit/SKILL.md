@@ -32,4 +32,4 @@ After the edits, prove it: the diff contains only comment lines, and the check c
 - The user's scope, if any, is whatever they typed after the command.
 - The guides and all the templates are in the offthemode skill, next to this one: `../offthemode/method/` (`INDEX.md` lists the guides; their working rules are in `../offthemode/method/rules/`) and `../offthemode/templates/`.
 - The other commands named here are sibling skills in the same skills folder: listrevisit is `../listrevisit/SKILL.md`.
-- Install all 5 Off the Mode skills together; they read each other's files.
+- Install all 6 Off the Mode skills together; they read each other's files.

@@ -1,5 +1,5 @@
-// One source (content/) -> every delivery: skills/ (committed, taken straight from GitHub),
-// lib/content.generated.json (MCP server + website), public/method/, public/view/ and public/skills/*.zip.
+// One source (content/) -> every delivery: skills/ (committed, taken straight from GitHub; the listview skill also
+// carries the built view page), lib/content.generated.json (MCP server + website), public/method/, public/view/ and public/skills/*.zip.
 // `--check` builds in memory and fails if skills/ on disk differs from content/ or the view page breaks its rules.
 // With `--committed` (CI passes it) it also fails if skills/ in the last commit differs, so GitHub serves the same
 // skills as the site.
@@ -67,12 +67,14 @@ const commands = readdirSync(join(ROOT, "content/commands")).filter((f) => f.end
 });
 
 const ENTRY = "offthemode";
-if (!commands.some((c) => c.name === ENTRY)) fail(`the entry command "${ENTRY}" is missing`);
+// The command that joins the notes with the view page; its skill carries the page, so it works offline.
+const VIEWER = "listview";
+for (const n of [ENTRY, VIEWER]) if (!commands.some((c) => c.name === n)) fail(`the command "${n}" is missing`);
 const known = new Set(commands.map((c) => c.name));
 // A command named in a body, not as part of a path (.offthemode/) or a tool id (mcp__offthemode__x).
 const mentions = (body, name) => new RegExp(`(?<![\\w./-])${name}(?![\\w/-])`).test(body);
 for (const c of commands) {
-  for (const ref of ["listrevisit", "reassess", "commentrevisit", "glossaryrevisit"]) {
+  for (const ref of ["listrevisit", "reassess", "commentrevisit", "glossaryrevisit", "listview"]) {
     if (c.body.includes(ref) && !known.has(ref)) fail(`${c.name}: mentions "${ref}", which doesn't exist`);
   }
 }
@@ -236,6 +238,9 @@ function skillFiles() {
             `## ${s.title}\n\n${s.rules}\nThese are the guide's working rules, for a change inside an existing product. Open the whole guide, \`../${sheetFile(s)}\`, when you start this phase or change its structure.\n`;
         }
       }
+    } else if (c.name === VIEWER) {
+      refs.push("`view.html`, next to this file, is the view page: copy it to the temporary file in place of the download.");
+      files[`${dir}/view.html`] = view.html;
     } else {
       refs.push(`The guides and all the templates are in the ${ENTRY} skill, next to this one: \`../${ENTRY}/method/\` (\`INDEX.md\` lists the guides; their working rules are in \`../${ENTRY}/method/rules/\`) and \`../${ENTRY}/templates/\`.`);
     }
@@ -256,7 +261,7 @@ function skillsReadme() {
   return (
     "# Off the Mode · skills\n\n" +
     "Generated from `content/` by `scripts/build-content.mjs`. Edit `content/`, never these files.\n\n" +
-    `The ${commands.length} folders belong together: \`${ENTRY}\` sets up a project and runs the others, and the others read the guides and templates inside \`${ENTRY}/\`. Put all of them in your tool's skills folder:\n\n` +
+    `The ${commands.length} folders belong together: \`${ENTRY}\` sets up a project and runs the others, the revisits read the guides and templates inside \`${ENTRY}/\`, and \`${VIEWER}/\` holds the view page. Put all of them in your tool's skills folder:\n\n` +
     "- Claude Code: `.claude/skills/` in a project, or `~/.claude/skills/` for every project.\n" +
     "- Codex, Gemini CLI, Cursor and VS Code: `.agents/skills/` in a project, or `~/.agents/skills/` for every project.\n\n" +
     "One paste installs them for every project. Claude Code:\n\n" +

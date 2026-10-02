@@ -24,11 +24,11 @@ Show the user the fragments in order, one line each, and wait for their ok. Then
 
 Reply in at most 25 lines: progress per fragment with its Verify mode (F2 ■■■□□ 3/5 · on completion), what moved since last time and why, untracked work, risks (failing bars, items stuck at [x], blocked fragments), and the next 3 items.
 
-End with this line: See it as a page: https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+End with this line: See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 ## Files
 - The user's note, if any, is whatever they typed after the command.
 - Templates are in `templates/` next to this file: `templates/CHECKLIST.md`. Open one only when you are about to write that file or compare a filled file with it.
 - The guides and all the templates are in the offthemode skill, next to this one: `../offthemode/method/` (`INDEX.md` lists the guides; their working rules are in `../offthemode/method/rules/`) and `../offthemode/templates/`.
 - The other commands named here are sibling skills in the same skills folder: reassess is `../reassess/SKILL.md`.
-- Install all 5 Off the Mode skills together; they read each other's files.
+- Install all 6 Off the Mode skills together; they read each other's files.

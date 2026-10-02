@@ -37,7 +37,7 @@ for (const version of ["2024-11-05", "2025-06-18"]) {
   const init = await rpc("initialize", { protocolVersion: version, capabilities: {}, clientInfo: { name: "offthemode-test", version: "1" } }, version);
   expect(init.serverInfo?.name === "offthemode" && init.protocolVersion === version, `initialize ${version} · server "${init.serverInfo?.name}" · protocol ${init.protocolVersion}`);
   const tools = (await rpc("tools/list", {}, version)).tools.length;
-  expect(tools === 7, `tools/list ${version} · ${tools} tools`);
+  expect(tools === 8, `tools/list ${version} · ${tools} tools`);
   if (version !== "2025-06-18") continue;
   // The standing rule applies only where the project opted in, and points to RULES.md §Guides instead of listing work.
   const ins = init.instructions ?? "";
@@ -46,7 +46,7 @@ for (const version of ["2024-11-05", "2025-06-18"]) {
 }
 
 const tools = (await rpc("tools/list")).tools.map((t) => t.name).sort();
-const wantTools = ["commentrevisit", "get_method", "get_template", "glossaryrevisit", "listrevisit", "offthemode", "reassess"];
+const wantTools = ["commentrevisit", "get_method", "get_template", "glossaryrevisit", "listrevisit", "listview", "offthemode", "reassess"];
 expect(JSON.stringify(tools) === JSON.stringify(wantTools), `tools/list · ${tools.join(", ")}`);
 
 const note = "add CSV export to reports";
@@ -56,11 +56,14 @@ expect(lr.includes(`User's note: ${note}`) && lr.includes("# Off the Mode · lis
 expect(lr.includes("only the first word of the note") && lr.includes("the user's own words") && !/\{\{\??NOTE/.test(lr),
   "tools/call listrevisit · says what to do with a cut-off note; no raw placeholder");
 
-for (const name of ["offthemode", "reassess", "commentrevisit", "glossaryrevisit"]) {
+for (const name of ["offthemode", "reassess", "commentrevisit", "glossaryrevisit", "listview"]) {
   const t = (await rpc("tools/call", { name, arguments: {} })).content[0].text;
   // Size guard: commands carry instructions only, so a status check stays cheap (~4 chars per token).
   expect(t.length > 500 && t.length < 6000 && t.includes("Off the Mode"), `tools/call ${name} · ${t.length} chars (~${Math.round(t.length / 4)} tokens, limit 1500)`);
   if (name === "offthemode") expect(t.startsWith("Set up Off the Mode:") && !t.includes("Off the Mode · Set up"), "tools/call offthemode · header names it once");
+  // listview gives a line for each shell, each writing every note as a <template data-offthemode-file>, and the skills' offline copy.
+  if (name === "listview") expect(t.includes(`curl -fsSL https://offthemode.vercel.app/view -o "$OUT"`) && t.includes("Invoke-WebRequest https://offthemode.vercel.app/view") && (t.match(/<template data-offthemode-file=/g) ?? []).length === 2 && t.includes("view.html"),
+    "tools/call listview · the macOS and Linux line, the PowerShell line, the skills' view.html");
 }
 
 const tpl = (await rpc("tools/call", { name: "get_template", arguments: { name: "RULES.md" } })).content[0].text;
@@ -79,7 +82,7 @@ const plain = (await rpc("tools/call", { name: "get_method", arguments: { sheet:
 expect(plain.startsWith("## Always-On · Words & Voice") && !plain.includes("### Working rules"), "tools/call get_method always-on-words-voice · no working rules, so the whole guide");
 
 const prompts = (await rpc("prompts/list")).prompts.map((p) => p.name).sort();
-expect(prompts.length === 5, `prompts/list · ${prompts.join(", ")}`);
+expect(prompts.length === 6, `prompts/list · ${prompts.join(", ")}`);
 const pr = await rpc("prompts/get", { name: "listrevisit", arguments: { note } });
 expect(pr.messages?.[0]?.content?.text?.includes(`User's note: ${note}`), "prompts/get listrevisit");
 

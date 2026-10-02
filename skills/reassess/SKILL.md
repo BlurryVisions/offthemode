@@ -17,9 +17,9 @@ Reply in at most 30 lines: alignment in one line (on course · drifting · off c
 
 Then offer to save the report. On the user's go, write it to `.offthemode/REASSESS.md`, replacing any earlier one: first line `REASSESS · <YYYY-MM-DD> · <on course | drifting | off course>`, then the report as shown.
 
-End with this line: See it as a page: https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+End with this line: See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 ## Files
 - The guides and all the templates are in the offthemode skill, next to this one: `../offthemode/method/` (`INDEX.md` lists the guides; their working rules are in `../offthemode/method/rules/`) and `../offthemode/templates/`.
 - The other commands named here are sibling skills in the same skills folder: listrevisit is `../listrevisit/SKILL.md`.
-- Install all 5 Off the Mode skills together; they read each other's files.
+- Install all 6 Off the Mode skills together; they read each other's files.
