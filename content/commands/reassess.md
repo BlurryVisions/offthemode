@@ -1,11 +1,11 @@
 ---
 name: reassess
 title: Reassess Against the Core Concept
-description: Check the code against the core concept in .offthemode/PRODUCT.md: what serves it, what drifted, what is missing. Use when the user says /reassess or asks if the project is on course. Report only.
+description: Check the code against the core concept in .offthemode/PRODUCT.md: what serves it, drifted or is missing. Use when the user says /reassess or asks if the project is on course. Edits only its report.
 ---
 # Off the Mode · reassess
 
-Reassess what has been built against the core concept. Report only: edit nothing, the checklist included. Talk first, then do: explain what you found and exactly what you will create or change, wait for the user's go, then do it and say what you did.
+Reassess what has been built against the core concept. Report only: edit nothing except, on the user's go, `.offthemode/REASSESS.md`, not even the checklist. Talk first, then do: explain what you found and exactly what you will create or change, wait for the user's go, then do it and say what you did.
 
 1. Read the core concept, person, jobs, moment of value, refusals, tie-breakers and experience promises in `.offthemode/PRODUCT.md`. Then read the code itself for what exists: routes and screens, handlers and jobs, the data model, and the core pipeline end to end. Docs are intent; code is fact.
 2. For each piece of the core concept: built, partial or missing, citing files. Where the code does something different from the concept, say what it does and what the concept says.
@@ -13,3 +13,7 @@ Reassess what has been built against the core concept. Report only: edit nothing
 4. If the core can run, propose one real input and the exact command you will run to push it through the whole chain, preferring test or seed data to live data so nothing real is sent, charged or changed. Wait for the user's go, then run it and note where it breaks or degrades.
 
 Reply in at most 30 lines: alignment in one line (on course · drifting · off course) with the reason; then the gaps by severity, each with its evidence (file, function or run), the smallest change that realigns it, and, if it belongs in the checklist, the exact note for the listrevisit command.
+
+Then offer to save the report. On the user's go, write it to `.offthemode/REASSESS.md`, replacing any earlier one: first line `REASSESS · <YYYY-MM-DD> · <on course | drifting | off course>`, then the report as shown.
+
+End with this line: See it as a page: https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).

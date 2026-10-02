@@ -41,3 +41,8 @@ Because: the author approved exactly these fixes in the trial · Revisit if: a u
 Context: the Supersense trial took 39 active minutes and 6 multi-agent runs, against a promise of about 10 minutes · Decision: the promise is about 10 minutes on a small project and longer on a large codebase; setup may use as many agents as the job needs
 Rejected: forcing setup into one session to protect the 10 minutes
 Because: the author wants it to deliver, not to be fast at the cost of depth · Revisit if: small projects also miss the 10 minutes
+
+### D-010 · The view, and reassess may save its report · 2026-10-02 · decided
+Context: the author wanted a page instead of chat-only views of the checklist, the plan and the last health check · Decision: offthemode.vercel.app/view reads a project's .offthemode/ folder in the browser and draws it as one drawing sheet (direction A, Stamped Sheet, plus direction C's revisited stamp); nothing is uploaded, and the page's own Content-Security-Policy (connect-src 'none') makes that a browser rule; reassess may save its report to .offthemode/REASSESS.md, on the user's go, so the view can show the verdict
+Rejected: directions B (Service Map) and C (Ruled Off) as the base, judged by two screenshot-only critics and the author; embedding Off the Mode's own notes as an example (the repo may go private)
+Because: "where you really stand" is the first win, and a page shows it far better than chat text · Revisit if: a browser blocks reading a folder, or a user wants the view without opening files each time

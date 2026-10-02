@@ -8,7 +8,7 @@ const skillsZip = `${SITE_URL}/skills/offthemode-skills.zip`;
 const TOUCHES: Record<string, string> = {
   offthemode: "The .offthemode/ folder, plus one line you approve so your tool loads it",
   listrevisit: "The checklist",
-  reassess: "Nothing: it reports",
+  reassess: "Only its own report, if you say so",
   commentrevisit: "Code comments only",
   glossaryrevisit: "The plain-words summary",
 };
@@ -45,6 +45,7 @@ export default function Home() {
           <nav aria-label="Main">
             <a href="#add">Add it</a>
             <a href="/method">Method</a>
+            <a href="/view">View</a>
             <a href={REPO_URL}>GitHub</a>
           </nav>
         </div>

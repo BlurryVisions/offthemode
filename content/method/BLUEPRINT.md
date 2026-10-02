@@ -2618,28 +2618,32 @@ Changelog: v4 references assigned by me, no recommendation (a generator grading 
 
 ## Always-On · Revisits
 
-> **Output:** four on-demand commands that each touch only what they own: `listrevisit` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and changes nothing, `commentrevisit` edits code comments only, and `glossaryrevisit` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`.
+> **Output:** four on-demand commands that each touch only what they own: `listrevisit` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md` only on your go, `commentrevisit` edits code comments only, and `glossaryrevisit` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`.
 
 Off the Mode has five commands. `offthemode` sets up a project or shows its status. The other four are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else.
 
 Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the link in Claude Code) or just say them: "reassess the project".
 
-> **Rule:** Every command talks first. It explains what it found and exactly what it will change, waits for your go, then does it and tells you what it did. `reassess` changes nothing: its report is the result, and the only go it asks for is before it runs a real input through the core.
+> **Rule:** Every command talks first. It explains what it found and exactly what it will change, waits for your go, then does it and tells you what it did. `reassess` changes no code and no other file: its report is the result. It asks for a go before it runs a real input through the core, and before it saves the report.
 
 | Command | Its one job | Touches |
 |---|---|---|
 | `listrevisit [note]` | Shows the checklist, or places a new feature or idea where it belongs | `.offthemode/CHECKLIST.md` |
-| `reassess` | Compares what has actually been built with the core concept | Nothing: it reports |
+| `reassess` | Compares what has actually been built with the core concept | Only its own report, `.offthemode/REASSESS.md`, if you say so |
 | `commentrevisit [path]` | Makes code comments true, necessary and useful | Comments only, never code |
 | `glossaryrevisit` | Keeps a plain-words summary of the project that anyone can understand | The "In plain words" part of `.offthemode/GLOSSARY.md` |
 
 `listrevisit` is covered in Living Checklist. The other three:
 
-**`reassess` reads the code, not the docs.** Docs describe intentions; the code is what exists. It compares the code with the core concept in PRODUCT.md: what serves it, what drifted from it, what is missing, and what was built that serves no job at all. When the core can run, it proposes one real input and the exact command, using test or seed data so nothing real is sent, charged or changed, and after your go pushes it through the whole chain: the only honest check for a product that proves itself end to end. It edits nothing, the checklist included. If it finds work to capture, it gives you the exact note to pass to `listrevisit`.
+**`reassess` reads the code, not the docs.** Docs describe intentions; the code is what exists. It compares the code with the core concept in PRODUCT.md: what serves it, what drifted from it, what is missing, and what was built that serves no job at all. When the core can run, it proposes one real input and the exact command, using test or seed data so nothing real is sent, charged or changed, and after your go pushes it through the whole chain: the only honest check for a product that proves itself end to end. It edits nothing else, the checklist included. At the end it offers to save the report to `.offthemode/REASSESS.md`, replacing the last one; the first line gives the date and whether the project is on course, drifting or off course. If it finds work to capture, it gives you the exact note to pass to `listrevisit`.
 
 **`commentrevisit` edits comments and nothing else.** It removes comments that lie (the code changed, the comment didn't), comments that narrate what the next line obviously does, commented-out code, and TODOs with no checklist id. It adds a short why where the code can't explain itself: a workaround, an invariant (a condition the code must always keep true), a magic number, a security decision. It proves it touched only comments: the diff (the list of changed lines) holds no code changes, and the checks still pass. When a comment reveals a bug, it reports the bug instead of fixing it.
 
 **`glossaryrevisit` is for people, not AI tools.** The top of `.offthemode/GLOSSARY.md` says what the project is, who it's for, what problem it solves, what works today and what's coming, in words anyone understands. No stack, no jargon, no feature lists: you could read it aloud to a relative or open a pitch with it. "Working today" comes from the code and the checklist, not from the plan, so it stays honest. The Terms list below it is left alone.
+
+**See it as a page.** `listrevisit`, `reassess` and `glossaryrevisit` end with the link to the view, a page that shows the `.offthemode/` folder at a glance: the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess. The page reads the files in your browser and sends nothing anywhere.
+
+See it as a page: https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 For a tool where the commands aren't set up, these prompts do the same jobs by hand.
 
@@ -2917,10 +2921,15 @@ A guide adds one of these to `.offthemode/` only when its work needs it, on your
 | `VOICE.md` | Always-On · Words & Voice | The product has words people read |
 | `TRACKING.md` | Always-On · Instrumentation | The product gets analytics events |
 | `prompts/` | Always-On · Prompt Library | A prompt gets typed a second time |
+| `REASSESS.md` | Always-On · Revisits | You say yes when `reassess` offers to save its report; the next save replaces it |
 
 Code a guide calls for, such as design tokens, scripts and tests, is ordinary project code: it lives where code belongs and is written on your go. Screenshots go to `shots/`, which stays out of git.
 
 Say "set up off the mode" again on a project that is already set up and you get its status: where things stand, and what's next on the checklist.
+
+To read the folder without opening each file, use the view: setup, `listrevisit`, `reassess` and `glossaryrevisit` end with its link. It shows the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess on one page, read in your browser.
+
+See it as a page: https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 > **Pro move:** Commit `.offthemode/` with your code. Every teammate and every AI session, in any tool, then works from the same product, rules and state.
 

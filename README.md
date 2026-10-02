@@ -23,11 +23,13 @@ Then, whenever you want:
 |---|---|---|
 | `/offthemode` | Sets up the project, or tells you where it stands | The `.offthemode/` folder, plus one line you approve so your tool loads it |
 | `/listrevisit [idea]` | Shows the checklist, or adds a new feature or idea to it | The checklist |
-| `/reassess` | Checks what's built against your core concept | Nothing: it reports |
+| `/reassess` | Checks what's built against your core concept | Only its own report, if you say so |
 | `/commentrevisit [path]` | Cleans up code comments | Comments only |
 | `/glossaryrevisit` | Refreshes a plain-words summary anyone can understand | The summary |
 
 Your normal coding sessions stay free. Nothing forces the checklist on you.
+
+See it as a page: https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 ## What goes into your project
 

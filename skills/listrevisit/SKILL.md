@@ -24,6 +24,8 @@ Show the user the fragments in order, one line each, and wait for their ok. Then
 
 Reply in at most 25 lines: progress per fragment with its Verify mode (F2 ■■■□□ 3/5 · on completion), what moved since last time and why, untracked work, risks (failing bars, items stuck at [x], blocked fragments), and the next 3 items.
 
+End with this line: See it as a page: https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+
 ## Files
 - The user's note, if any, is whatever they typed after the command.
 - Templates are in `templates/` next to this file: `templates/CHECKLIST.md`. Open one only when you are about to write that file or compare a filled file with it.

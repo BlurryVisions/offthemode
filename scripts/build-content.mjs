@@ -1,11 +1,13 @@
 // One source (content/) -> every delivery: skills/ (committed, taken straight from GitHub),
-// lib/content.generated.json (MCP server + website), public/method/ and public/skills/*.zip.
-// `--check` builds in memory and fails if skills/ on disk differs from content/. With `--committed` (CI passes it)
-// it also fails if skills/ in the last commit differs, so GitHub serves the same skills as the site.
+// lib/content.generated.json (MCP server + website), public/method/, public/view/ and public/skills/*.zip.
+// `--check` builds in memory and fails if skills/ on disk differs from content/ or the view page breaks its rules.
+// With `--committed` (CI passes it) it also fails if skills/ in the last commit differs, so GitHub serves the same
+// skills as the site.
 import { readFileSync, writeFileSync, mkdirSync, rmSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { zipSync, strToU8 } from "fflate";
 import { renderMethod } from "./render-method.mjs";
 
@@ -155,6 +157,49 @@ const cited = [...guideMap.matchAll(/\| ([a-z0-9-]+(?:, [a-z0-9-]+)*) \|$/gm)].f
 if (!cited.length) fail("RULES.md: §Guides map is missing or empty");
 for (const g of cited) if (!slugs.has(g)) fail(`RULES.md §Guides cites "${g}", which is not a method sheet`);
 
+// ---------- the view (public/view/index.html) ----------
+// The page reads a project's .offthemode/ files in the browser and must send nothing anywhere (CHECKLIST F8.5).
+// So it loads no outside script: the parser is pasted into its one module script, and a meta CSP written here
+// allows no connection and runs only the inline scripts whose hashes it lists.
+const PARSER_LINE = "/*__PARSER__*/";
+const INLINE_SCRIPT = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+// The CSP blocks these anyway; failing here keeps one from shipping and failing silently in the browser.
+const NETWORK_CALLS = [/\bfetch\s*\(/, /\bXMLHttpRequest\b/, /\bWebSocket\b/, /\bEventSource\b/, /\bsendBeacon\b/, /\bnew\s+Image\s*\(/];
+const sha256 = (text) => `'sha256-${createHash("sha256").update(text, "utf8").digest("base64")}'`;
+
+function buildView() {
+  // The browser reads CRLF as LF, so the hashes must be taken over LF text.
+  const src = read("content/site/view-page.html").replace(/\r\n?/g, "\n");
+  const parser = read("content/site/view-parse.mjs").replace(/\r\n?/g, "\n");
+  const modules = [...src.matchAll(INLINE_SCRIPT)].filter((m) => /\stype=["']?module\b/.test(m[1]));
+  if (modules.length !== 1) fail(`view-page.html: needs exactly one inline <script type="module">, found ${modules.length}`);
+  if (modules[0][2].trimStart().split("\n")[0].trim() !== PARSER_LINE) fail(`view-page.html: the module script's first statement must be the line ${PARSER_LINE}`);
+  if (src.split(PARSER_LINE).length !== 2) fail(`view-page.html: ${PARSER_LINE} must appear exactly once`);
+  if (/<script\b[^>]*\ssrc\s*=/i.test(src)) fail("view-page.html: /view must load no outside script");
+  if (/http-equiv=["']?content-security-policy/i.test(src)) fail("view-page.html: the build writes the Content-Security-Policy; remove the page's own");
+  // The CSP allows hashed <script> blocks only, so inline handlers and javascript: links would silently do nothing.
+  const markup = src.replace(INLINE_SCRIPT, "");
+  if (/<[a-z][^>]*\son[a-z]+\s*=/i.test(markup) || /javascript:/i.test(markup)) fail("view-page.html: no inline event handlers or javascript: links (the CSP blocks them); use addEventListener in the module script");
+  if (/^\s*import\b/m.test(parser) || /<\/script/i.test(parser)) fail("view-parse.mjs: is pasted into the page, so it can't import or contain </script");
+  const page = src.replace(/^[ \t]*\/\*__PARSER__\*\/[ \t]*$/m, () => parser.replace(/^export /gm, "").trimEnd());
+  if (page.includes(PARSER_LINE)) fail(`view-page.html: ${PARSER_LINE} must be a line of its own`);
+  for (const re of NETWORK_CALLS) {
+    const hit = page.match(re);
+    if (hit) fail(`view-page.html or view-parse.mjs: holds a network call (${hit[0]}); the view reads files only and sends nothing`);
+  }
+  const hashes = [...page.matchAll(INLINE_SCRIPT)].map((m) => sha256(m[2]));
+  const csp = `default-src 'none'; script-src ${hashes.join(" ")}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'`;
+  const head = page.match(/<head\b[^>]*>/i);
+  if (!head) fail("view-page.html: no <head>");
+  const at = head.index + head[0].length;
+  const html = `${page.slice(0, at)}\n<meta http-equiv="Content-Security-Policy" content="${csp}">${page.slice(at)}`;
+  // Browsers look for the charset in the first 1024 bytes, and the CSP line now comes before it.
+  const charset = html.match(/<meta charset=[^>]*>/i);
+  if (!charset || Buffer.byteLength(html.slice(0, charset.index + charset[0].length)) > 1024) fail("view-page.html: <meta charset> must come early in <head>, within the first 1024 bytes");
+  return { html, scripts: hashes.length };
+}
+const view = buildView();
+
 // ---------- skills ----------
 // Only the keys the Agent Skills spec allows (the skill-creator validator's list); claude.ai rejects an upload
 // with any other key.
@@ -273,7 +318,7 @@ if (CHECK) {
     const stale = diff(skills, committed);
     if (stale.length) fail(`skills/ matches content/, but the last commit doesn't (${stale.length} files, e.g. ${stale.slice(0, 3).join(", ")}). Commit skills/ with the content/ change, so GitHub serves the same skills as the site.`);
   }
-  console.log(`build-content: ok · ${commands.length} commands, ${Object.keys(templates).length} templates, ${sheets.length} sheets, skills/ in sync${committed ? " and committed" : COMMITTED ? " (not a git repo: commit check skipped)" : ""}`);
+  console.log(`build-content: ok · ${commands.length} commands, ${Object.keys(templates).length} templates, ${sheets.length} sheets, skills/ in sync${committed ? " and committed" : COMMITTED ? " (not a git repo: commit check skipped)" : ""}, /view: ${view.scripts} script${view.scripts === 1 ? "" : "s"} pinned by hash, no network call`);
   console.log(`build-content: working rules in ${withRules.length} guides, largest ${(largestRules / 1024).toFixed(1)} KB · §Guides cites ${new Set(cited).size} of ${sheets.length} guides (not cited: ${uncited.join(", ")})`);
   process.exit(0);
 }
@@ -325,4 +370,8 @@ const html =
 mkdirSync(join(ROOT, "public/method"), { recursive: true });
 writeFileSync(join(ROOT, "public/method/index.html"), html);
 
-console.log(`build-content: ${commands.length} commands, ${Object.keys(templates).length} templates, ${sheets.length} sheets (${withRules.length} with working rules) -> skills/ (${Object.keys(skills).length} files), lib/content.generated.json, public/method (${counts.prompts} prompts, ${counts.files} file templates), public/skills (${commands.length + 1} zips)`);
+// ---------- public/view/index.html ----------
+mkdirSync(join(ROOT, "public/view"), { recursive: true });
+writeFileSync(join(ROOT, "public/view/index.html"), view.html);
+
+console.log(`build-content: ${commands.length} commands, ${Object.keys(templates).length} templates, ${sheets.length} sheets (${withRules.length} with working rules) -> skills/ (${Object.keys(skills).length} files), lib/content.generated.json, public/method (${counts.prompts} prompts, ${counts.files} file templates), public/view (${view.scripts} script${view.scripts === 1 ? "" : "s"} pinned by hash), public/skills (${commands.length + 1} zips)`);

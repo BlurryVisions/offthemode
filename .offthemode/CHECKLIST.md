@@ -1,5 +1,5 @@
 # Checklist · Off the Mode
-Last revisit: 2026-10-01 · Verified 29/50
+Last revisit: 2026-10-02 · Verified 32/57
 
 A map, not a gate. Build in any order; /listrevisit reconciles and updates this file.
 Marks: [ ] todo · [~] in progress · [x] built, not proven · [v] verified, evidence cited · [-] dropped, reason kept
@@ -81,6 +81,16 @@ For the person: they pick their tool and are done in one step, on any device.
 - [-] F7.7 the home page's script weight within a budget · dropped 2026-09-30: Off the Mode sets no size limits; how minimal or comprehensive a product is stays its builder's call (DECISIONS D-005)
 - [ ] F7.Q Quality bars met for F7 · evidence:
 
+### F8 · The view: your project at a glance · depends on: F7 · Verify: early
+For the person: they open one page and see where their project stands: the checklist, the plan, the decisions and the last reassess, without reading markdown.
+- [x] F8.1 open a project's .offthemode/ folder at offthemode.vercel.app/view · done when: the folder opens in Chrome, Safari and Firefox and this repo's own .offthemode/ renders with no error · guide: p5-navigation-flows · evidence: Chrome: both this repo's and Supersense's folders loaded into /view through the file input (CDP DOM.setFileInputFiles, 2026-10-02); Safari, Firefox, the folder dialog and drag and drop not tried yet
+- [v] F8.2 the checklist as a progress board · done when: every fragment, mark and the verified count match a script's parse of the same CHECKLIST.md · guide: p3-visual-language · evidence: page = parser = CHECKLIST.md header: stamp 29/57 and legend 29 · 10 · 3 · 15 · 3 dropped for this repo, 0/61 for Supersense (shoot.mjs measures, 2026-10-02); npm run test:view compares parser and header
+- [x] F8.3 plan, plain summary, decisions and where things stand, each on its own panel · done when: each panel shows its file's sections for this repo and for Supersense · guide: p3-visual-language · evidence: the page agent's run drew every panel for both folders (2026-10-02); not looked at panel by panel by a second reader
+- [x] F8.4 the latest reassess result · done when: reassess saves its report to .offthemode/REASSESS.md on the user's go, and the view shows its alignment and gaps · guide: none · evidence: reassess offers the save to .offthemode/REASSESS.md on a go; the view ticked 'on course' from a test REASSESS.md (2026-10-02); no real reassess run has saved one yet
+- [v] F8.5 nothing leaves the computer · done when: the page's Content-Security-Policy has connect-src 'none' and the network panel shows no request carrying file content · guide: p7-security-hardening · evidence: public/view/index.html carries a CSP meta with connect-src 'none' and hashed scripts (npm run test:view); the network log shows only page and font loads, none after a folder is opened, and a test fetch() was blocked (2026-10-02)
+- [v] F8.6 the commands point to the view · done when: listrevisit, reassess and glossaryrevisit end with the view link, and setup's last step names it · guide: always-on-words-voice · evidence: listrevisit, reassess and glossaryrevisit end with the view line, and setup's last step names it (grep of content/commands, 2026-10-02)
+- [ ] F8.Q Quality bars met for F8 · evidence:
+
 ## Foundation (keep only what this product needs)
 - [v] B1 Rules and memory in place: .offthemode/RULES.md and STATE.md filled · done when: a fresh session can say what the project is and what's next, and RULES.md has every section of the current template · evidence: a fresh agent reading only RULES.md and STATE.md named the project, the next step and what is waiting (2026-09-30)
 - [v] B2 Ready to host: deployed on Vercel; no database, so no migrations · done when: a preview deploy starts and serves the core journey · evidence: production deploy of commit 1939a47 is Ready and serves / , /method and /mcp; the live MCP test passes (2026-09-30)
@@ -120,3 +130,5 @@ Dropped: (native) frame budget, because there is no native app · (UI) empty, lo
 - 2026-09-30 · revisit: 13 items verified with the checks cited; F6.2 and F6.3 back to [x], since an on-completion fragment stays unverified until its end-to-end run; untracked: CI actions moved from v4 to v7
 - 2026-09-30 · F3.5 to [x]: descriptions cut to claude.ai's 200-character limit and a build check added; the real upload waits for a personal account
 - 2026-10-01 · Supersense trial recorded: F5.3 and F6.4 verified end to end; F5.5 measured at 5 replies (not met); F5.7 1 of 3; the time promise now depends on project size (D-009)
+- 2026-10-02 · added F8, the view: the author asked for a page instead of chat-only views; reassess may save its report to .offthemode/REASSESS.md on the user's go
+- 2026-10-02 · F8 built: F8.2, F8.5 and F8.6 verified; F8.1, F8.3 and F8.4 built, not proven (Safari, Firefox and a real reassess save still to try)

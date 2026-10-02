@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The view · Off the Mode</title>
+<meta name="description" content="Open your project's .offthemode folder and see where it stands: the checklist, the plan, the decisions and the last reassess. The files stay on this computer.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,300..700&family=Schibsted+Grotesk:ital,wght@0,400..800;1,400..600&family=Fragment+Mono&display=swap">
+<style>
+/* One file on purpose, over max_file_lines: /view loads no outside script (CHECKLIST F8.5), so the page, its styles
+   and its one module script travel together and the build pins that script by hash. Drawing-set tokens as in
+   app/globals.css; the sheet is direction A ("Stamped Sheet") with C's revisit stamp. */
+:root{
+  color-scheme: light;
+  --paper:#edefea; --paper-raised:#f5f6f2;
+  --ink:#1a2457; --ink-soft:#465080; --ink-faint:#8a91b0;
+  --line:#c6cbd8; --line-strong:#1a2457;
+  --grid:rgba(26,36,87,.07);
+  --red:#c4311c; --red-wash:rgba(196,49,28,.07);
+
+  --f-display:"Martian Mono", ui-monospace, monospace;
+  --f-body:"Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --f-data:"Fragment Mono", ui-monospace, monospace;
+  --wdth-narrow:75%; --wdth-mid:87.5%; --wdth-wide:112.5%;
+  --wt-regular:400; --wt-mid:500; --wt-semi:600; --wt-bold:700;
+
+  --fs-0:10px; --fs-1:11px; --fs-2:12px; --fs-3:13px; --fs-4:14px; --fs-5:16px;
+  --fs-6:18px; --fs-7:21px; --fs-8:28px; --fs-9:40px; --fs-10:56px;
+  --lh-tight:1.12; --lh-data:1.35; --lh-item:1.45; --lh-body:1.55; --lh-read:1.6;
+  --track-label:.07em; --track-title:.04em; --track-none:0;
+
+  --s-0:1px; --s-1:2px; --s-2:4px; --s-3:6px; --s-4:8px; --s-5:12px; --s-6:16px;
+  --s-7:24px; --s-8:32px; --s-9:48px; --s-10:72px; --s-11:112px;
+
+  --w-hair:1px; --w-mid:1.5px; --w-heavy:2px; --w-border:3px;
+  --page-pad:20px; --zone-band:26px;
+  --mk:12px; --mk-key:11px; --bub:38px; --tag:22px;
+  --measure:68ch;
+
+  --stamp-tilt:-2.5deg; --stamp-max:360px; --stamp-from-tilt:-7deg; --stamp-from-scale:1.22;
+  --stamp2-tilt:1.6deg;
+  --t-stamp:380ms; --t-stamp-delay:220ms;
+  --ease-out:cubic-bezier(.16,.84,.3,1);
+
+  --round:50%;
+  --u-offset:.18em; --fs-inline:.92em; --o-muted:.62; --dash:3 2;
+  --hatch:repeating-linear-gradient(135deg, var(--ink) 0 var(--w-hair), transparent var(--w-hair) calc(var(--w-hair) * 3));
+  --half:linear-gradient(90deg, var(--ink) 50%, transparent 50%);
+  --cloud-r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --paper:#0e2242; --paper-raised:#132a50;
+    --ink:#e4ecf8; --ink-soft:#a8bad8; --ink-faint:#6f86ad;
+    --line:#2b4674; --line-strong:#cfdbee;
+    --grid:rgba(207,219,238,.055);
+    --red:#ff8f70; --red-wash:rgba(255,143,112,.09);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --paper:#0e2242; --paper-raised:#132a50;
+  --ink:#e4ecf8; --ink-soft:#a8bad8; --ink-faint:#6f86ad;
+  --line:#2b4674; --line-strong:#cfdbee;
+  --grid:rgba(207,219,238,.055);
+  --red:#ff8f70; --red-wash:rgba(255,143,112,.09);
+}
+
+/* base */
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--paper)}
+body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--f-body); font-size:var(--fs-5); line-height:var(--lh-body);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility}
+a{color:inherit; text-decoration-thickness:var(--w-hair); text-underline-offset:var(--u-offset)}
+a:hover{text-decoration-thickness:var(--w-heavy)}
+:focus-visible{outline:var(--w-heavy) solid var(--ink); outline-offset:var(--s-1)}
+.pname:focus{outline:none}
+button{font:inherit; color:inherit}
+code{font-family:var(--f-data); font-size:var(--fs-inline); letter-spacing:var(--track-none)}
+p{margin:0}
+h1,h2,h3,h4{margin:0; font-weight:inherit}
+ol,ul{margin:0; padding:0}
+.sr{position:absolute; width:var(--s-0); height:var(--s-0); overflow:hidden; clip-path:inset(50%); white-space:nowrap}
+.defs{position:absolute; width:0; height:0; overflow:hidden}
+.lab{display:block; font-family:var(--f-display); font-stretch:var(--wdth-narrow); font-size:var(--fs-0); font-weight:var(--wt-mid);
+  line-height:var(--lh-data); letter-spacing:var(--track-label); text-transform:uppercase; color:var(--ink-soft)}
+
+/* the sheet: trim line, zone band, heavy border, 12 columns */
+.paper{padding:var(--page-pad)}
+.trim{position:relative; border:var(--w-hair) solid var(--line); padding:var(--zone-band) var(--s-4) var(--s-4) var(--zone-band)}
+.zx{position:absolute; top:0; left:calc(var(--zone-band) + var(--w-border)); right:calc(var(--s-4) + var(--w-border)); height:var(--zone-band);
+  display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); list-style:none; pointer-events:none}
+.zx li{border-left:var(--w-hair) solid var(--line); font-family:var(--f-data); font-size:var(--fs-1); color:var(--ink-faint); display:flex; align-items:center; justify-content:center}
+.zx li:last-child{border-right:var(--w-hair) solid var(--line)}
+.frame{position:relative; border:var(--w-border) solid var(--line-strong); display:grid; grid-template-columns:repeat(12,minmax(0,1fr));
+  background-image:linear-gradient(90deg, var(--grid) 0 var(--w-hair), transparent var(--w-hair)); background-size:calc(100% / 12) 100%}
+.board-wrap{grid-column:1 / 10; grid-row:1; min-width:0}
+.tb{grid-column:10 / 13; grid-row:1; min-width:0; border-left:var(--w-heavy) solid var(--line-strong); background:var(--paper)}
+.rest{grid-column:1 / 13; grid-row:2; min-width:0}
+.zone{position:relative; padding:var(--s-8) 0 var(--s-9); border-top:var(--w-hair) solid var(--line-strong)}
+.board-wrap .zone{border-top:0}
+.zl{position:absolute; top:calc(-1 * var(--w-hair)); left:calc(-1 * (var(--zone-band) + var(--w-border))); width:var(--zone-band); padding-top:var(--s-3);
+  text-align:center; border-top:var(--w-hair) solid var(--line-strong); font-family:var(--f-data); font-size:var(--fs-1); color:var(--ink-faint)}
+.board-wrap .zl{border-top:0}
+
+/* view title: bubble, underlined title, scale line */
+.vt{display:flex; align-items:flex-start; gap:var(--s-5); padding:0 var(--s-6) var(--s-7)}
+.bub{flex:none; display:inline-grid; place-items:center; width:var(--bub); height:var(--bub); border:var(--w-mid) solid var(--line-strong); border-radius:var(--round);
+  font-family:var(--f-display); font-stretch:var(--wdth-mid); font-weight:var(--wt-semi); font-size:var(--fs-3); line-height:1; background:var(--paper)}
+.vt-t{flex:1; min-width:0}
+.vt h2{font-family:var(--f-display); font-stretch:var(--wdth-wide); font-weight:var(--wt-semi); font-size:var(--fs-7); line-height:var(--lh-tight);
+  letter-spacing:var(--track-title); text-transform:uppercase; padding:var(--s-1) 0 var(--s-3); border-bottom:var(--w-heavy) solid var(--line-strong)}
+.vt-meta{padding-top:var(--s-3); font-family:var(--f-data); font-size:var(--fs-2); color:var(--ink-soft); overflow-wrap:anywhere}
+
+/* label left, content right, on the column grid */
+.lr{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); padding:var(--s-6) 0; border-top:var(--w-hair) solid var(--line)}
+.lr > .l{grid-column:1 / 3; padding:0 var(--s-6)}
+.lr > .r{grid-column:3 / 10; padding:0 var(--s-6); min-width:0; overflow-wrap:anywhere}
+.board-wrap .lr{grid-template-columns:repeat(9,minmax(0,1fr))}
+.l h3{font-family:var(--f-display); font-stretch:var(--wdth-narrow); font-size:var(--fs-1); font-weight:var(--wt-mid); letter-spacing:var(--track-label);
+  text-transform:uppercase; color:var(--ink-soft); line-height:var(--lh-data)}
+.l .sub{display:block; margin-top:var(--s-2); font-size:var(--fs-2); line-height:var(--lh-data); color:var(--ink-faint)}
+
+/* marks: verified solid, built hatched, doing half, to do open, dropped struck through a dashed outline */
+.mk{position:relative; display:inline-block; flex:none; width:var(--mk); height:var(--mk); border:var(--w-hair) solid var(--ink)}
+.mk-verified{background:var(--ink)}
+.mk-built{background:var(--hatch)}
+.mk-doing{background:var(--half)}
+.mk-todo{border-color:var(--ink-soft)}
+.mk-dropped{border-style:dashed; border-color:var(--ink-faint)}
+.mk-dropped::after{content:""; position:absolute; left:calc(-1 * var(--s-1)); right:calc(-1 * var(--s-1)); top:50%; height:var(--w-heavy); margin-top:calc(var(--w-heavy) / -2); background:var(--ink-soft)}
+.hex,.delta{width:var(--tag); height:var(--tag); flex:none; overflow:visible; vertical-align:middle}
+.hex path,.delta path{fill:var(--paper); stroke:currentColor; stroke-width:var(--w-mid)}
+.hex text,.delta text{fill:currentColor; font-family:var(--f-data); font-size:var(--fs-3); text-anchor:middle}
+.delta text{font-size:var(--fs-2)}
+.delta.pending path{stroke-dasharray:var(--dash)}
+.delta.red{color:var(--red)}
+.delta.big{width:calc(var(--tag) * 1.4); height:calc(var(--tag) * 1.4)}
+
+/* title block */
+.tb-top{display:flex; flex-direction:column}
+.cell{padding:var(--s-5) var(--s-6) var(--s-6); border-top:var(--w-hair) solid var(--line-strong); min-width:0}
+.tb-top > .cell:first-child{border-top:0}
+.cell > .lab{margin-bottom:var(--s-4)}
+.cell-head{display:flex; justify-content:space-between; align-items:baseline; gap:var(--s-4); margin-bottom:var(--s-3)}
+.pname{font-family:var(--f-display); font-stretch:var(--wdth-wide); font-weight:var(--wt-semi); font-size:var(--fs-8); line-height:var(--lh-tight); overflow-wrap:anywhere}
+.psub{margin-top:var(--s-3); font-size:var(--fs-3); line-height:var(--lh-data); color:var(--ink-soft)}
+.btn-quiet{border:0; background:none; padding:0; font-size:var(--fs-2); line-height:var(--lh-data); text-decoration:underline; text-underline-offset:var(--u-offset); cursor:pointer; white-space:nowrap}
+.cell-missing{background:var(--paper-raised)}
+.missing{list-style:none; display:grid; gap:var(--s-3); font-size:var(--fs-3); line-height:var(--lh-item)}
+.missing li{padding-left:var(--s-5); border-left:var(--w-heavy) dashed var(--ink-soft)}
+.missing b{font-family:var(--f-data); font-weight:var(--wt-regular)}
+
+/* the review stamp, the one moment that moves; the revisit stamp beside it is still */
+.cell-stamp{padding-bottom:var(--s-6)}
+.stamps{display:flex; flex-direction:column; align-items:flex-end; gap:var(--s-4)}
+.stamp{align-self:stretch; color:var(--red); border:var(--w-border) solid currentColor; outline:var(--w-hair) solid currentColor; outline-offset:calc(-1 * var(--s-3));
+  padding:var(--s-5) var(--s-5) var(--s-4); margin:var(--s-2) var(--s-4) 0; max-width:var(--stamp-max); transform:rotate(var(--stamp-tilt)); transform-origin:50% 60%;
+  filter:url(#ink); font-family:var(--f-display); font-stretch:var(--wdth-wide); text-transform:uppercase}
+.stamp.landing{animation:stamp-in var(--t-stamp) var(--ease-out) var(--t-stamp-delay) both}
+@keyframes stamp-in{
+  0%{opacity:0; transform:rotate(var(--stamp-from-tilt)) scale(var(--stamp-from-scale))}
+  45%{opacity:1}
+  100%{opacity:1; transform:rotate(var(--stamp-tilt)) scale(1)}
+}
+.st-head{display:flex; justify-content:space-between; gap:var(--s-4); padding:0 var(--s-2) var(--s-3); font-size:var(--fs-0); font-weight:var(--wt-semi);
+  letter-spacing:var(--track-label); border-bottom:var(--w-hair) solid currentColor}
+.st-count{display:flex; align-items:baseline; gap:var(--s-3); padding:var(--s-4) var(--s-2) var(--s-3); border-bottom:var(--w-hair) solid currentColor}
+.st-count b{font-size:var(--fs-10); font-weight:var(--wt-bold); line-height:1}
+.st-count .of{font-size:var(--fs-8); font-weight:var(--wt-semi); line-height:1}
+.st-count .w{margin-left:auto; font-size:var(--fs-1); font-weight:var(--wt-semi); letter-spacing:var(--track-label); align-self:flex-end}
+.st-made{padding:var(--s-3) var(--s-2); font-size:var(--fs-0); letter-spacing:var(--track-label); border-bottom:var(--w-hair) solid currentColor; font-weight:var(--wt-mid)}
+.st-opts{list-style:none; padding:var(--s-3) var(--s-2) var(--s-2); display:grid; gap:var(--s-2)}
+.st-opts li{display:flex; align-items:center; gap:var(--s-4); font-size:var(--fs-2); font-weight:var(--wt-semi); letter-spacing:var(--track-title)}
+.st-opts li.off{opacity:var(--o-muted)}
+.st-box{position:relative; width:var(--s-6); height:var(--s-6); border:var(--w-mid) solid currentColor; flex:none}
+.st-box svg{position:absolute; inset:calc(-1 * var(--s-2)); width:calc(100% + var(--s-4)); height:calc(100% + var(--s-4)); overflow:visible}
+.st-box path{fill:none; stroke:currentColor; stroke-width:var(--w-border); stroke-linecap:round}
+.st-foot{margin-top:var(--s-3); padding:var(--s-3) var(--s-2) 0; border-top:var(--w-hair) solid currentColor; font-size:var(--fs-0); letter-spacing:var(--track-label); font-weight:var(--wt-semi)}
+.stamp2{display:inline-flex; flex-direction:column; align-items:center; gap:var(--s-2); margin:0 var(--s-5) 0 0; padding:var(--s-3) var(--s-6);
+  color:var(--red); border:var(--s-2) double currentColor; transform:rotate(var(--stamp2-tilt)); filter:url(#ink);
+  font-family:var(--f-display); text-transform:uppercase; text-align:center}
+.stamp2 .k{font-size:var(--fs-0); font-weight:var(--wt-semi); font-stretch:var(--wdth-wide); letter-spacing:var(--track-label); line-height:var(--lh-data)}
+.stamp2 .d{font-size:var(--fs-8); font-weight:var(--wt-bold); font-stretch:var(--wdth-narrow); line-height:1; padding:var(--s-2) var(--s-3) var(--s-1);
+  border-top:var(--w-hair) solid currentColor; border-bottom:var(--w-hair) solid currentColor}
+.st-note{margin-top:var(--s-6); font-size:var(--fs-3); line-height:var(--lh-item); color:var(--ink-soft)}
+
+/* keyed notes: what to do next */
+.keyed{list-style:none; display:grid; gap:var(--s-4)}
+.keyed li{display:grid; grid-template-columns:var(--tag) 1fr; gap:var(--s-4); align-items:start; font-size:var(--fs-4); line-height:var(--lh-item); overflow-wrap:anywhere}
+.keyed li:first-child p{font-weight:var(--wt-semi)}
+.keyed .hex{margin-top:var(--s-0)}
+
+/* key plan */
+.kp{list-style:none; display:grid; gap:var(--s-1)}
+.kp a{display:grid; grid-template-columns:calc(var(--fs-2) * 2.4) 1fr auto; align-items:center; gap:var(--s-4); text-decoration:none; padding:var(--s-1) 0}
+.kp a:hover .kp-id,.kp a:focus-visible .kp-id{text-decoration:underline}
+.kp-id{font-family:var(--f-data); font-size:var(--fs-2)}
+.kp-cells{display:flex; flex-wrap:wrap; gap:var(--s-2) var(--s-1)}
+.kp-cells .mk{width:var(--mk-key); height:var(--mk-key)}
+.kp-n{font-family:var(--f-data); font-size:var(--fs-1); color:var(--ink-soft); text-align:right; min-width:calc(var(--fs-1) * 3.4)}
+.legend{list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:var(--s-2) var(--s-5); margin-top:var(--s-5); padding-top:var(--s-4); border-top:var(--w-hair) solid var(--line)}
+.legend li{display:flex; align-items:center; gap:var(--s-3); font-size:var(--fs-2); line-height:var(--lh-data)}
+.legend .n{margin-left:auto; font-family:var(--f-data); font-size:var(--fs-2)}
+.scale{margin-top:var(--s-4); font-family:var(--f-data); font-size:var(--fs-1); color:var(--ink-soft)}
+
+/* fields, revisions, drawing index, general notes */
+.fields{display:grid; grid-template-columns:1fr 1fr; border-top:var(--w-hair) solid var(--line-strong)}
+.fields > div{padding:var(--s-4) var(--s-6) var(--s-5); border-bottom:var(--w-hair) solid var(--line); min-width:0}
+.fields > div:nth-child(odd){border-right:var(--w-hair) solid var(--line)}
+.fields .v{font-family:var(--f-data); font-size:var(--fs-3); line-height:var(--lh-data); margin-top:var(--s-1); overflow-wrap:anywhere}
+.fields .v small{display:block; font-family:var(--f-body); font-size:var(--fs-2); color:var(--ink-soft)}
+.fields .wide{grid-column:1 / -1; border-right:0 !important}
+.paper-set{display:flex; gap:var(--s-2); margin-top:var(--s-2)}
+.paper-set button{border:var(--w-hair) solid var(--line-strong); background:transparent; padding:var(--s-1) var(--s-4); font-family:var(--f-data); font-size:var(--fs-2); cursor:pointer}
+.paper-set button[aria-pressed="true"]{background:var(--ink); color:var(--paper)}
+.revs{width:100%; border-collapse:collapse; font-size:var(--fs-3); line-height:var(--lh-data)}
+.revs th{text-align:left; padding:0 var(--s-3) var(--s-3) 0; border-bottom:var(--w-hair) solid var(--line-strong)}
+.revs th .lab{display:inline}
+.revs td{vertical-align:top; padding:var(--s-3) var(--s-3) var(--s-3) 0; border-bottom:var(--w-hair) solid var(--line); overflow-wrap:anywhere}
+.revs td.d{font-family:var(--f-data); font-size:var(--fs-1); white-space:nowrap; color:var(--ink-soft)}
+.revs td.n{width:var(--tag)}
+.index{list-style:none; display:grid}
+.index a,.index span.row{display:grid; grid-template-columns:var(--s-6) 1fr auto; gap:var(--s-4); padding:var(--s-2) 0; text-decoration:none; font-size:var(--fs-3); line-height:var(--lh-data); border-bottom:var(--w-hair) solid var(--line)}
+.index a:hover .t{text-decoration:underline}
+.index .z{font-family:var(--f-data); font-size:var(--fs-2)}
+.index .f{font-family:var(--f-data); font-size:var(--fs-1); color:var(--ink-soft); text-align:right}
+.index .gone,.index .gone .f{color:var(--ink-faint)}
+.gnotes{list-style:none; counter-reset:gn; display:grid; gap:var(--s-3); font-size:var(--fs-3); line-height:var(--lh-item); color:var(--ink-soft)}
+.gnotes li{counter-increment:gn; display:grid; grid-template-columns:calc(var(--fs-2) * 2) 1fr; gap:var(--s-3); overflow-wrap:anywhere}
+.gnotes li::before{content:counter(gn); font-family:var(--f-data); font-size:var(--fs-2); color:var(--ink)}
+
+/* the board */
+.core-lr .r p{font-size:var(--fs-6); line-height:var(--lh-body); max-width:var(--measure)}
+.bay{position:relative; display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); border-top:var(--w-hair) solid var(--line)}
+.bay-meta{grid-column:1 / 3; padding:var(--s-6) var(--s-6) var(--s-7); min-width:0}
+.bay-head{display:flex; align-items:center; gap:var(--s-4); margin-bottom:var(--s-4)}
+.bay-count{font-family:var(--f-data); font-size:var(--fs-2); color:var(--ink-soft); line-height:var(--lh-data)}
+.bay h3{font-size:var(--fs-5); font-weight:var(--wt-semi); line-height:var(--lh-tight)}
+.bay-meta dl{margin:var(--s-6) 0 0; display:grid; gap:var(--s-4)}
+.bay-meta dd{margin:var(--s-1) 0 0; font-size:var(--fs-3); line-height:var(--lh-item)}
+.bay-meta dd.for{font-style:italic}
+.items{grid-column:3 / 10; list-style:none; padding:var(--s-5) 0 var(--s-6); min-width:0}
+.it > details > summary,.it > .row{display:grid; grid-template-columns:var(--mk) calc(var(--fs-2) * 3.6) minmax(0,1fr) auto; column-gap:var(--s-4);
+  align-items:start; padding:var(--s-2) var(--s-6) var(--s-2) var(--s-5); list-style:none; cursor:pointer; font-size:var(--fs-4); line-height:var(--lh-item)}
+.it > .row{cursor:default}
+.it > details > summary::-webkit-details-marker{display:none}
+.it > details > summary:hover{background:var(--paper-raised)}
+.it .mk{margin-top:calc((var(--fs-4) * var(--lh-item) - var(--mk)) / 2)}
+.it-id{font-family:var(--f-data); font-size:var(--fs-2); color:var(--ink-soft); padding-top:var(--s-0)}
+.it-text{min-width:0; overflow-wrap:anywhere}
+.it.m-dropped .it-text{text-decoration:line-through; text-decoration-color:var(--ink-faint); color:var(--ink-soft)}
+.it.m-verified .it-id{color:var(--ink)}
+.it-tags{display:flex; gap:var(--s-2); align-items:center; min-height:calc(var(--fs-4) * var(--lh-item))}
+.plus{font-family:var(--f-data); font-size:var(--fs-3); color:var(--ink-faint); width:var(--s-5); text-align:center}
+details[open] > summary .plus{color:var(--ink)}
+.hold{display:block; margin-top:var(--s-1); font-size:var(--fs-3); color:var(--ink-soft)}
+.hold b{font-family:var(--f-display); font-stretch:var(--wdth-narrow); font-size:var(--fs-0); font-weight:var(--wt-semi); letter-spacing:var(--track-label);
+  text-transform:uppercase; border:var(--w-hair) solid var(--ink-soft); padding:0 var(--s-2); margin-right:var(--s-3); color:var(--ink)}
+.it.next > details > summary,.it.next > .row{background:var(--paper-raised)}
+.it-detail{margin:var(--s-1) var(--s-6) var(--s-5) calc(var(--s-5) + var(--mk) + var(--s-4)); padding:var(--s-2) 0 var(--s-2) var(--s-5);
+  border-left:var(--w-heavy) solid var(--line-strong); display:grid; grid-template-columns:auto 1fr; gap:var(--s-3) var(--s-5); font-size:var(--fs-3); line-height:var(--lh-item)}
+.it-detail dt{padding-top:var(--s-0)}
+.it-detail dd{margin:0; min-width:0; overflow-wrap:anywhere}
+.it-detail dd.g{font-family:var(--f-data); font-size:var(--fs-2)}
+.it-detail .none{color:var(--ink-faint)}
+.ref{font-family:var(--f-data); font-size:var(--fs-inline); text-decoration-style:dotted}
+.ref-d{white-space:nowrap}
+/* revision cloud: red scallops around what the latest revision touched */
+.cloud{position:relative}
+.cloud::before{content:""; position:absolute; inset:var(--s-2) var(--s-3); pointer-events:none; background:
+  radial-gradient(circle at 50% 100%, transparent calc(var(--cloud-r) - var(--w-mid)), var(--red) calc(var(--cloud-r) - var(--w-mid)) var(--cloud-r), transparent var(--cloud-r)) top left / calc(var(--cloud-r) * 2) var(--cloud-r) repeat-x,
+  radial-gradient(circle at 50% 0, transparent calc(var(--cloud-r) - var(--w-mid)), var(--red) calc(var(--cloud-r) - var(--w-mid)) var(--cloud-r), transparent var(--cloud-r)) bottom left / calc(var(--cloud-r) * 2) var(--cloud-r) repeat-x,
+  radial-gradient(circle at 100% 50%, transparent calc(var(--cloud-r) - var(--w-mid)), var(--red) calc(var(--cloud-r) - var(--w-mid)) var(--cloud-r), transparent var(--cloud-r)) top left / var(--cloud-r) calc(var(--cloud-r) * 2) repeat-y,
+  radial-gradient(circle at 0 50%, transparent calc(var(--cloud-r) - var(--w-mid)), var(--red) calc(var(--cloud-r) - var(--w-mid)) var(--cloud-r), transparent var(--cloud-r)) top right / var(--cloud-r) calc(var(--cloud-r) * 2) repeat-y}
+.cloud > .items{padding-right:var(--s-4)}
+.bay.cloud > .cloud-tag{position:absolute; z-index:1; top:calc(var(--s-2) - var(--tag) * .7 + var(--w-hair)); right:var(--s-9); line-height:0}
+details.fold > summary{cursor:pointer; list-style:none; display:inline-flex; gap:var(--s-3); align-items:baseline; font-size:var(--fs-4)}
+details.fold > summary::-webkit-details-marker{display:none}
+details.fold[open] > summary{margin-bottom:var(--s-5)}
+
+/* the zones below the board */
+.now .r{font-size:var(--fs-6); line-height:var(--lh-body); max-width:var(--measure)}
+.now .r p + p{margin-top:var(--s-4)}
+.notes{list-style:none; counter-reset:nt; display:grid; gap:var(--s-4); max-width:var(--measure); font-size:var(--fs-4); line-height:var(--lh-item)}
+.notes li{counter-increment:nt; display:grid; grid-template-columns:calc(var(--fs-2) * 2.2) 1fr; gap:var(--s-3)}
+.notes li::before{content:counter(nt) "."; font-family:var(--f-data); font-size:var(--fs-2); color:var(--ink-soft); padding-top:var(--s-0)}
+.pointer{font-size:var(--fs-4); line-height:var(--lh-item); max-width:var(--measure)}
+.pointer a{font-family:var(--f-data); font-size:var(--fs-3)}
+.prose{font-size:var(--fs-4); line-height:var(--lh-body); max-width:var(--measure)}
+.prose > * + *{margin-top:var(--s-4)}
+.prose ul,.prose ol{padding-left:var(--s-6)}
+.prose li + li{margin-top:var(--s-2)}
+.prose li > ul,.prose li > ol{margin-top:var(--s-2)}
+.prose h4{font-family:var(--f-display); font-stretch:var(--wdth-narrow); font-size:var(--fs-1); font-weight:var(--wt-semi); letter-spacing:var(--track-label); text-transform:uppercase; color:var(--ink-soft)}
+.prose pre{margin:0; padding:var(--s-4) var(--s-5); background:var(--paper-raised); border-left:var(--w-heavy) solid var(--line); overflow-x:auto; font-size:var(--fs-3)}
+strong{font-weight:var(--wt-semi)}
+.tbl-wrap{overflow-x:auto; max-width:100%}
+.prose table,.sched{border-collapse:collapse; width:100%; font-size:var(--fs-3); line-height:var(--lh-data)}
+.prose th,.sched th{text-align:left; vertical-align:bottom; font-family:var(--f-display); font-stretch:var(--wdth-narrow); font-size:var(--fs-0); letter-spacing:var(--track-label);
+  text-transform:uppercase; font-weight:var(--wt-mid); color:var(--ink-soft); padding:0 var(--s-5) var(--s-3) 0; border-bottom:var(--w-hair) solid var(--line-strong)}
+.prose td,.sched td{vertical-align:top; padding:var(--s-3) var(--s-5) var(--s-3) 0; border-bottom:var(--w-hair) solid var(--line); min-width:calc(var(--fs-3) * 7)}
+.plan .l .num{display:block; font-family:var(--f-data); font-size:var(--fs-2); color:var(--ink); margin-bottom:var(--s-2)}
+.reg-head,.reg summary{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); align-items:start}
+.reg-head{padding:0 0 var(--s-3); border-bottom:var(--w-hair) solid var(--line-strong)}
+.reg-head > *,.reg summary > *{padding:0 var(--s-6); min-width:0}
+.c-rev{grid-column:1 / 3; display:flex; align-items:center; gap:var(--s-4)}
+.c-desc{grid-column:3 / 10; overflow-wrap:anywhere}
+.c-date{grid-column:10 / 11; font-family:var(--f-data); font-size:var(--fs-2); padding-top:var(--s-0)}
+.c-status{grid-column:11 / 13; font-size:var(--fs-3); line-height:var(--lh-data); padding-top:var(--s-0)}
+.reg{list-style:none}
+.reg > li{border-bottom:var(--w-hair) solid var(--line)}
+.reg summary{list-style:none; cursor:pointer; padding:var(--s-4) 0; font-size:var(--fs-4); line-height:var(--lh-item)}
+.reg summary::-webkit-details-marker{display:none}
+.reg summary:hover{background:var(--paper-raised)}
+.reg .c-rev .id{font-family:var(--f-data); font-size:var(--fs-3)}
+.reg .by{display:block; margin-top:var(--s-1); font-size:var(--fs-2); color:var(--ink-soft)}
+.reg .pending-t{font-style:italic}
+.reg-body{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); padding:0 0 var(--s-6)}
+.reg-body dl{grid-column:3 / 10; margin:0; padding:0 var(--s-6); display:grid; grid-template-columns:calc(var(--fs-2) * 7) 1fr; gap:var(--s-3) var(--s-5); font-size:var(--fs-4); line-height:var(--lh-item)}
+.reg-body dd{margin:0; max-width:var(--measure); min-width:0; overflow-wrap:anywhere}
+.plain .r{font-size:var(--fs-6); line-height:var(--lh-read); max-width:var(--measure)}
+.plain .r ul{list-style:none; display:grid; gap:var(--s-3); margin-top:var(--s-3)}
+.plain .r li{display:grid; grid-template-columns:var(--s-7) 1fr}
+.plain .r li::before{content:"—"; color:var(--ink-faint)}
+.plain .l h3{font-family:var(--f-body); font-stretch:normal; text-transform:none; letter-spacing:var(--track-none); font-size:var(--fs-4); font-weight:var(--wt-semi); color:var(--ink)}
+.ra-empty{font-size:var(--fs-6); line-height:var(--lh-body); max-width:var(--measure)}
+.ra-empty + p{margin-top:var(--s-4); font-size:var(--fs-4); color:var(--ink-soft); max-width:var(--measure)}
+.ra-filled{border-left:var(--w-border) solid var(--red); padding:var(--s-1) 0 var(--s-1) var(--s-6); max-width:var(--measure)}
+.ra-filled .al{font-family:var(--f-display); font-stretch:var(--wdth-wide); font-weight:var(--wt-semi); font-size:var(--fs-6); letter-spacing:var(--track-title); text-transform:uppercase; color:var(--red)}
+.ra-filled .prose{margin-top:var(--s-5)}
+.ra-filled .src{margin-top:var(--s-5); font-family:var(--f-data); font-size:var(--fs-2); color:var(--ink-soft)}
+.cmd{font-family:var(--f-data); font-size:var(--fs-inline); border-bottom:var(--w-hair) solid var(--line-strong)}
+
+/* entry: no folder open yet */
+.entry{padding-bottom:var(--s-10)}
+.entry-body{padding:var(--s-7) var(--s-6) 0}
+.big{font-family:var(--f-display); font-stretch:var(--wdth-wide); font-weight:var(--wt-semi); font-size:var(--fs-9); line-height:var(--lh-tight); max-width:16ch}
+.lead{margin-top:var(--s-6); font-size:var(--fs-6); line-height:var(--lh-body); color:var(--ink-soft); max-width:46ch}
+.notice{margin-top:var(--s-7); padding:var(--s-2) 0 var(--s-2) var(--s-5); border-left:var(--w-border) solid var(--ink); font-size:var(--fs-5); line-height:var(--lh-item); max-width:52ch; overflow-wrap:anywhere}
+.primary{display:inline-flex; align-items:center; gap:var(--s-5); margin-top:var(--s-8); border:var(--w-heavy) solid var(--line-strong); background:var(--ink); color:var(--paper);
+  padding:var(--s-5) var(--s-7); cursor:pointer; font-family:var(--f-display); font-stretch:var(--wdth-mid); font-weight:var(--wt-semi); font-size:var(--fs-4); letter-spacing:var(--track-title)}
+.primary:hover{background:var(--paper); color:var(--ink)}
+.primary:focus-visible{outline-offset:var(--s-2)}
+.honest{margin-top:var(--s-5); font-size:var(--fs-4); line-height:var(--lh-item); max-width:52ch}
+.tip{margin-top:var(--s-3); font-size:var(--fs-3); line-height:var(--lh-item); color:var(--ink-soft); max-width:58ch}
+.reads{margin-top:var(--s-9); max-width:calc(var(--measure) + var(--s-11))}
+.reads > .lab{margin-bottom:var(--s-4)}
+.reads ul{list-style:none; border-top:var(--w-heavy) solid var(--line-strong)}
+.reads li{display:grid; grid-template-columns:var(--s-7) calc(var(--fs-3) * 9.5) minmax(0,1fr); gap:var(--s-5); align-items:baseline; padding:var(--s-4) 0; border-bottom:var(--w-hair) solid var(--line); font-size:var(--fs-4); line-height:var(--lh-item)}
+.reads .z{font-family:var(--f-data); font-size:var(--fs-2); color:var(--ink-soft)}
+.reads .f{font-family:var(--f-data); font-size:var(--fs-3)}
+.reads .w{display:block; font-size:var(--fs-3); color:var(--ink-soft)}
+.blank{display:block; height:var(--fs-7); border-bottom:var(--w-hair) dashed var(--line)}
+.blank-stamp{min-height:calc(var(--s-11) * 1.6); border:var(--w-hair) dashed var(--line); display:flex; align-items:flex-end; padding:var(--s-4); font-size:var(--fs-3); line-height:var(--lh-item); color:var(--ink-faint)}
+.drop{position:fixed; inset:var(--s-5); z-index:5; display:none; place-items:center; pointer-events:none; border:var(--w-border) dashed var(--ink);
+  background:var(--paper); opacity:.94; font-family:var(--f-display); font-stretch:var(--wdth-wide); font-size:var(--fs-6); text-align:center; padding:var(--s-7)}
+.dropping .drop{display:grid}
+
+/* tablet: the title block's top comes first, then the board */
+@media (max-width: 1179px){
+  .frame{display:flex; flex-direction:column; background-size:calc(100% / 6) 100%}
+  .zx{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .zx li:nth-child(n+7){display:none}
+  .zx li:nth-child(6){border-right:var(--w-hair) solid var(--line)}
+  .tb{display:contents}
+  .tb-top{order:1; background:var(--paper); display:grid; grid-template-columns:1fr 1fr; border-bottom:var(--w-heavy) solid var(--line-strong)}
+  .tb-top > .cell{grid-column:1 / -1}
+  .tb-top > .cell-project{order:1} .tb-top > .cell-missing{order:2}
+  .tb-top > .cell-stamp{order:3; grid-column:1; border-right:var(--w-hair) solid var(--line-strong)}
+  .tb-top > .cell-key{order:4; grid-column:2}
+  .tb-top > .cell-next{order:5}
+  .board-wrap{order:2}
+  .tb-rest{order:3; background:var(--paper); border-top:var(--w-hair) solid var(--line-strong)}
+  .rest{order:4}
+  .is-entry .board-wrap{order:0}
+  .lr,.board-wrap .lr,.bay,.reg-head,.reg summary,.reg-body{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .lr > .l{grid-column:1 / 3} .lr > .r{grid-column:3 / 7}
+  .bay-meta{grid-column:1 / 3} .items{grid-column:3 / 7}
+  .c-rev{grid-column:1 / 2} .c-desc{grid-column:2 / 5} .c-date{grid-column:5 / 6} .c-status{grid-column:6 / 7}
+  .reg-body dl{grid-column:2 / 7}
+}
+/* phone: one column, the zone band folds away */
+@media (max-width: 719px){
+  :root{--page-pad:6px; --zone-band:0px; --fs-8:24px; --fs-9:30px; --fs-10:48px; --bub:32px}
+  .trim{border:0; padding:0}
+  .zx,.zl{display:none}
+  .frame{border-width:var(--w-heavy); background-size:calc(100% / 4) 100%}
+  .tb-top{display:flex; flex-direction:column}
+  .tb-top > .cell-stamp{border-right:0}
+  .tb-top > .cell-next{order:4} .tb-top > .cell-key{order:5}
+  .is-entry .tb-top{display:none}
+  .cell,.fields > div,.vt{padding-inline:var(--s-4)}
+  .lr,.board-wrap .lr{display:block; padding:var(--s-5) var(--s-4)}
+  .lr > .l,.lr > .r{padding:0}
+  .lr > .l{margin-bottom:var(--s-3)}
+  .bay{display:block}
+  .bay-meta{padding:var(--s-5) var(--s-4) var(--s-2)}
+  .bay-meta dl{grid-template-columns:1fr; margin-top:var(--s-4)}
+  .items{padding:0 0 var(--s-5)}
+  .it > details > summary,.it > .row{grid-template-columns:var(--mk) calc(var(--fs-2) * 3.4) minmax(0,1fr) auto; padding-inline:var(--s-4) var(--s-3); column-gap:var(--s-3)}
+  .it-detail{grid-template-columns:1fr; margin-left:var(--s-4); margin-right:var(--s-4)}
+  .reg-head{display:none}
+  .reg summary{display:grid; grid-template-columns:auto 1fr; gap:var(--s-1) var(--s-4); padding:var(--s-4)}
+  .reg summary > *{padding:0}
+  .c-rev{grid-column:1; grid-row:1 / 4}
+  .c-desc,.c-date,.c-status{grid-column:2}
+  .reg-body{display:block; padding:0 var(--s-4) var(--s-5)}
+  .reg-body dl{padding:0; grid-template-columns:1fr; gap:var(--s-1)}
+  .reg-body dd{margin-bottom:var(--s-3)}
+  .entry-body{padding:var(--s-5) var(--s-4) 0}
+  .primary{width:100%; justify-content:center}
+  .reads li{grid-template-columns:var(--s-6) minmax(0,1fr); gap:var(--s-1) var(--s-4)}
+  .reads li > :last-child{grid-column:2}
+  .bay.cloud > .cloud-tag{right:var(--s-7)}
+}
+@media (prefers-reduced-motion: reduce){ .stamp.landing{animation:none} }
+@media print{ .paper-set,.btn-quiet,.primary{display:none} }
+</style>
+</head>
+<body>
+<svg class="defs" aria-hidden="true" focusable="false">
+  <filter id="ink" x="-4%" y="-4%" width="108%" height="108%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="11" result="grain"/>
+    <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.1 1.85" result="holes"/>
+    <feComposite in="SourceGraphic" in2="holes" operator="in" result="inked"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="1" seed="4" result="warp"/>
+    <feDisplacementMap in="inked" in2="warp" scale="1.8" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+<div class="paper">
+  <div class="trim">
+    <ol class="zx" aria-hidden="true"><li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li><li>7</li><li>8</li><li>9</li><li>10</li><li>11</li><li>12</li></ol>
+    <main class="frame" id="frame"></main>
+  </div>
+</div>
+<input type="file" id="picker" class="sr" webkitdirectory multiple tabindex="-1" aria-hidden="true">
+<p class="sr" id="status" role="status" aria-live="polite"></p>
+<div class="drop" aria-hidden="true">Drop the folder to open it.<br>It stays on this computer.</div>
+<script type="module">
+/*__PARSER__*/
+// The view: draws a project's .offthemode/ notes as one sheet. Files are read with the File API, in this tab only;
+// nothing is sent anywhere (the build's CSP allows no connection). parseProject comes from view-parse.mjs above.
+
+const MARK_ORDER = ["verified", "built", "doing", "todo", "dropped"];
+const MARK_WORD = { verified: "verified", built: "built", doing: "doing", todo: "to do", dropped: "dropped" };
+const MARK_SAYS = { verified: "proven, evidence cited", built: "made, not proven yet", doing: "being made", todo: "not started", dropped: "removed, reason kept" };
+const ALIGN = ["on course", "drifting", "off course"];
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+const SETUP = "/offthemode (the setup) adds it on your go";
+// The files the sheet draws, its zone for each, and the command that writes it.
+const FILES = [
+  { zone: "A", file: "CHECKLIST.md", title: "Checklist board", shows: "every fragment and item, its mark and its proof", writer: "/listrevisit builds it from PRODUCT.md" },
+  { zone: "B", file: "STATE.md", title: "Where things stand", shows: "what is true now, the next steps, what is waiting", writer: SETUP },
+  { zone: "C", file: "PRODUCT.md", title: "The plan", shows: "who it is for, the core concept, what it refuses", writer: SETUP },
+  { zone: "D", file: "DECISIONS.md", title: "Decisions", shows: "each decision, why, and what was turned down", writer: SETUP },
+  { zone: "E", file: "GLOSSARY.md", title: "Plain summary", shows: "the project in plain words, one word for each thing", writer: "/glossaryrevisit writes it" },
+  { zone: "F", file: "REASSESS.md", title: "Reassess", shows: "the last health check: on course, drifting or off course", writer: "/reassess saves it if you say so", optional: true },
+];
+const RULES = { file: "RULES.md", writer: SETUP };
+const KNOWN = [...FILES.map((f) => f.file), RULES.file];
+const TICK = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 4.5 16 15.8M15.6 3.8 4.2 16.2"/></svg>';
+
+const root = document.documentElement;
+const frame = document.getElementById("frame");
+const picker = document.getElementById("picker");
+const status = document.getElementById("status");
+let IDX = { items: {}, frags: {}, decs: {} };
+
+/* ---------- text helpers ---------- */
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const slug = (id) => String(id).replace(/[^A-Za-z0-9-]/g, "-");
+const hex = (n) => `<svg class="hex" viewBox="0 0 24 22" role="img" aria-label="next step ${n}"><path d="M6.5 1.2h11L23 11l-5.5 9.8h-11L1 11z"/><text x="12" y="15">${n}</text></svg>`;
+const delta = (n, cls, label) => `<svg class="delta ${cls || ""}" viewBox="0 0 24 22" role="img" aria-label="${esc(label || "revision " + n)}"><path d="M12 1.2 23 20.6H1z"/><text x="12" y="17.4">${esc(n)}</text></svg>`;
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+// Item, fragment and decision ids in running text become links to where they are drawn.
+function refs(html) {
+  let inA = false;
+  return html.split(/(<[^>]+>)/).map((part) => {
+    if (part.startsWith("<")) {
+      if (/^<a[\s>]/i.test(part)) inA = true; else if (/^<\/a>/i.test(part)) inA = false;
+      return part;
+    }
+    if (inA) return part;
+    return part
+      .replace(/\b(F\d+\.(?:\d+|Q)|F\d+|B\d+)\b/g, (m) => IDX.items[m] ? `<a class="ref" href="#it-${slug(m)}">${m}</a>` : IDX.frags[m] ? `<a class="ref" href="#frag-${slug(m)}">${m}</a>` : m)
+      .replace(/\bD-\d{3}\b/g, (m) => IDX.decs[m] ? `<a class="ref ref-d" href="#dec-${m}">${m}</a>` : m);
+  }).join("");
+}
+// Inline markdown: `code`, **bold**, links. Outside links open in a new tab, so the sheet stays open.
+function inline(s) {
+  const out = ' target="_blank" rel="noopener noreferrer"';
+  return String(s ?? "").split(/(`[^`]+`)/).map((seg) => {
+    if (/^`[^`]+`$/.test(seg)) return `<code>${esc(seg.slice(1, -1))}</code>`;
+    let t = esc(seg).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    t = t.replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, `<a href="$2"${out}>$1</a>`);
+    t = t.replace(/(^|[\s(])(https?:\/\/[^\s<]+[^\s<.,;:)])/g, `$1<a href="$2"${out}>$2</a>`);
+    return refs(t);
+  }).join("");
+}
+// Bold the "Waiting on me:" style lead-in of a STATE note.
+function lead(s) {
+  const m = /^([A-Z][A-Za-z ]{2,24}):\s/.exec(s);
+  return m ? `<strong>${esc(m[1])}:</strong> ${inline(s.slice(m[0].length))}` : inline(s);
+}
+
+/* ---------- small markdown: headings, paragraphs, nested lists, tables, code blocks ---------- */
+const isList = (l) => /^\s*(?:[-*]|\d+\.)\s+/.test(l);
+const isTable = (l) => /^\s*\|/.test(l);
+const isHead = (l) => /^#{1,6}\s/.test(l);
+function md(src) {
+  const lines = String(src || "").split("\n");
+  let out = "", i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (!l.trim()) { i++; continue; }
+    if (l.startsWith("```")) {
+      const code = [];
+      for (i++; i < lines.length && !lines[i].startsWith("```"); i++) code.push(lines[i]);
+      i++; out += `<pre><code>${esc(code.join("\n"))}</code></pre>`; continue;
+    }
+    if (isHead(l)) { out += `<h4>${inline(l.replace(/^#+\s*/, ""))}</h4>`; i++; continue; }
+    if (isTable(l)) { const rows = []; while (i < lines.length && isTable(lines[i])) rows.push(lines[i++]); out += table(rows); continue; }
+    if (isList(l)) {
+      const block = [];
+      while (i < lines.length && (isList(lines[i]) || (/^\s{2,}\S/.test(lines[i]) && block.length))) block.push(lines[i++]);
+      out += list(block); continue;
+    }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !isList(lines[i]) && !isTable(lines[i]) && !isHead(lines[i]) && !lines[i].startsWith("```")) para.push(lines[i++]);
+    out += `<p>${inline(para.join(" "))}</p>`;
+  }
+  return out;
+}
+function list(block) {
+  const items = block.map((l) => {
+    const m = /^(\s*)([-*]|\d+\.)\s+(.*)$/.exec(l);
+    return m ? { ind: m[1].length, ord: /\d/.test(m[2]), text: m[3] } : { ind: l.match(/^\s*/)[0].length, cont: true, text: l.trim() };
+  });
+  let pos = 0;
+  const build = (ind) => {
+    const tag = items[pos]?.ord ? "ol" : "ul";
+    let html = `<${tag}>`;
+    while (pos < items.length && items[pos].ind >= ind) {
+      const it = items[pos];
+      if (it.ind > ind && !it.cont) { html = html.replace(/<\/li>$/, "") + build(it.ind) + "</li>"; continue; }
+      if (it.cont) { html = html.replace(/<\/li>$/, ` ${inline(it.text)}</li>`); pos++; continue; }
+      html += `<li>${inline(it.text)}</li>`; pos++;
+    }
+    return html + `</${tag}>`;
+  };
+  let out = "";
+  while (pos < items.length) out += build(items[pos].ind);
+  return out;
+}
+const cells = (row) => row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
+function table(rows) {
+  const head = cells(rows[0]), body = rows.slice(1).filter((r) => !/^\s*\|?[\s:|-]+\|?\s*$/.test(r));
+  return `<div class="tbl-wrap"><table><thead><tr>${head.map((c) => `<th>${inline(c)}</th>`).join("")}</tr></thead><tbody>` +
+    body.map((r) => `<tr>${cells(r).map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`).join("") + "</tbody></table></div>";
+}
+
+/* ---------- reading the parser's output ---------- */
+const allItems = (c) => [...(c.fragments || []).flatMap((f) => f.items || []), ...(c.foundation || [])];
+function counts(items) {
+  const n = { verified: 0, built: 0, doing: 0, todo: 0, dropped: 0 };
+  for (const it of items) if (n[it.mark] != null) n[it.mark]++;
+  return n;
+}
+function findRefs(text) {
+  const out = [], re = /\b(F\d+\.(?:\d+|Q)|F\d+|B\d+|D-\d{3})\b/g;
+  for (const m of String(text || "").matchAll(re)) if (!out.includes(m[1])) out.push(m[1]);
+  return out;
+}
+const stateSection = (d, re) => (d.state?.sections || []).find((s) => re.test(s.title));
+function sectionItems(s) {
+  if (!s) return [];
+  if (s.items?.length) return s.items;
+  return String(s.body || "").split("\n").map((l) => l.replace(/^\s*(?:[-*]|\d+\.)\s+/, "").trim()).filter(Boolean);
+}
+function splitTitle(t) {
+  const m = /^(.*?)\s*\((.+)\)\s*$/.exec(t || "");
+  return m ? { t: m[1], sub: m[2] } : { t, sub: "" };
+}
+function stampDate(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ""));
+  return m ? `${m[3]} ${MONTHS[+m[2] - 1] || m[2]} ${m[1]}` : (s || "not yet");
+}
+// "missing", "empty" or "" for a file name, from what was read.
+const fileGap = (ctx, name) => !(name in ctx.read) ? "missing" : ctx.d.present.includes(name) ? "" : "empty";
+// One sentence for one or more files that share a gap and the command that writes them.
+function gapLine(ctx, fs) {
+  const names = fs.map((f) => `<b>${f.file}</b>`), many = fs.length > 1;
+  const list = many ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0];
+  const what = fileGap(ctx, fs[0].file) === "empty" ? "empty" : "not in this folder";
+  return `${list} ${many ? "are" : "is"} ${what}. ${cap(many ? fs[0].writer.replace(" it", " them") : fs[0].writer)}.`;
+}
+
+/* ---------- title block ---------- */
+function reviewStamp(ctx) {
+  const r = ctx.reassess, al = r ? r.alignment : "", n = ctx.n;
+  const opts = ALIGN.map((a) => `<li class="${r && a !== al ? "off" : ""}"><span class="st-box">${a === al ? TICK : ""}</span>${a}${a === al ? '<span class="sr"> (ticked)</span>' : ""}</li>`).join("");
+  const said = r && !ALIGN.includes(al) ? ` · says ${esc(r.alignment || "nothing")}` : "";
+  const foot = r ? `Reassess ${esc(r.date || "undated")}${said}` : "Not reassessed · run /reassess";
+  const label = `Review stamp: ${ctx.verified} of ${ctx.total} verified. ${r ? `Reassess ${r.date}: ${al || "no result"}.` : "Not reassessed yet."}`;
+  return `<div class="stamp landing" role="group" aria-label="${esc(label)}">` +
+    '<div class="st-head"><span>Checked</span><span>Off the Mode</span></div>' +
+    `<div class="st-count"><b>${ctx.verified}</b><span class="of">/${ctx.total}</span><span class="w">verified</span></div>` +
+    `<div class="st-made">${n.built} built · ${n.doing} doing · ${n.todo} to do</div>` +
+    `<ul class="st-opts">${opts}</ul><div class="st-foot">${foot}</div></div>`;
+}
+function revisitStamp(ctx) {
+  const when = ctx.c.lastRevisit, label = `Checklist revisited ${when || "not yet"}: ${ctx.verified} of ${ctx.total} verified`;
+  return `<p class="stamp2" role="img" aria-label="${esc(label)}"><span class="k">Checklist revisited</span>` +
+    `<span class="d">${esc(stampDate(when))}</span><span class="k">${ctx.verified} of ${ctx.total} verified</span></p>`;
+}
+function stampCell(ctx) {
+  if (!ctx.hasChecklist) return '<div class="cell cell-stamp"><span class="lab">Stamps</span><div class="blank-stamp">Nothing to stamp yet: there is no checklist to count. /listrevisit builds it from PRODUCT.md.</div></div>';
+  const c = ctx.c, off = c.verified !== null && (c.verified !== ctx.verified || c.total !== ctx.total);
+  const note = off ? `<p class="st-note">The top line of CHECKLIST.md says ${c.verified} of ${c.total}. Its marks add up to ${ctx.verified} of ${ctx.total}, which is what the stamps show. /listrevisit brings the top line up to date.</p>` : "";
+  return `<div class="cell cell-stamp"><span class="lab">Stamps · reassess and revisit</span><div class="stamps">${reviewStamp(ctx)}${revisitStamp(ctx)}</div>${note}</div>`;
+}
+function missingCell(ctx) {
+  const gaps = [...FILES.filter((f) => !f.optional), RULES].filter((f) => fileGap(ctx, f.file));
+  if (!gaps.length) return "";
+  const groups = new Map();
+  for (const f of gaps) { const k = `${fileGap(ctx, f.file)} ${f.writer}`; groups.set(k, [...(groups.get(k) || []), f]); }
+  return `<div class="cell cell-missing"><span class="lab">Missing from this folder</span><ul class="missing">${[...groups.values()].map((fs) => `<li>${gapLine(ctx, fs)}</li>`).join("")}</ul></div>`;
+}
+function nextCell(ctx) {
+  const none = ctx.d.present.includes("STATE.md") ? "STATE.md has no next steps yet." : "No STATE.md, so no next steps to show.";
+  const body = ctx.next.length ? `<ol class="keyed">${ctx.next.map((t, i) => `<li id="next-${i + 1}">${hex(i + 1)}<p>${inline(t)}</p></li>`).join("")}</ol>` : `<p class="psub">${none}</p>`;
+  return `<div class="cell cell-next"><span class="lab">Keyed notes · next, from STATE.md</span>${body}</div>`;
+}
+function keyCell(ctx) {
+  const rows = (ctx.c.fragments || []).map((f) => ({ id: f.id, href: `#frag-${slug(f.id)}`, items: f.items || [] }));
+  if (ctx.c.foundation?.length) rows.push({ id: "B", href: "#frag-B", items: ctx.c.foundation });
+  const kp = rows.map((r) => {
+    const live = r.items.filter((i) => i.mark !== "dropped"), v = live.filter((i) => i.mark === "verified").length;
+    const sq = r.items.map((i) => `<i class="mk mk-${esc(i.mark)}" title="${esc(i.id + " · " + MARK_WORD[i.mark])}"></i>`).join("");
+    return `<li><a href="${r.href}" aria-label="${esc(`${r.id}: ${v} of ${live.length} verified`)}"><span class="kp-id">${esc(r.id)}</span><span class="kp-cells" aria-hidden="true">${sq}</span><span class="kp-n" aria-hidden="true">${v}/${live.length}</span></a></li>`;
+  }).join("");
+  const legend = MARK_ORDER.map((m) => `<li title="${MARK_SAYS[m]}"><i class="mk mk-${m}" aria-hidden="true"></i>${MARK_WORD[m]}<span class="n">${ctx.n[m]}</span></li>`).join("");
+  return `<div class="cell cell-key"><span class="lab">Key plan · how far the core is</span>${rows.length ? `<ol class="kp">${kp}</ol>` : '<p class="psub">No fragments yet.</p>'}` +
+    `<ul class="legend">${legend}</ul><p class="scale">Scale: 1 square = 1 item · dropped items are left out of the x/y counts</p></div>`;
+}
+function projectCell(d, ctx) {
+  const frags = (ctx.c.fragments || []).length, items = ctx.items.length;
+  const sub = ctx.hasChecklist ? `${frags} fragment${frags === 1 ? "" : "s"}${ctx.c.foundation?.length ? " and the foundation" : ""}, ${items} item${items === 1 ? "" : "s"}` : "No checklist yet";
+  return '<div class="cell cell-project"><div class="cell-head"><span class="lab">Project</span><button type="button" class="btn-quiet" data-open>Open another folder</button></div>' +
+    `<h1 class="pname" id="pname" tabindex="-1">${esc(d.name || "Your project")}</h1><p class="psub">${sub}</p></div>`;
+}
+// The drafting names stay as tooltips: diazo paper in light, cyanotype in dark.
+function paperToggle() {
+  const t = currentTheme(), b = (v, tip) => `<button type="button" data-theme-set="${v}" aria-pressed="${t === v}" title="${tip}">${v}</button>`;
+  return `<div class="wide"><span class="lab">Paper</span><div class="paper-set" role="group" aria-label="Paper, light or dark">${b("light", "diazo")}${b("dark", "cyanotype")}</div></div>`;
+}
+function fieldsHTML(d, ctx) {
+  const decs = d.decisions || [], last = decs[decs.length - 1];
+  const status = String(d.product?.status || "—"), sm = /^(\S+)\s*(.*)$/.exec(status);
+  const field = (lab, v) => `<div><span class="lab">${lab}</span><div class="v">${v}</div></div>`;
+  return '<div class="fields">' + field("Revisited", esc(ctx.c.lastRevisit || "—")) + field("State updated", esc(d.state?.updated || "—")) +
+    field("Latest decision", last ? `<a class="ref" href="#dec-${esc(last.id)}">${esc(last.id)}</a><small>${esc(last.date)}</small>` : "—") +
+    field("Plan", esc(sm ? sm[1] : status) + (sm?.[2] ? `<small>${esc(sm[2])}</small>` : "")) + paperToggle() + "</div>";
+}
+function revisionsHTML(ctx) {
+  const changes = ctx.c.changes || [];
+  if (!changes.length) return '<div class="cell"><span class="lab">Revisions to this board · CHECKLIST.md</span><p class="psub">No revisions logged yet.</p></div>';
+  const rows = changes.map((ch, i) => ({ ch, n: i + 1 })).reverse().map(({ ch, n }) => {
+    const latest = ctx.cloudRevs.includes(n);
+    return `<tr><td class="n">${delta(n, latest ? "red" : "")}</td><td class="d">${esc(ch.date)}</td><td>${inline(ch.text)}</td></tr>`;
+  }).join("");
+  return '<div class="cell"><span class="lab">Revisions to this board · CHECKLIST.md</span><table class="revs"><thead><tr>' +
+    '<th scope="col"><span class="lab">Rev</span></th><th scope="col"><span class="lab">Date</span></th><th scope="col"><span class="lab">What changed</span></th></tr></thead>' +
+    `<tbody>${rows}</tbody></table></div>`;
+}
+function indexHTML(ctx) {
+  const row = (f) => {
+    const gap = fileGap(ctx, f.file), word = gap === "empty" ? "empty" : gap ? "not in folder" : f.file;
+    return `<li><a class="${gap ? "gone" : ""}" href="#zone-${f.zone}"><span class="z">${f.zone}</span><span class="t">${f.title}</span><span class="f">${word}</span></a></li>`;
+  };
+  const rules = fileGap(ctx, RULES.file) ? "not in folder" : "RULES.md · for your AI";
+  return `<div class="cell"><span class="lab">Drawing index · ${ctx.count} file${ctx.count === 1 ? "" : "s"} read from ${esc(ctx.folder)}</span><ul class="index">${FILES.map(row).join("")}` +
+    `<li><span class="row"><span class="z">—</span><span class="t">Rules</span><span class="f">${rules}</span></span></li></ul></div>`;
+}
+// The missing files come after the next steps so, on a wide screen, the next steps stay on the first screen.
+// Tablet and phone put the missing files second with CSS order.
+function tbHTML(d, ctx) {
+  const bars = (ctx.c.qualityBars || []).map((b) => `<li><span>${inline(b)}</span></li>`).join("");
+  return '<aside class="tb" aria-label="Title block"><div class="tb-top">' + projectCell(d, ctx) + stampCell(ctx) + nextCell(ctx) + missingCell(ctx) + keyCell(ctx) + "</div>" +
+    '<div class="tb-rest">' + fieldsHTML(d, ctx) + revisionsHTML(ctx) + indexHTML(ctx) +
+    (bars ? `<div class="cell"><span class="lab">General notes · quality bars, checked by each fragment's Q item</span><ol class="gnotes">${bars}</ol></div>` : "") +
+    '<div class="cell"><button type="button" class="btn-quiet" data-open>Open another .offthemode folder</button></div></div></aside>';
+}
+
+/* ---------- A: the board ---------- */
+function itemHTML(it, ctx) {
+  let text = String(it.text || ""), hold = "";
+  const k = text.indexOf(" · blocked on: ");
+  if (k >= 0) { hold = text.slice(k + 15); text = text.slice(0, k); }
+  const notes = ctx.nextByRef[it.id] || [], rev = ctx.cloudByRef[it.id];
+  const tags = notes.map(hex).join("") + (rev ? delta(rev, "red", `changed in revision ${rev}`) : "");
+  const has = it.doneWhen || it.evidence || it.guide || it.dropped;
+  const cls = `it m-${esc(it.mark)}${notes.length ? " next" : ""}${rev ? " cloud" : ""}`;
+  const head = `<i class="mk mk-${esc(it.mark)}" aria-hidden="true"></i><span class="it-id">${esc(it.id)}</span>` +
+    `<span class="it-text"><span class="sr">${MARK_WORD[it.mark]}: </span>${inline(text)}${hold ? `<span class="hold"><b>Hold</b>blocked on ${inline(hold)}</span>` : ""}</span>` +
+    `<span class="it-tags">${tags}${has ? '<span class="plus" aria-hidden="true">+</span>' : ""}</span>`;
+  if (!has) return `<li class="${cls}" id="it-${slug(it.id)}"><div class="row">${head}</div></li>`;
+  let dl = it.dropped ? `<dt class="lab">Dropped because</dt><dd>${inline(it.dropped)}</dd>` : "";
+  dl += `<dt class="lab">Done when</dt><dd>${it.doneWhen ? inline(it.doneWhen) : '<span class="none">not written</span>'}</dd>`;
+  dl += `<dt class="lab">Evidence</dt><dd>${it.evidence ? inline(it.evidence) : '<span class="none">none yet</span>'}</dd>`;
+  if (it.guide) dl += `<dt class="lab">Guide</dt><dd class="g">${esc(it.guide)}</dd>`;
+  return `<li class="${cls}" id="it-${slug(it.id)}"><details><summary>${head}</summary><dl class="it-detail">${dl}</dl></details></li>`;
+}
+function bayHTML(f, ctx, isFoundation) {
+  const items = f.items || [], live = items.filter((i) => i.mark !== "dropped"), n = counts(items);
+  const id = isFoundation ? "B" : f.id, rev = ctx.cloudByRef[id];
+  const count = `${n.verified} of ${live.length} verified` + ["built", "doing", "dropped"].map((m) => n[m] ? ` · ${n[m]}\u00a0${m}` : "").join("");
+  let meta = f.forPerson ? `<div><dt class="lab">What they get</dt><dd class="for">${inline(f.forPerson)}</dd></div>` : "";
+  if (f.dependsOn && f.dependsOn !== "none") meta += `<div><dt class="lab">Built after</dt><dd>${inline(f.dependsOn)}</dd></div>`;
+  if (f.verify) meta += `<div><dt class="lab">Proven</dt><dd>${f.verify === "early" ? "item by item, as each is built" : "at completion, when the whole fragment runs end to end"}</dd></div>`;
+  if (isFoundation) meta += '<div><dt class="lab">Under</dt><dd>every fragment</dd></div>';
+  return `<section class="bay${rev ? " cloud" : ""}" id="frag-${slug(id)}" aria-labelledby="fh-${slug(id)}">` +
+    (rev ? `<span class="cloud-tag">${delta(rev, "red big", `changed in revision ${rev}`)}</span>` : "") +
+    `<div class="bay-meta"><div class="bay-head"><span class="bub" aria-hidden="true">${esc(id)}</span><p class="bay-count">${count}</p></div>` +
+    `<h3 id="fh-${slug(id)}"><span class="sr">${esc(id)} </span>${esc(isFoundation ? "Foundation" : f.name)}</h3>${meta ? `<dl>${meta}</dl>` : ""}</div>` +
+    `<ol class="items">${items.map((it) => itemHTML(it, ctx)).join("")}</ol></section>`;
+}
+const zoneHead = (z, title, meta) => `<span class="zl" aria-hidden="true">${z}</span><header class="vt"><span class="bub" aria-hidden="true">${z}</span>` +
+  `<div class="vt-t"><h2 id="h-${z}">${title}</h2><p class="vt-meta">${meta}</p></div></header>`;
+const gapRow = (ctx, f) => `<div class="lr"><div class="l"><h3>Not drawn</h3></div><div class="r"><p class="pointer">${gapLine(ctx, [f])}</p></div></div>`;
+function boardHTML(ctx) {
+  const c = ctx.c, v = c.vision || {};
+  if (!ctx.hasChecklist) return `<section class="zone" id="zone-A" aria-labelledby="h-A">${zoneHead("A", "Checklist board", "CHECKLIST.md · not in this folder")}${gapRow(ctx, FILES[0])}</section>`;
+  return `<section class="zone" id="zone-A" aria-labelledby="h-A">${zoneHead("A", "Checklist board", `CHECKLIST.md · revisited ${esc(c.lastRevisit || "—")} · open any item for its proof`)}` +
+    (v.core ? `<div class="lr core-lr"><div class="l"><h3>The core</h3><span class="sub">every fragment below serves it</span></div><div class="r"><p>${inline(v.core)}</p></div></div>` : "") +
+    (c.fragments || []).map((f) => bayHTML(f, ctx, false)).join("") + (c.foundation?.length ? bayHTML({ items: c.foundation }, ctx, true) : "") + "</section>";
+}
+
+/* ---------- B to F: the zones below ---------- */
+function stateHTML(d, ctx) {
+  const st = d.state, f = FILES[1];
+  const open = `<section class="zone" id="zone-B" aria-labelledby="h-B">${zoneHead("B", "Where things stand", `STATE.md · ${fileGap(ctx, f.file) ? "not in this folder" : `updated ${esc(st.updated || "—")}`}`)}`;
+  if (fileGap(ctx, f.file)) return open + gapRow(ctx, f) + "</section>";
+  const now = stateSection(d, /^Now/);
+  const pointer = ctx.next.length ? `Keyed notes ${ctx.next.map((_, i) => `<a href="#next-${i + 1}">${i + 1}</a>`).join(", ")} in the title block, also tagged on the board where they land.` : "No next steps written yet.";
+  const groups = (st.sections || []).filter((s) => !/^Now|^Next/.test(s.title)).map((g) => {
+    const t = splitTitle(g.title), items = sectionItems(g);
+    return `<div class="lr"><div class="l"><h3>${esc(t.t)}</h3>${t.sub ? `<span class="sub">${esc(t.sub)}</span>` : ""}</div><div class="r">` +
+      (items.length ? `<ol class="notes">${items.map((x) => `<li><span>${lead(x)}</span></li>`).join("")}</ol>` : '<p class="pointer">Nothing here.</p>') + "</div></div>";
+  }).join("");
+  return open + (now ? `<div class="lr now"><div class="l"><h3>Now</h3></div><div class="r">${md(now.body)}</div></div>` : "") +
+    `<div class="lr"><div class="l"><h3>Next</h3></div><div class="r"><p class="pointer">${pointer}</p></div></div>` + groups + "</section>";
+}
+function planHTML(d, ctx) {
+  const p = d.product, f = FILES[2], gap = fileGap(ctx, f.file);
+  const open = `<section class="zone plan" id="zone-C" aria-labelledby="h-C">${zoneHead("C", "The plan", gap ? "PRODUCT.md · not in this folder" : `PRODUCT.md · ${esc(p.status || "no status")}`)}`;
+  if (gap) return open + gapRow(ctx, f) + "</section>";
+  return open + (p.sections || []).map((s, i) => {
+    const t = splitTitle(s.title);
+    return `<div class="lr"><div class="l"><span class="num">${String(i + 1).padStart(2, "0")}</span><h3>${esc(t.t)}</h3>${t.sub ? `<span class="sub">${esc(t.sub)}</span>` : ""}</div>` +
+      `<div class="r prose">${s.body?.trim() ? md(s.body) : '<p class="pointer">Not written yet.</p>'}</div></div>`;
+  }).join("") + "</section>";
+}
+function decBody(body) {
+  return String(body || "").split(/(?:\n| · )(?=(?:Context|Decision|Rejected|Because|Revisit if):)/).map((p) => {
+    const m = /^\s*(Context|Decision|Rejected|Because|Revisit if):\s*([\s\S]*)$/.exec(p);
+    return m ? `<dt class="lab">${m[1]}</dt><dd>${inline(m[2].trim())}</dd>` : p.trim() ? `<dt class="lab">Note</dt><dd>${inline(p.trim())}</dd>` : "";
+  }).join("");
+}
+function decisionsHTML(d, ctx) {
+  const decs = d.decisions || [], f = FILES[3], gap = fileGap(ctx, f.file);
+  const open = `<section class="zone" id="zone-D" aria-labelledby="h-D">${zoneHead("D", "Decisions", gap ? "DECISIONS.md · not in this folder" : `DECISIONS.md · ${decs.length} decision${decs.length === 1 ? "" : "s"}, newest first, nothing erased`)}`;
+  if (gap) return open + gapRow(ctx, f) + "</section>";
+  if (!decs.length) return open + '<div class="lr"><div class="l"><h3>None yet</h3></div><div class="r"><p class="pointer">No decisions recorded yet.</p></div></div></section>';
+  const rows = decs.slice().reverse().map((x) => {
+    const status = String(x.status || ""), pending = !/^decided/i.test(status), sm = /^(.*?)\s*\((.+)\)\s*$/.exec(status);
+    const back = ctx.decBack[x.id] || [], notes = ctx.nextByRef[x.id] || [];
+    const by = back.length ? `<span class="by">on the board: ${back.map((b) => `<a class="ref" href="#it-${slug(b)}">${esc(b)}</a>`).join(", ")}</span>` : "";
+    return `<li id="dec-${esc(x.id)}"><details><summary><span class="c-rev">${delta(String(x.id).replace(/^D-0*/, ""), pending ? "pending" : "", x.id)}<span class="id">${esc(x.id)}</span>${notes.map(hex).join("")}</span>` +
+      `<span class="c-desc">${inline(x.title)}${by}</span><span class="c-date">${esc(x.date)}</span>` +
+      `<span class="c-status${pending ? " pending-t" : ""}">${esc(sm ? sm[1] : status)}${sm ? `<span class="by">${esc(sm[2])}</span>` : ""}</span>` +
+      `</summary><div class="reg-body"><dl>${decBody(x.body)}</dl></div></details></li>`;
+  }).join("");
+  return open + '<div class="reg-head" aria-hidden="true"><span class="c-rev"><span class="lab">Rev</span></span><span class="c-desc"><span class="lab">Description</span></span>' +
+    `<span class="c-date"><span class="lab">Date</span></span><span class="c-status"><span class="lab">Status</span></span></div><ol class="reg">${rows}</ol></section>`;
+}
+function plainHTML(d, ctx) {
+  const g = d.glossary, f = FILES[4], gap = fileGap(ctx, f.file), terms = g.terms;
+  const open = `<section class="zone" id="zone-E" aria-labelledby="h-E">${zoneHead("E", "Plain summary", gap ? "GLOSSARY.md · not in this folder" : "GLOSSARY.md · for anyone, no code needed")}`;
+  if (gap) return open + gapRow(ctx, f) + "</section>";
+  const plain = (g.plain || []).map((p) => `<div class="lr plain"><div class="l"><h3>${esc(p.label)}</h3></div><div class="r">${p.text ? `<p>${inline(p.text)}</p>` : ""}` +
+    (p.points?.length ? `<ul>${p.points.map((x) => `<li><span>${inline(x)}</span></li>`).join("")}</ul>` : "") + "</div></div>").join("");
+  const sched = terms?.rows?.length ? '<div class="lr"><div class="l"><h3>Terms schedule</h3><span class="sub">the one word for each thing</span></div><div class="r">' +
+    `<details class="fold"><summary><span class="plus" aria-hidden="true">+</span>${terms.rows.length} terms, with what never to call them</summary><div class="tbl-wrap"><table class="sched"><thead><tr>` +
+    (terms.head || []).map((h) => `<th scope="col">${esc(h)}</th>`).join("") + "</tr></thead><tbody>" +
+    terms.rows.map((r) => `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`).join("") + "</tbody></table></div></details></div></div>" : "";
+  return open + (plain || '<div class="lr"><div class="l"><h3>Not written</h3></div><div class="r"><p class="pointer">GLOSSARY.md has no plain-words summary yet. /glossaryrevisit writes it.</p></div></div>') + sched + "</section>";
+}
+function reassessHTML(ctx) {
+  const r = ctx.reassess;
+  const body = r
+    ? `<div class="ra-filled"><p class="al">${esc(r.alignment || "no result written")}</p><div class="prose">${md(r.body)}</div><p class="src">REASSESS.md · ${esc(r.date || "undated")} · run /reassess again after the fixes to stamp it anew</p></div>`
+    : '<p class="ra-empty">Empty until you run <span class="cmd">/reassess</span> and say yes to saving it.</p><p>It reads the code against the core concept and says whether the project is on course, drifting or off course, with the gaps. Saved, it lands in REASSESS.md, and the review stamp gets its tick.</p>';
+  return `<section class="zone" id="zone-F" aria-labelledby="h-F">${zoneHead("F", "Reassess", `REASSESS.md · ${r ? "the last health check" : "not in this folder yet"}`)}` +
+    `<div class="lr"><div class="l"><h3>${r ? "Last health check" : "No health check yet"}</h3>${r ? `<span class="sub">${esc(r.date)}</span>` : ""}</div><div class="r">${body}</div></div></section>`;
+}
+
+/* ---------- context: every count comes from the parser's items ---------- */
+function clouds(changes) {
+  // Only the latest revision is clouded, and never the first issue.
+  const latest = changes.reduce((m, ch) => (ch.date > m ? ch.date : m), ""), byRef = {}, revs = [];
+  changes.forEach((ch, i) => {
+    if (ch.date !== latest || /^created\b/i.test(ch.text)) return;
+    revs.push(i + 1);
+    for (const r of findRefs(ch.text)) if (!r.startsWith("D-")) byRef[r] = i + 1;
+  });
+  return { cloudByRef: byRef, cloudRevs: revs };
+}
+function buildCtx(d, read) {
+  const c = d.checklist, items = allItems(c), n = counts(items);
+  IDX = { items: {}, frags: {}, decs: {} };
+  for (const it of items) IDX.items[it.id] = it;
+  for (const f of c.fragments) IDX.frags[f.id] = f;
+  if (c.foundation.length) IDX.frags.B = true;
+  for (const x of d.decisions) IDX.decs[x.id] = x;
+  const next = sectionItems(stateSection(d, /^Next/)), nextByRef = {};
+  next.forEach((t, i) => { for (const r of findRefs(t)) (nextByRef[r] ||= []).push(i + 1); });
+  const decBack = {};
+  for (const it of items) for (const r of findRefs(`${it.text} ${it.doneWhen}`)) if (r.startsWith("D-") && !(decBack[r] ||= []).includes(it.id)) decBack[r].push(it.id);
+  return {
+    d, c, items, n, verified: n.verified, total: items.length - n.dropped, next, nextByRef, decBack, ...clouds(c.changes),
+    reassess: d.reassess, read: read.files, folder: read.folder, count: Object.keys(read.files).length, hasChecklist: d.present.includes("CHECKLIST.md"),
+  };
+}
+
+/* ---------- surfaces ---------- */
+function renderProject(read) {
+  const d = parseProject(read.files), ctx = buildCtx(d, read);
+  frame.classList.remove("is-entry");
+  frame.innerHTML = `<div class="board-wrap">${boardHTML(ctx)}</div>${tbHTML(d, ctx)}<div class="rest">` +
+    stateHTML(d, ctx) + planHTML(d, ctx) + decisionsHTML(d, ctx) + plainHTML(d, ctx) + reassessHTML(ctx) + "</div>";
+  document.title = `${d.name || "Your project"} · the view`;
+  window.scrollTo(0, 0);
+  document.getElementById("pname").focus({ preventScroll: true });
+  status.textContent = `Read ${ctx.count} file${ctx.count === 1 ? "" : "s"} from ${read.folder} on this computer. Nothing was sent.`;
+}
+function renderEntry(notice) {
+  const blank = '<span class="blank" aria-hidden="true"></span>';
+  const reads = FILES.map((f) => `<li><span class="z">${f.zone}</span><span class="f">${f.file}</span><span>${cap(f.shows)}<span class="w">${f.optional ? "Optional. " : ""}${cap(f.writer)}.</span></span></li>`).join("") +
+    '<li><span class="z">—</span><span class="f">RULES.md</span><span>Read by your AI, not drawn here</span></li>';
+  frame.classList.add("is-entry");
+  frame.innerHTML = '<div class="board-wrap"><section class="zone entry" id="zone-A" aria-labelledby="h-A">' + zoneHead("A", "No folder open", "this sheet is blank until it reads your project's notes") +
+    '<div class="entry-body"><h1 class="big">Your project, on one sheet.</h1>' +
+    '<p class="lead">Open the .offthemode folder inside your project, or drop it anywhere on this page. The checklist, where things stand, the plan, the decisions and the last reassess are drawn from its notes.</p>' +
+    (notice ? `<p class="notice" role="alert">${esc(notice)}</p>` : "") +
+    '<button type="button" class="primary" data-open>Open your .offthemode folder</button>' +
+    '<p class="honest">The files stay on this computer: this page reads them here and sends nothing anywhere.</p>' +
+    '<p class="tip">If your browser asks to "upload" the folder, it means hand it to this page; nothing leaves. On a Mac the folder is hidden: press Cmd Shift . (period) in the picker, or pick the project folder and the page finds .offthemode inside.</p>' +
+    `<div class="reads"><span class="lab">What each file shows</span><ul>${reads}</ul></div></div></section></div>` +
+    '<aside class="tb" aria-label="Title block, blank"><div class="tb-top">' +
+    `<div class="cell cell-project"><span class="lab">Project</span>${blank}</div>` +
+    '<div class="cell cell-stamp"><span class="lab">Stamps</span><div class="blank-stamp">Stamped once the folder is read</div></div>' +
+    `<div class="cell cell-next"><span class="lab">Keyed notes · next, from STATE.md</span>${blank}${blank}</div>` +
+    `<div class="cell cell-key"><span class="lab">Key plan · how far the core is</span>${blank}${blank}${blank}</div></div>` +
+    `<div class="tb-rest"><div class="fields">${["Revisited", "State updated", "Latest decision", "Plan"].map((l) => `<div><span class="lab">${l}</span>${blank}</div>`).join("")}${paperToggle()}</div></div></aside>`;
+  document.title = "The view · Off the Mode";
+}
+
+/* ---------- reading a folder: three ways in, one shape out ---------- */
+// Each lister returns the folder's entries as { name, isDir, text(), list() }, so the reading rule is written once.
+const listHandle = (dir) => async () => {
+  const out = [];
+  for await (const h of dir.values()) out.push({ name: h.name, isDir: h.kind === "directory", text: async () => (await h.getFile()).text(), list: h.kind === "directory" ? listHandle(h) : null });
+  return out;
+};
+const listEntry = (dir) => async () => {
+  const reader = dir.createReader(), out = [];
+  for (;;) {
+    const batch = await new Promise((ok, no) => reader.readEntries(ok, no));
+    if (!batch.length) return out;
+    for (const e of batch) out.push({ name: e.name, isDir: e.isDirectory, text: () => new Promise((ok, no) => e.file(ok, no)).then((f) => f.text()), list: e.isDirectory ? listEntry(e) : null });
+  }
+};
+const fileItem = (f) => ({ name: f.name, isDir: false, text: () => f.text(), list: null });
+// <input webkitdirectory> hands over every file below the folder at once, each with its path.
+const listInput = (files, inner) => async () => {
+  const out = [];
+  let hasInner = false;
+  for (const f of files) {
+    const p = (f.webkitRelativePath || f.name).split("/");
+    if (p.length === 1) { if (!inner) out.push(fileItem(f)); continue; }
+    if (inner) { if (p.length === 3 && p[1] === ".offthemode") out.push(fileItem(f)); continue; }
+    if (p.length === 2) out.push(fileItem(f)); else if (p[1] === ".offthemode") hasInner = true;
+  }
+  if (hasInner) out.push({ name: ".offthemode", isDir: true, list: listInput(files, true) });
+  return out;
+};
+// Every .md file at the top of the folder, keyed by name. Picked the project instead? Its .offthemode/ is read.
+async function readFolder(name, list) {
+  const entries = await list(), files = {};
+  for (const e of entries) if (!e.isDir && /\.md$/i.test(e.name)) files[e.name] = await e.text();
+  const inner = entries.find((e) => e.isDir && e.name === ".offthemode");
+  if (inner && !KNOWN.some((k) => k in files)) return readFolder(`${name}/.offthemode`, inner.list);
+  return { files, folder: name };
+}
+async function load(name, list) {
+  let read;
+  try { read = await readFolder(name, list); } catch (e) {
+    renderEntry(`That folder could not be read (${e.message || e.name}). Try again, or drop the folder onto this page.`);
+    return;
+  }
+  if (!KNOWN.some((k) => k in read.files)) {
+    renderEntry(`The folder "${read.folder}" has none of the Off the Mode files. Open the .offthemode folder inside your project, or the project folder that holds it.`);
+    return;
+  }
+  renderProject(read);
+}
+
+/* ---------- behaviour ---------- */
+function currentTheme() {
+  return root.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+}
+async function openFolder() {
+  // Chrome and Edge ask "let this site view files?" and read only what the page opens; others use the file input.
+  if (typeof window.showDirectoryPicker !== "function") { picker.click(); return; }
+  let dir;
+  try { dir = await window.showDirectoryPicker({ id: "offthemode", mode: "read" }); } catch (e) {
+    if (e.name !== "AbortError") renderEntry(`The folder could not be opened (${e.message || e.name}). Try again, or drop it onto this page.`);
+    return;
+  }
+  load(dir.name, listHandle(dir));
+}
+document.addEventListener("click", (e) => {
+  const el = e.target.closest?.("[data-open], [data-theme-set], a[href^='#']");
+  if (!el) return;
+  if (el.hasAttribute("data-open")) { openFolder(); return; }
+  if (el.hasAttribute("data-theme-set")) {
+    root.dataset.theme = el.dataset.themeSet;
+    for (const b of document.querySelectorAll("[data-theme-set]")) b.setAttribute("aria-pressed", String(b.dataset.themeSet === root.dataset.theme));
+    return;
+  }
+  // Following a link to a board item opens its proof.
+  const target = document.getElementById(el.getAttribute("href").slice(1));
+  const det = target?.querySelector(":scope > details");
+  if (det && target !== el.closest("li")) det.open = true;
+});
+picker.addEventListener("change", () => {
+  const files = [...picker.files];
+  picker.value = "";
+  if (!files.length) return;
+  load(files[0].webkitRelativePath.split("/")[0] || "the folder", listInput(files, false));
+});
+let dragDepth = 0;
+const dropping = (on) => document.body.classList.toggle("dropping", on);
+document.addEventListener("dragenter", (e) => { e.preventDefault(); dragDepth++; dropping(true); });
+document.addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; dropping(false); } });
+document.addEventListener("dragover", (e) => e.preventDefault());
+document.addEventListener("drop", (e) => {
+  e.preventDefault(); dragDepth = 0; dropping(false);
+  // The entries must be taken while the drop event runs; the browser empties the list afterwards.
+  const entries = [...(e.dataTransfer?.items || [])].map((i) => i.webkitGetAsEntry?.()).filter(Boolean);
+  const dir = entries.length === 1 && entries[0].isDirectory ? entries[0] : null;
+  if (dir) { load(dir.name, listEntry(dir)); return; }
+  const loose = entries.filter((x) => x.isFile).map((x) => ({ name: x.name, isDir: false, list: null, text: () => new Promise((ok, no) => x.file(ok, no)).then((f) => f.text()) }));
+  if (loose.length) load("the dropped files", async () => loose);
+});
+// Load every font face now, so opening a folder later asks the network for nothing, not even a missing glyph.
+function loadFaces() {
+  // A face that fails falls back to the next font in its stack; there is nothing for the reader to do about it.
+  document.fonts.forEach((f) => { if (f.status === "unloaded") f.load().catch(() => {}); });
+}
+const fontsheet = document.querySelector('link[rel="stylesheet"]');
+if (fontsheet?.sheet) loadFaces(); else fontsheet?.addEventListener("load", loadFaces);
+renderEntry("");
+</script>
+</body>
+</html>

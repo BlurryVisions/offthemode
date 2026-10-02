@@ -142,10 +142,15 @@ A guide adds one of these to `.offthemode/` only when its work needs it, on your
 | `VOICE.md` | Always-On · Words & Voice | The product has words people read |
 | `TRACKING.md` | Always-On · Instrumentation | The product gets analytics events |
 | `prompts/` | Always-On · Prompt Library | A prompt gets typed a second time |
+| `REASSESS.md` | Always-On · Revisits | You say yes when `reassess` offers to save its report; the next save replaces it |
 
 Code a guide calls for, such as design tokens, scripts and tests, is ordinary project code: it lives where code belongs and is written on your go. Screenshots go to `shots/`, which stays out of git.
 
 Say "set up off the mode" again on a project that is already set up and you get its status: where things stand, and what's next on the checklist.
+
+To read the folder without opening each file, use the view: setup, `listrevisit`, `reassess` and `glossaryrevisit` end with its link. It shows the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess on one page, read in your browser.
+
+See it as a page: https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 > **Pro move:** Commit `.offthemode/` with your code. Every teammate and every AI session, in any tool, then works from the same product, rules and state.
 

@@ -15,6 +15,7 @@
     "start": "next start",
     "check": "node scripts/build-content.mjs --check && tsc --noEmit",
     "test:mcp": "node scripts/test-mcp.mjs",
+    "test:view": "node scripts/test-view.mjs",
     "audit": "node scripts/contrast.mjs"
   },
   "dependencies": {

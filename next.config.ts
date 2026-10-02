@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 // Security headers from the P7 guide, minus its script policy: the pages rely on small inline scripts, so the
 // Content-Security-Policy only blocks framing, plugins, <base> and cross-site form posts. HSTS comes from Vercel.
+// /view adds its own strict policy as a meta tag (no connections, hashed scripts only), written by the build.
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -16,9 +17,12 @@ const securityHeaders = [
 ];
 
 const config: NextConfig = {
-  // /method is a prebuilt static page (public/method/index.html).
+  // /method and /view are prebuilt static pages (public/method/index.html, public/view/index.html).
   async rewrites() {
-    return [{ source: "/method", destination: "/method/index.html" }];
+    return [
+      { source: "/method", destination: "/method/index.html" },
+      { source: "/view", destination: "/view/index.html" },
+    ];
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

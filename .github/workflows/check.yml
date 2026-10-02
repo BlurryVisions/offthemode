@@ -19,5 +19,7 @@ jobs:
       # --committed, which compares with skills/ in the pushed commit, is what catches a skills/ that was not
       # committed with its content/ change.
       - run: npm run content
+      # The view built from this repo's own .offthemode/: the CSP allows no connection and hashes its scripts (counts are a note).
+      - run: npm run test:view
       - run: node scripts/build-content.mjs --check --committed
       - run: npx tsc --noEmit
