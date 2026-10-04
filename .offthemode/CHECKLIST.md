@@ -1,5 +1,5 @@
 # Checklist · Off the Mode
-Last revisit: 2026-10-02 · Verified 31/59
+Last revisit: 2026-10-02 · Verified 33/59
 
 A map, not a gate. Build in any order; /listrevisit reconciles and updates this file.
 Marks: [ ] todo · [~] in progress · [x] built, not proven · [v] verified, evidence cited · [-] dropped, reason kept
@@ -23,7 +23,7 @@ For the person: whichever way they add it, they get the same, current method.
 
 ### F2 · The link: the MCP server hands out commands, templates and guides · depends on: F1 · Verify: early
 For the person: one pasted link and their tool has every command, and it never sees their code.
-- [x] F2.1 6 command tools, 6 prompts, get_template, get_method and resources answer · done when: `npm run test:mcp` passes against the live URL · guide: p4-backend-infra · evidence: 5 of each passed live after the 2026-09-30 deploy; 6 of each pass locally (`npm run test:mcp`, 2026-10-02); the live run waits for the next deploy
+- [v] F2.1 6 command tools, 6 prompts, get_template, get_method and resources answer · done when: `npm run test:mcp` passes against the live URL · guide: p4-backend-infra · evidence: MCP_URL=https://offthemode.vercel.app/mcp npm run test:mcp after the 2026-10-02 deploy of 305ee2a: tools/list shows the 6 command tools plus get_template and get_method, prompts/list the 6 prompts, all passed
 - [v] F2.2 the server stores and logs nothing it is sent · done when: app/mcp/route.ts and lib/content.ts contain no storage or logging of arguments · guide: p7-security-hardening · evidence: grep of app/mcp/route.ts and lib/content.ts finds no console, file writes, fetch, kv, redis or verboseLogs (2026-09-30)
 - [v] F2.3 the server's instructions apply only to projects with a .offthemode/ folder · done when: every step in the instructions text is conditioned on the folder · guide: p4-backend-infra · evidence: `npm run test:mcp` · 'instructions: conditioned on .offthemode/, point to §Guides' (local, 2026-09-30)
 - [v] F2.4 no idle subscription streams on a stateless server · done when: a live subscriptions/listen call is refused at once · guide: p4-backend-infra · evidence: `npm run test:mcp` · 'subscriptions/listen 2026-07-28 · refused in 7 ms' (local, 2026-09-30)
@@ -89,7 +89,7 @@ For the person: they open one page and see where their project stands: the check
 - [x] F8.4 the latest reassess result · done when: reassess saves its report to .offthemode/REASSESS.md on the user's go, and the view shows its alignment and gaps · guide: none · evidence: reassess offers the save to .offthemode/REASSESS.md on a go; the view ticked 'on course' from a test REASSESS.md (2026-10-02); no real reassess run has saved one yet
 - [v] F8.5 nothing leaves the computer · done when: the page's Content-Security-Policy has connect-src 'none' and the network panel shows no request carrying file content · guide: p7-security-hardening · evidence: public/view/index.html carries a CSP meta with connect-src 'none' and hashed scripts (npm run test:view); the network log shows only page and font loads, none after a folder is opened, and a test fetch() was blocked (2026-10-02)
 - [v] F8.6 the commands point to the view · done when: listrevisit, reassess and glossaryrevisit end with the view link, and setup's last step names it · guide: always-on-words-voice · evidence: listrevisit, reassess and glossaryrevisit end with the view line, and setup's last step names it (grep of content/commands, 2026-10-02)
-- [x] F8.7 /listview opens the project as a page in one step · done when: run on this repo and on Supersense, its own command line writes one temporary page that shows the same counts as CHECKLIST.md's header, opens it, and leaves every file in the project unchanged (git status clean) · guide: none · evidence: npm run test:listview ran the command's own line (the built page in place of the download) on this repo (31/59) and on Supersense (0/61): counts match each header and git status is unchanged (2026-10-02); the live run waits for the deploy
+- [v] F8.7 /listview opens the project as a page in one step · done when: run on this repo and on Supersense, its own command line writes one temporary page that shows the same counts as CHECKLIST.md's header, opens it, and leaves every file in the project unchanged (git status clean) · guide: none · evidence: the command's own line against the live site (curl from https://offthemode.vercel.app/view, 2026-10-02): a 155 KB temporary page drew 31/59, equal to the header, with the snapshot line; git status unchanged; also npm run test:listview on this repo and Supersense
 - [x] F8.8 Chrome remembers the folder · done when: after a reload, one click on "Reopen <project>" draws the project again in Chrome, and Safari and Firefox show the normal open button · guide: p5-navigation-flows · evidence: headless Chrome with a stubbed folder: the pick is stored, 'Reopen Off the Mode' leads after a reload, one click draws 32/59; refused and moved-folder notices work; without showDirectoryPicker only the normal button shows (2026-10-02); the real Chrome prompt is not tried yet
 - [ ] F8.Q Quality bars met for F8 · evidence:
 
@@ -137,3 +137,4 @@ Dropped: (native) frame budget, because there is no native app · (UI) empty, lo
 - 2026-10-02 · added F8.7 (/listview, a sixth command) and F8.8 (Chrome remembers the folder): the author found picking the folder every time outdated
 - 2026-10-02 · F2.1 now counts six commands (listview), so it is back to [x] until the live MCP test passes after the deploy
 - 2026-10-02 · F8.7 and F8.8 built (/listview and Chrome's remembered folder); F2.1 back to [x] until the live MCP test sees the sixth command
+- 2026-10-02 · after the deploy: F2.1 and F8.7 verified by the live MCP test and a live /listview run
