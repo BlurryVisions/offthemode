@@ -1,5 +1,5 @@
 # Checklist · Off the Mode
-Last revisit: 2026-10-02 · Verified 34/62
+Last revisit: 2026-10-02 · Verified 35/62
 
 A map, not a gate. Build in any order; /listrevisit reconciles and updates this file.
 Marks: [ ] todo · [~] in progress · [x] built, not proven · [v] verified, evidence cited · [-] dropped, reason kept
@@ -81,7 +81,7 @@ For the person: they pick their tool and are done in one step, on any device.
 - [v] F7.5 /method readable without JavaScript and with no third-party script · done when: curl of /method shows sheet text and no cdnjs reference · guide: always-on-accessibility-performance-budgets · evidence: curl of local /method shows sheet text with scripts stripped, 0 cdnjs references (2026-09-30)
 - [v] F7.6 the closed index drawer is out of the tab order · done when: at 375 px, Tab from the top reaches the content without landing off-screen · guide: always-on-accessibility-performance-budgets · evidence: live /method at 375 px: links in the closed index are visibility hidden and refuse focus; the same link in the page strip takes focus on-screen (browser check, 2026-09-30)
 - [-] F7.7 the home page's script weight within a budget · dropped 2026-09-30: Off the Mode sets no size limits; how minimal or comprehensive a product is stays its builder's call (DECISIONS D-005)
-- [~] F7.8 the site follows its own being-found guide · done when: the live robots.txt and sitemap.xml return 200 with the production address, the home page carries its title, description, canonical, share image and WebSite structured data, and the sitemap is submitted in Search Console · guide: always-on-being-found · evidence: live after commit 0126e4c (2026-10-07): robots.txt and sitemap.xml return 200 with https://offthemode.vercel.app addresses; /, /method and /view carry canonical and og:image; the share image serves; WebSite JSON-LD on /; waiting only on the Search Console and Bing submissions (the author's accounts)
+- [v] F7.8 the site follows its own being-found guide · done when: the live robots.txt and sitemap.xml return 200 with the production address, the home page carries its title, description, canonical, share image and WebSite structured data · guide: always-on-being-found · evidence: live after commits 0126e4c and 06f8be2 (2026-10-07): robots.txt and sitemap.xml return 200 with https://offthemode.vercel.app addresses, robots.txt blocks the five training crawlers (D-014); /, /method and /view carry canonical and og:image; the share image serves; WebSite JSON-LD on /. Search Console left out by the author's choice: they don't want to own the vercel.app address yet
 - [ ] F7.Q Quality bars met for F7 · evidence:
 
 ### F8 · The view: your project at a glance · depends on: F7 · Verify: early
@@ -142,3 +142,4 @@ Dropped: (native) frame budget, because there is no native app · (UI) empty, lo
 - 2026-10-02 · F8.7 and F8.8 built (/listview and Chrome's remembered folder); F2.1 back to [x] until the live MCP test sees the sixth command
 - 2026-10-02 · after the deploy: F2.1 and F8.7 verified by the live MCP test and a live /listview run
 - 2026-10-07 · added F4.6 (the being-found guide), F4.7 (suggestions, not scripts) and F7.8 (the site follows the guide): from the author's SEO reel, checked against official sources and extended
+- 2026-10-07 · F7.8 verified live; its Search Console step dropped by the author's choice (no ownership of the vercel.app address yet)

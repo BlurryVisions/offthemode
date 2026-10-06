@@ -12,7 +12,7 @@ Rules only this project needs, each saying what to do and why, kept apart from t
 - Every word a user reads is plain: short sentences, no jargon, because the builders who read it are not all engineers.
 - The website and /method share one visual language, the drawing set: diazo paper in light, cyanotype in dark, redlines for change.
 - Every control is reachable by keyboard, and a closed panel stays out of the tab order.
-- Each command's rendered text stays under the MCP test's 6000-character guard (offthemode is at 5999), so a status check stays cheap: tighten wording before adding it.
+- Each command's rendered text stays under the MCP test's 8000-character guard, so a status check stays cheap. Write every rule in full, clear words first; raise the guard with a reason rather than squeeze a rule until it loses meaning (DECISIONS D-015).
 
 ## How to work
 - Talk first, then do. For anything beyond a small fix (a typo, a one-line change), restate the task and your plan in a few lines and wait for my go. Say what you changed when you're done.

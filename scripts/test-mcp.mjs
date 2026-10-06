@@ -58,8 +58,9 @@ expect(lr.includes("only the first word of the note") && lr.includes("the user's
 
 for (const name of ["offthemode", "reassess", "commentrevisit", "glossaryrevisit", "listview"]) {
   const t = (await rpc("tools/call", { name, arguments: {} })).content[0].text;
-  // Size guard: commands carry instructions only, so a status check stays cheap (~4 chars per token).
-  expect(t.length > 500 && t.length < 6000 && t.includes("Off the Mode"), `tools/call ${name} · ${t.length} chars (~${Math.round(t.length / 4)} tokens, limit 1500)`);
+  // Size guard: commands carry instructions only, so a status check stays cheap (~4 chars per token). Raised from 6000
+  // to 8000 on 2026-10-07 (D-015) because squeezing under 6000 had started to cost clarity; quality wins over the guard.
+  expect(t.length > 500 && t.length < 8000 && t.includes("Off the Mode"), `tools/call ${name} · ${t.length} chars (~${Math.round(t.length / 4)} tokens, limit 2000)`);
   if (name === "offthemode") expect(t.startsWith("Set up Off the Mode:") && !t.includes("Off the Mode · Set up"), "tools/call offthemode · header names it once");
   // listview gives a line for each shell, each writing every note as a <template data-offthemode-file>, and the skills' offline copy.
   if (name === "listview") expect(t.includes(`curl -fsSL https://offthemode.vercel.app/view -o "$OUT"`) && t.includes("Invoke-WebRequest https://offthemode.vercel.app/view") && (t.match(/<template data-offthemode-file=/g) ?? []).length === 2 && t.includes("view.html"),

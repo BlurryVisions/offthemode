@@ -66,3 +66,8 @@ Because: the author's go on 2026-10-06 · Revisit if: Google or the AI companies
 Context: D-012 proposed letting every crawler read the site; the author chose to block training · Decision: robots.txt allows every crawler by default, so search engines and the AI search bots (OAI-SearchBot, Claude-SearchBot, Claude-User, PerplexityBot) read everything, and gives each training token its own Disallow group: GPTBot, ClaudeBot, Google-Extended, Applebot-Extended, CCBot
 Rejected: allowing training (D-012); blocking crawlers no company documents a training token for (only what official pages confirm)
 Because: the author's go on 2026-10-07 · Cost: Google-Extended also controls grounding in the Gemini app, so Gemini may stop citing the site; Google Search and its AI Overviews are unaffected · Revisit if: the author wants Gemini to cite the site, or a company adds a new training crawler
+
+### D-015 · The command size guard rises to 8000 characters; quality wins · 2026-10-07 · decided
+Context: the setup command sat at 5999 of the MCP test's 6000-character guard, and squeezing had cut a rule's meaning (a rule-file fix "only on the user's go") and left lines hard to read · Decision: the guard is 8000 characters; rules are written in full, clear words first, and the guard is raised with a reason rather than a rule squeezed until it loses meaning
+Rejected: keeping 6000 and splitting setup into more files now (more reads for the same words)
+Because: the author: increase the limit if it compromises quality · Revisit if: a command passes about 7000 characters, then move rarely needed detail into the guide it points to
