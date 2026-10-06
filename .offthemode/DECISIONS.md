@@ -71,3 +71,8 @@ Because: the author's go on 2026-10-07 · Cost: Google-Extended also controls gr
 Context: the setup command sat at 5999 of the MCP test's 6000-character guard, and squeezing had cut a rule's meaning (a rule-file fix "only on the user's go") and left lines hard to read · Decision: the guard is 8000 characters; rules are written in full, clear words first, and the guard is raised with a reason rather than a rule squeezed until it loses meaning
 Rejected: keeping 6000 and splitting setup into more files now (more reads for the same words)
 Because: the author: increase the limit if it compromises quality · Revisit if: a command passes about 7000 characters, then move rarely needed detail into the guide it points to
+
+### D-016 · Setup time is noted, not a pass/fail item · 2026-10-07 · decided
+Context: two real setups took 39 and 46 active minutes against "about 10", both with real product thinking and agent research · Decision: time and reply counts are not checklist targets; F5.7 is dropped as a gate and times are noted when they happen; F5.5 becomes a quality check (setup never asks what the user already said or what the code shows)
+Rejected: a 3-reply cap and a 10-minute gate (count caps, and they punish projects that need real thinking)
+Because: the author: time depends on the project's complexity, the user's pace and the agents' research · Revisit if: a small, simple project still takes long

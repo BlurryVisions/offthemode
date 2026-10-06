@@ -1,5 +1,5 @@
 # Checklist · Off the Mode
-Last revisit: 2026-10-02 · Verified 35/62
+Last revisit: 2026-10-07 · Verified 35/62
 
 A map, not a gate. Build in any order; /listrevisit reconciles and updates this file.
 Marks: [ ] todo · [~] in progress · [x] built, not proven · [v] verified, evidence cited · [-] dropped, reason kept
@@ -55,11 +55,12 @@ For the person: their AI works to the method for each kind of work without turni
 For the person: soon after adding it (about ten minutes on a small project), they have a plan, or a health check, and a checklist.
 - [x] F5.1 the setup command covers both doors, talk first · done when: skills/offthemode/SKILL.md has a New and an Existing section, each with a go before writing · guide: p1-vision-skeleton · evidence: content/commands/offthemode.md
 - [x] F5.2 a path for tools that can't open the project · done when: a claude.ai chat run yields the PRODUCT.md and CHECKLIST.md text to save · guide: p1-vision-skeleton · evidence: setup has a no-file-access path; needs a claude.ai run
-- [v] F5.3 no placeholder left that nobody asked about · done when: grep "{{" on a dry run's .offthemode/ lists only blanks the user chose to leave · guide: none · evidence: Supersense trial (end to end, 2026-10-01): grep of its .offthemode/ finds no blank left; the one hit was the RULES template's own header text, reworded since
+- [v] F5.3 no placeholder left that nobody asked about · done when: grep "{{" on a dry run's .offthemode/ lists only blanks the user chose to leave · guide: none · evidence: Supersense trial (end to end, 2026-10-01): grep of its .offthemode/ finds no blank left; the one hit was the RULES template's own header text, reworded since; again in the lasscrobits new-project run (2026-10-06): no blank left, every template section present
 - [x] F5.4 the status path flags files that are filled but out of date · done when: on this repo's pre-update RULES.md, status names the missing sections · guide: none · evidence: the status branch compares each file's ## headings with the template; needs a run
-- [~] F5.5 fewer waits: project specifics, the file list and the auto-load line are confirmed in one go · done when: a dry run of the existing door counts at most 3 user turns before the checklist · guide: p1-vision-skeleton · evidence: Supersense trial: 5 setup replies before the checklist (start, 3 answers, one go), plus 3 to resume after spend-limit stops; not met
+- [x] F5.5 setup never asks what the user already said or what the code shows · done when: a setup run's questions hold none that the user's earlier messages or the project's files already answer · guide: p1-vision-skeleton · evidence: setup says "Use everything the user has already said, and never ask it again" (live since 5fc4f82, 2026-10-07); not yet checked against a run. Replaced the old 'at most 3 user turns' target (D-016)
 - [x] F5.6 the rules fit products without a web UI · done when: a dry run on a CLI keeps no UI or server line it can't meet · guide: none · evidence: (UI), (web), (native), (server) tags with delete-when-absent in RULES; needs a CLI dry run
-- [~] F5.7 timed with real people · done when: 3 builders, at least one per door, reach CHECKLIST.md within the time PRODUCT.md §Experience promises sets for their project's size, with the times written into PRODUCT.md · guide: none · evidence: 1 of 3: Supersense trial, 2026-09-30 to 10-01 (a large existing codebase, where PRODUCT.md sets no number): 39 active minutes and 5 setup replies before CHECKLIST.md, 6 multi-agent runs
+- [-] F5.7 timed with real people · dropped 2026-10-07 as a pass/fail item (D-016): time depends on the project's complexity, the user's pace and the agents' research; times are noted when they happen (Supersense 39 active minutes, lasscrobits 46, both with real product thinking), and the author may time a quick small-project run later for reference
+- [ ] F5.8 setup talks in plain words · done when: in a real setup run, the user never has to ask what a message means, and a fresh reader finds no unexplained term in setup's messages · guide: always-on-words-voice · evidence: not met in the lasscrobits run (2026-10-06): the user had to ask what "switching chat" meant, said "not clear… in simple words" and "didn't get the phone dashboard homescreen alert", and asked where the view was
 - [ ] F5.Q Quality bars met for F5 · evidence:
 
 ### F6 · The health check and revisits keep it honest · depends on: F5 · Verify: on completion
@@ -143,3 +144,4 @@ Dropped: (native) frame budget, because there is no native app · (UI) empty, lo
 - 2026-10-02 · after the deploy: F2.1 and F8.7 verified by the live MCP test and a live /listview run
 - 2026-10-07 · added F4.6 (the being-found guide), F4.7 (suggestions, not scripts) and F7.8 (the site follows the guide): from the author's SEO reel, checked against official sources and extended
 - 2026-10-07 · F7.8 verified live; its Search Console step dropped by the author's choice (no ownership of the vercel.app address yet)
+- 2026-10-07 · lasscrobits recorded (the first new-project run); F5.7 dropped and F5.5 rewritten as a quality check, not a count (D-016); F5.8 added: setup talks in plain words

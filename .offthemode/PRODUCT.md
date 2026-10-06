@@ -14,7 +14,7 @@ One method (rules, plan, look and feel, backend, navigation, the core in fragmen
 - Person: a builder using Claude, Cursor or another AI coding tool on a new or existing project · evidence heard (the author)
 - Jobs: 1. When I start or continue a project with an AI tool, I want it to plan like a top engineer and build in the right order, so I get a standout product instead of generic output · evidence heard
 - Found by: web search and AI answers; words: Claude Code, Cursor, AI coding tool, plan first · evidence hypothesis
-- Moment of value: within about ten minutes of adding it, a new project has a plan and a checklist; an existing project has a plain summary, where it stands against its core concept, and a checklist with what's done · on a large codebase it takes longer, because setup reads more and may run several agents · evidence observed once (Supersense trial, 2026-09-30 to 10-01 (an existing backend and frontend codebase): 39 active minutes and 5 setup replies before CHECKLIST.md, 6 multi-agent runs); the 10 minutes on a small project is still a hypothesis
+- Moment of value: within about ten minutes of adding it, a new project has a plan and a checklist; an existing project has a plain summary, where it stands against its core concept, and a checklist with what's done · on a large codebase it takes longer, because setup reads more and may run several agents · evidence observed twice: Supersense (a large existing codebase) 39 active minutes, lasscrobits (a new project) 46, both with real product thinking and agent research; time depends on complexity and pace, so it is noted, not a target (D-016)
 - Signature moment: the existing-project health check
 - Not for: people who want a code library or a UI kit
 
