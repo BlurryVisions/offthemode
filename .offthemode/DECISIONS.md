@@ -52,7 +52,7 @@ Context: the author found picking the .offthemode folder on every visit to the v
 Rejected: waiting for a go first, as the other commands do (an extra step for a command that changes nothing in the project); picking the folder on every visit as the only way in
 Because: one step from the command to the page, with nothing uploaded and nothing written in the project · Revisit if: /listview ever needs to write in the project, or browsers stop opening a local page
 
-### D-012 · AI crawlers: search and training allowed · 2026-10-07 · proposed, waiting for the author's go
+### D-012 · AI crawlers: search and training allowed · 2026-10-07 · superseded by D-014
 Context: the Being Found guide says the AI-crawler choice is written here before robots.txt carries it; the site had no robots.txt, so every crawler could already read every page, and the new app/robots.ts keeps that · Decision (proposed): robots.txt lets every crawler read every page: search engines, the AI search crawlers that quote pages in answers (OAI-SearchBot, Claude-SearchBot, PerplexityBot) and the crawlers that collect text to train AI models (GPTBot, ClaudeBot, Google-Extended, Applebot-Extended, CCBot); it names the sitemap
 Rejected: nothing yet; the other option is the guide's example, found and quoted but not used for training, with one Disallow group per training crawler
 Because: I think the author wants the free, MIT-licensed method to reach as many builders and AI tools as it can, because it exists to spread; a hypothesis until the author says go · Revisit if: the author chooses to keep the site out of training
@@ -61,3 +61,8 @@ Because: I think the author wants the free, MIT-licensed method to reach as many
 Context: the author found SEO missing and shared a reel's checklist; they also asked that any reference be taken to heart but improved, not followed blindly · Decision: a new guide, Always-On · Being Found (search, AI answers, app stores, or not at all), with pointers from the plan, backend, navigation, words, mobile and launch guides, built only on facts from official sources; the reel's items are judged keep, change or drop with their source; and a standing rule in every project: take references and suggestions to heart, check their claims, and say how to go further before building
 Rejected: pasting the reel's checklist as a launch-day audit (rendering, URLs and words are decided long before launch)
 Because: the author's go on 2026-10-06 · Revisit if: Google or the AI companies change what they publish
+
+### D-014 · AI crawlers: found and quoted, not used for training · 2026-10-07 · decided
+Context: D-012 proposed letting every crawler read the site; the author chose to block training · Decision: robots.txt allows every crawler by default, so search engines and the AI search bots (OAI-SearchBot, Claude-SearchBot, Claude-User, PerplexityBot) read everything, and gives each training token its own Disallow group: GPTBot, ClaudeBot, Google-Extended, Applebot-Extended, CCBot
+Rejected: allowing training (D-012); blocking crawlers no company documents a training token for (only what official pages confirm)
+Because: the author's go on 2026-10-07 · Cost: Google-Extended also controls grounding in the Gemini app, so Gemini may stop citing the site; Google Search and its AI Overviews are unaffected · Revisit if: the author wants Gemini to cite the site, or a company adds a new training crawler
