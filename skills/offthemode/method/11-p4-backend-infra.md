@@ -11,6 +11,7 @@
 - A mutation that charges, sends or calls a vendor must be safe to retry, with an idempotency key (one id per request, so a repeat is done only once).
 - Contract changes are additive only, unless the user approves a versioning plan.
 - A new dependency, service or environment variable gets a DECISIONS.md entry and an updated env check, on the user's go.
+- A page meant to be found (PRODUCT.md, Found by) stays rendered on the server or prebuilt, and robots.txt changes only with its DECISIONS.md entry (Always-On · Being Found).
 - Open the whole guide to choose hosting or the data architecture, to add an entity or a service, or to change the API style.
 <!-- /offthemode:rules -->
 
@@ -108,6 +109,16 @@ Show me the contract and wait for my go. Then generate a typed client and a mock
 | Rate limits | Per user and per IP at the edge; strict on auth, search and expensive routes | 429 with `Retry-After` |
 
 Row-level security (RLS) means Postgres itself checks, row by row, whether the current user may read or write. It backs up the `can()` module when app code slips.
+
+### Built to be found
+
+If PRODUCT.md's Found by line says people should find the product in search or AI answers, three backend choices decide whether they can, and each is cheap now and expensive later. Always-On · Being Found has the detail.
+
+- **Rendering.** Pages meant to be found are rendered on the server or prebuilt, so their words, links and tags are in the first HTML the server sends. A page that exists only after JavaScript runs is found late, or not at all.
+- **Structured data.** Generated from the same data and query that render the page, so it never says something the page doesn't.
+- **robots.txt.** Code, deployed with the app, carrying the AI-crawler choice from DECISIONS.md, with the host's bot protection set to match.
+
+A product not meant to be found decides that here too: a noindex header on whatever should stay out of search, and everything private behind the login.
 
 ### Parity, hosting, observability
 

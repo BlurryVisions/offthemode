@@ -1,4 +1,5 @@
 import data from "./content.generated.json";
+import { SITE_URL } from "./site-url.mjs";
 
 export type Command = {
   name: string;
@@ -20,10 +21,7 @@ export const REPO_URL = "https://github.com/BlurryVisions/offthemode";
 /** The standing rule the server sends to every client. Its only source is content/server/instructions.md. */
 export const INSTRUCTIONS = `${data.instructions}\n\nSource: ${REPO_URL}`;
 
-/** Public origin: NEXT_PUBLIC_SITE_URL, else Vercel's production domain, else local dev. */
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000");
+export { SITE_URL };
 export const MCP_URL = `${SITE_URL}/mcp`;
 
 /** A command as the agent receives it: who is speaking, the user's input, the instructions, and which templates to fetch.

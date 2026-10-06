@@ -1,5 +1,5 @@
 # Checklist · Off the Mode
-Last revisit: 2026-10-02 · Verified 33/59
+Last revisit: 2026-10-02 · Verified 34/62
 
 A map, not a gate. Build in any order; /listrevisit reconciles and updates this file.
 Marks: [ ] todo · [~] in progress · [x] built, not proven · [v] verified, evidence cited · [-] dropped, reason kept
@@ -47,6 +47,8 @@ For the person: their AI works to the method for each kind of work without turni
 - [v] F4.3 §Guides routes to expertise-injection and p0-constitution · done when: `npm run check` lists both as cited · guide: none · evidence: `npm run check`: expertise-injection and p0-constitution are not in the not-cited list (2026-09-30)
 - [v] F4.4 every number has one owner: time to value in PRODUCT.md, budgets in one json block in RULES.md §Budgets · done when: the method's own budget parser reads the block from the RULES template · guide: always-on-accessibility-performance-budgets · evidence: the method's budget reader (BLUEPRINT audit script) parses this repo's RULES.md block and stops on the raw template's blanks (2026-09-30)
 - [v] F4.5 security from day one is set up by setup, or the method stops promising it · done when: the P7 phase table, P0 output and RULES template §Safety say the same thing · guide: p7-security-hardening · evidence: P7 phase table (BLUEPRINT:28), P0's Safety row (:204), P7 working rules (:1907) and the RULES template §Safety all say: day-one rules in §Safety, SECURITY.md written at the first security work and pointed to from §Safety (2026-09-30)
+- [x] F4.6 a guide for being found: search, AI answers, app stores, or not at all · done when: RULES.md §Guides routes to always-on-being-found, npm run check passes, and every fact in the guide has an official source or is written as a hypothesis · guide: always-on-being-found · evidence: guide written from 143 facts read on official pages (2026-10-06); a fresh reviewer checked its claims against them and 14 issues were fixed; npm run check passes
+- [v] F4.7 references and suggestions are taken to heart, never as a script · done when: the rule is in the RULES template's §How to work, setup's Questions and the method · guide: none · evidence: grep finds it in content/templates/RULES.md, content/commands/offthemode.md and BLUEPRINT.md (Product-First Doctrine, P3 references), 2026-10-07
 - [ ] F4.Q Quality bars met for F4 · evidence:
 
 ### F5 · Setup: both doors reach the first win · depends on: F2, F3, F4 · Verify: on completion
@@ -79,6 +81,7 @@ For the person: they pick their tool and are done in one step, on any device.
 - [v] F7.5 /method readable without JavaScript and with no third-party script · done when: curl of /method shows sheet text and no cdnjs reference · guide: always-on-accessibility-performance-budgets · evidence: curl of local /method shows sheet text with scripts stripped, 0 cdnjs references (2026-09-30)
 - [v] F7.6 the closed index drawer is out of the tab order · done when: at 375 px, Tab from the top reaches the content without landing off-screen · guide: always-on-accessibility-performance-budgets · evidence: live /method at 375 px: links in the closed index are visibility hidden and refuse focus; the same link in the page strip takes focus on-screen (browser check, 2026-09-30)
 - [-] F7.7 the home page's script weight within a budget · dropped 2026-09-30: Off the Mode sets no size limits; how minimal or comprehensive a product is stays its builder's call (DECISIONS D-005)
+- [~] F7.8 the site follows its own being-found guide · done when: the live robots.txt and sitemap.xml return 200 with the production address, the home page carries its title, description, canonical, share image and WebSite structured data, and the sitemap is submitted in Search Console · guide: always-on-being-found · evidence: built and checked locally (2026-10-07); the live check follows the deploy; Search Console is the author's step
 - [ ] F7.Q Quality bars met for F7 · evidence:
 
 ### F8 · The view: your project at a glance · depends on: F7 · Verify: early
@@ -138,3 +141,4 @@ Dropped: (native) frame budget, because there is no native app · (UI) empty, lo
 - 2026-10-02 · F2.1 now counts six commands (listview), so it is back to [x] until the live MCP test passes after the deploy
 - 2026-10-02 · F8.7 and F8.8 built (/listview and Chrome's remembered folder); F2.1 back to [x] until the live MCP test sees the sixth command
 - 2026-10-02 · after the deploy: F2.1 and F8.7 verified by the live MCP test and a live /listview run
+- 2026-10-07 · added F4.6 (the being-found guide), F4.7 (suggestions, not scripts) and F7.8 (the site follows the guide): from the author's SEO reel, checked against official sources and extended

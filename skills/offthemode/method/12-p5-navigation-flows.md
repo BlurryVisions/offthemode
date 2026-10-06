@@ -7,7 +7,7 @@
 - Any view a person would refresh, bookmark or share keeps its state in the URL. Back and reload return to the same place.
 - A new or changed screen covers every state in the ROUTES.md state inventory (first-run, empty, loading, partial, error, offline, no permission), each with one next action.
 - Every tap gets visible feedback, inside feedback_ms when RULES.md §Budgets holds it.
-- Update ROUTES.md in the same change as the route.
+- Update ROUTES.md in the same change as the route, including whether it should be found; a route meant to be found keeps one canonical URL and its place in the sitemap (Always-On · Being Found).
 - Open the whole guide to add a primary destination, change how the product's places connect (the information architecture), or add a core journey.
 <!-- /offthemode:rules -->
 
@@ -18,6 +18,8 @@ Get the whole product working as a shell before the core does anything. In a com
 Rank the entities by how often your person touches each one times its value, and promote to primary destinations only the ones at the top that the person reaches for in most sessions. Everything else is reached through a parent, search or the command palette. Verbs are actions on objects, never menu items.
 
 If a person would refresh, bookmark or share a view, it lives in the URL: filters, sort, tabs, selection, route-backed modals. Opening an object pushes a history entry, and changing a filter replaces the current one. Back closes a modal before it leaves the page. Scroll gets restored, and focus moves to the main heading.
+
+ROUTES.md also says whether each route should be found: yes, noindex (public but kept out of search) or login. A route meant to be found has one canonical URL, a place in the sitemap the build generates from ROUTES.md, a link from at least one other page in words that say what is there, and a real 404 when what it names doesn't exist. When it moves, one permanent redirect goes straight to the new address. Always-On · Being Found has the detail.
 
 Every tap gets visible feedback, inside feedback_ms when RULES.md §Budgets holds it. Prefetch on intent (hover, focus, touch-start), seed detail views from the cached list item, and move fetches into route loaders so requests can't waterfall (wait on each other one after another).
 
@@ -35,12 +37,14 @@ Show me the object map and the ranking first and wait for my go. Then write .off
 ROUTES: {{PRODUCT_NAME}} · source of truth for navigation; a route change updates this file in the same commit.
 
 ### Route map
-| Route | Purpose | Access | URL state (param: type = default) | History | Deep link | Back target |
-|---|---|---|---|---|---|---|
-| / | {{MOMENT_OF_VALUE}} surface | user | none | - | {{SCHEME}}:// | - |
-| /{{object}}s | Collection (tab 1) | user | q: string; sort: recent or name = recent; cursor | replace | https://{{DOMAIN}}/{{object}}s | / |
-| /{{object}}s/:id | Detail | member | tab: overview or activity = overview | push | https://{{DOMAIN}}/{{object}}s/:id | /{{object}}s |
-| /{{object}}s/:id/edit | Route-backed sheet | editor | none | push; back closes | same as web | /{{object}}s/:id |
+| Route | Purpose | Access | Found | URL state (param: type = default) | History | Deep link | Back target |
+|---|---|---|---|---|---|---|---|
+| / | {{MOMENT_OF_VALUE}} surface | user | {{yes, noindex or login}} | none | - | {{SCHEME}}:// | - |
+| /{{object}}s | Collection (tab 1) | user | login | q: string; sort: recent or name = recent; cursor | replace | https://{{DOMAIN}}/{{object}}s | / |
+| /{{object}}s/:id | Detail | member | login | tab: overview or activity = overview | push | https://{{DOMAIN}}/{{object}}s/:id | /{{object}}s |
+| /{{object}}s/:id/edit | Route-backed sheet | editor | login | none | push; back closes | same as web | /{{object}}s/:id |
+
+Found: yes (meant to be found; the sitemap is generated from these rows), noindex (public, kept out of search) or login (private).
 
 ### Core journeys
 J1 {{JOURNEY}}: first run to {{MOMENT_OF_VALUE}} in {{N}} interactions, inside the time to value in PRODUCT.md §Experience promises. Driven by e2e/journeys/j1.{{ext}}.

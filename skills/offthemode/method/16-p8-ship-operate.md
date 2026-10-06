@@ -27,7 +27,7 @@ Before building, list the sections and what each one shows, and wait for my go.
 
 ### The launch checklist
 
-- [ ] Per-route title and meta in the product's voice (never "Home | X"); canonical URLs, `robots.txt`, a `sitemap.xml` generated from .offthemode/ROUTES.md, `noindex` on previews; Open Graph images generated per page from tokens, because the link preview is often the first impression
+- [ ] Being found: the Being Found Audit (Always-On · Being Found) passes, with proof for every page and store listing PRODUCT.md says should be found and for every one that should stay out, previews and staging included
 - [ ] Privacy policy generated from what your tracking plan and the schema actually collect, then reviewed by a lawyer (this is not legal advice); terms; working account deletion and export; consent only for non-essential trackers, with reject as prominent as accept and Global Privacy Control honored; GDPR and CCPA/CPRA where your users are
 - [ ] India's DPDP Act 2023 if you serve Indian users. The Rules were notified in November 2025, with most obligations applying from May 2027: a per-purpose plain-language notice, affirmative consent, withdrawal as easy as giving it, a grievance contact, breach notification, verifiable parental consent for under-18s, and erasure once the purpose is served
 - [ ] SPF, DKIM and DMARC for transactional email; designed 404, 500, offline and maintenance states; a status page hosted apart from the app

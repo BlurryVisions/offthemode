@@ -26,6 +26,10 @@ AI tools help by adding. RULES.md §Product first pushes back: no feature withou
 
 > **Why:** The quoting rule turns a vague value into a lookup. Models look things up reliably; they apply vague values unreliably.
 
+### Suggestions: taken to heart, never as a script
+
+References and suggestions reach every product: a rival's feature, a teammate's idea, a checklist from a short video, a best-practice post, an AI's answer. Take each one to heart, never as a script. Find what makes it work and keep that. Check its claims against the official source, because popular advice is often out of date and sometimes was never true. Then go further: a better version, a fresh idea or an extension it never thought of. A suggestion copied whole brings its author's average with it; one that is understood becomes your own decision, written in DECISIONS.md with its source. Always-On · Being Found shows the rule applied to a popular search checklist.
+
 ### Make the experience testable
 
 "Top of the game" UX has to be testable, or your AI cannot aim at it. An AI driving a browser cannot measure a 100 ms tap, because one tool round-trip takes longer than that, and "one-handed" is not something it can observe. So each property gets a script check: code that measures it and passes or fails. PRODUCT.md §Experience promises says what each promise is, and holds the time to the moment of value. Any speed, interaction or accessibility number the product chooses to hold is a key in RULES.md §Budgets: Off the Mode sets none for you, and Accessibility & Performance Budgets lists common keys to copy. Each number lives in one place only, so it changes in one place. Where a row below names a key the product doesn't hold, that part of the check is skipped.

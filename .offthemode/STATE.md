@@ -1,7 +1,7 @@
-STATE · updated 2026-10-02 · under 40 lines · rewritten, not appended, whenever a real piece of work ends
+STATE · updated 2026-10-07 · under 40 lines · rewritten, not appended, whenever a real piece of work ends
 
 ## Now
-Live at https://offthemode.vercel.app (MCP at /mcp, method at /method), repo public at https://github.com/BlurryVisions/offthemode. The fixes from the 2026-09-29 self-reassess are live and on GitHub (commit 1939a47, deployed 2026-09-30; CI green): guides open as short working rules unless the whole guide is asked for, the server's instructions apply only to projects with .offthemode/, /method renders at build time, and setup, reassess and listrevisit hand over to each other. The live MCP test passes (both protocol versions); npm run check, npm run build and npm run audit pass; both pages were looked at in light and dark.
+Live at https://offthemode.vercel.app (MCP at /mcp, method at /method, the view at /view), repo public at https://github.com/BlurryVisions/offthemode; a push to main deploys. Six commands, including /listview. The view draws a project's .offthemode/ folder on one sheet with nothing uploaded. New on 2026-10-07: the guide Always-On · Being Found (search, AI answers, app stores, or not at all, built from 143 facts on official pages), the rule that suggestions are taken to heart but never as a script, and the site's own robots.txt, sitemap, share image and search titles. Checklist 34/62 verified.
 
 ## Next (item 1 is where the next session starts)
 1. A scripted dry run for what the Supersense trial couldn't cover, kept as npm run eval (CHECKLIST F6.6): a new project, a chat with no file access (F5.2), a product with no web UI (F5.6)
@@ -9,8 +9,7 @@ Live at https://offthemode.vercel.app (MCP at /mcp, method at /method), repo pub
 3. Time two more builders, including a new project (F5.7)
 
 ## In flight
-- F8, the view (offthemode.vercel.app/view): built and checked locally, not committed yet
-- the Supersense session still has its own setup edits to commit there
+- nothing in this repo
 
 ## Unverified
 - the view in Safari and Firefox, and through a real folder dialog or drag and drop (only Chrome's file input was driven by script): CHECKLIST F8.1
@@ -22,7 +21,7 @@ Live at https://offthemode.vercel.app (MCP at /mcp, method at /method), repo pub
 ## Waiting on me · known broken · do not touch
 - Pushing to main deploys to production on its own (Vercel is linked to GitHub): push only what should go live.
 - In Claude Code auto mode, the MCP tools need the allow rule mcp__offthemode; the skills need none.
-- The offthemode command is at 5969 of the MCP test's 6000-character guard: tighten before adding to it.
+- The offthemode command is at 5999 of the MCP test's 6000-character guard: tighten before adding to it.
 - The code calls a guide Sheet (lib/content.ts); people read "guide". Rename when that code is next touched (GLOSSARY.md §Terms).
 
 ## Corrections seen once (date · what)

@@ -12,12 +12,13 @@ Rules only this project needs, each saying what to do and why, kept apart from t
 - Every word a user reads is plain: short sentences, no jargon, because the builders who read it are not all engineers.
 - The website and /method share one visual language, the drawing set: diazo paper in light, cyanotype in dark, redlines for change.
 - Every control is reachable by keyboard, and a closed panel stays out of the tab order.
-- Each command's rendered text stays under the MCP test's 6000-character guard (offthemode is at 5969), so a status check stays cheap: tighten wording before adding it.
+- Each command's rendered text stays under the MCP test's 6000-character guard (offthemode is at 5999), so a status check stays cheap: tighten wording before adding it.
 
 ## How to work
 - Talk first, then do. For anything beyond a small fix (a typo, a one-line change), restate the task and your plan in a few lines and wait for my go. Say what you changed when you're done.
 - One concern per change. The smallest diff that fully solves it; drive-by refactors become follow-ups.
 - Never build on an assumption. When something is unclear (what I want, how something should behave, what the code does), write it as a hypothesis, "I think X, because Y", so it is clear, then confirm it before building on it: check it in the code or docs, or ask me. Questions come batched and numbered, most important first, each with your recommended answer, in more rounds if needed, until nothing left would change the plan.
+- Take my references and suggestions to heart, never as a script. Keep what makes them work, check their claims against official sources, and before building, say where they could go further: a better version, a fresh idea or an extension.
 - Read STATE.md when you start. When a real piece of work ends, rewrite STATE.md (now, next, in flight, unverified), add a correction I gave for the first time to its Corrections seen once, and add any decision to DECISIONS.md. A correction given twice becomes a proposed line in Project specifics.
 - Sessions stay free. Never force the checklist; /listrevisit catches up afterwards.
 
@@ -36,6 +37,7 @@ Off the Mode has a guide for each kind of work. Before you plan or do work of th
 | build or rework a core fragment | p6-core-build-iteration |
 | touch login, permissions, user input, uploads, secrets, payments or AI features | p7-security-hardening |
 | launch, release or set up monitoring | p8-ship-operate |
+| make a page people should find, a public launch, or a store listing | always-on-being-found |
 | change RULES.md, or end a piece of work | p0-constitution |
 | write words people will read | always-on-words-voice |
 | write or change tests and checks | always-on-verification-loop |

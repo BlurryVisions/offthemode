@@ -10,12 +10,17 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { zipSync, strToU8 } from "fflate";
 import { renderMethod } from "./render-method.mjs";
+import { SITE_URL } from "../lib/site-url.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CHECK = process.argv.includes("--check");
 const COMMITTED = process.argv.includes("--committed");
 const REPO_URL = "https://github.com/BlurryVisions/offthemode";
-const SKILLS_ZIP_URL = "https://offthemode.vercel.app/skills/offthemode-skills.zip";
+// skills/ is committed and taken from GitHub, so the addresses it carries are the live site's, never this build's.
+const LIVE_SITE = "https://offthemode.vercel.app";
+const SKILLS_ZIP_URL = `${LIVE_SITE}/skills/offthemode-skills.zip`;
+// The pages write the site's address as __SITE__ in their canonical link and share tags.
+const withSite = (html, site) => html.replaceAll("__SITE__", () => site);
 const fail = (msg) => { console.error(`build-content: ${msg}`); process.exit(1); };
 const read = (p) => readFileSync(join(ROOT, p), "utf8");
 
@@ -240,7 +245,7 @@ function skillFiles() {
       }
     } else if (c.name === VIEWER) {
       refs.push("`view.html`, next to this file, is the view page: copy it to the temporary file in place of the download.");
-      files[`${dir}/view.html`] = view.html;
+      files[`${dir}/view.html`] = withSite(view.html, LIVE_SITE);
     } else {
       refs.push(`The guides and all the templates are in the ${ENTRY} skill, next to this one: \`../${ENTRY}/method/\` (\`INDEX.md\` lists the guides; their working rules are in \`../${ENTRY}/method/rules/\`) and \`../${ENTRY}/templates/\`.`);
     }
@@ -358,7 +363,7 @@ for (const [name, html] of Object.entries(slots)) {
 const left = page.match(/<!--slot:[a-zA-Z]+-->/);
 if (left) fail(`method-page.html: ${left[0]} has no content`);
 if (/<script[^>]*\ssrc=/.test(page)) fail("method-page.html: /method must load no outside script");
-page = page.replace("__TITLE__", () => "Off the Mode · the method");
+page = withSite(page, SITE_URL);
 const split = page.indexOf('<div class="shell">');
 if (split < 0) fail("method-page.html: shell marker missing");
 // Without JavaScript nothing can copy, tick or open the drawer, so those controls hide and long templates unclamp.
@@ -377,6 +382,6 @@ writeFileSync(join(ROOT, "public/method/index.html"), html);
 
 // ---------- public/view/index.html ----------
 mkdirSync(join(ROOT, "public/view"), { recursive: true });
-writeFileSync(join(ROOT, "public/view/index.html"), view.html);
+writeFileSync(join(ROOT, "public/view/index.html"), withSite(view.html, SITE_URL));
 
 console.log(`build-content: ${commands.length} commands, ${Object.keys(templates).length} templates, ${sheets.length} sheets (${withRules.length} with working rules) -> skills/ (${Object.keys(skills).length} files), lib/content.generated.json, public/method (${counts.prompts} prompts, ${counts.files} file templates), public/view (${view.scripts} script${view.scripts === 1 ? "" : "s"} pinned by hash), public/skills (${commands.length + 1} zips)`);

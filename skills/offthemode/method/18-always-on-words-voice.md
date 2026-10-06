@@ -14,6 +14,7 @@ Banned: hype copy ({{HYPE_WORDS, e.g. seamless, effortless, unlock, supercharge,
 
 ### Patterns
 - Headlines name the outcome in the user's nouns: "Every invoice reconciled by 9am", not "Streamline your finances".
+- Page titles and descriptions say what the page holds, in the words people type (GLOSSARY.md), one of each per page; never "Home | X".
 - Buttons are verb + object and predict the result: "Export 3 clips". Destructive confirms name the consequence: "Delete 12 files" / "Keep files".
 - Errors: what happened, why if known, what to do next. Never blame, never clear what the person typed.
 - Empty states: what this space holds and why it matters, plus one action.
@@ -21,6 +22,8 @@ Banned: hype copy ({{HYPE_WORDS, e.g. seamless, effortless, unlock, supercharge,
 ```
 
 A grade 6 to 8 reading level means text an 11 to 14 year old reads without effort; it is about speed of reading, not about talking down. Intl is the built-in formatter in JavaScript that writes numbers, dates, currency and plurals correctly for each locale; every platform has an equivalent. Using it means "1 file" and "2 files" are never glued together by hand.
+
+Titles, descriptions, headings and alt text are also what search results, AI answers and link previews show. Always-On · Being Found says where each one appears and how it is read.
 
 ```prompt title="Copy Pass"
 Copy pass on {{SURFACE_OR_PATH}}. Edit only user-facing strings and the string catalog. Read .offthemode/VOICE.md (with its banned words) and .offthemode/GLOSSARY.md first.

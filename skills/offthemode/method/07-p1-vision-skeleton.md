@@ -21,6 +21,7 @@ Setup (the offthemode command) creates PRODUCT.md from its template, which you c
 - **Vision.** One sentence: "For [person] who [struggle], [product] is the [frame] that [the one thing], unlike [status quo], which [why it fails them]." It forces a person, a struggle and a rival into one line.
 - **Person.** A specific person in a specific situation, with what they already have open. Their skill (novice, practitioner or expert) sets the default density. Name the tools and workarounds they use today.
 - **Jobs.** Ranked, each as "When [situation], I want to [motivation], so I can [outcome]." Keep a job only if a real person has it and it changes what gets built or cut.
+- **Found by.** Where people should find the product (web search, AI answers, an app store, or nowhere, as for an internal tool or a logged-in app) and the words they type when they look for it. It changes how pages are rendered and addressed, so it is decided now; the words also go beside their terms in GLOSSARY.md. Always-On · Being Found says how.
 - **Moment of value.** What they see or feel, within how long of first opening the product, after at most how many steps and decisions. Say whether an account is required before it, and if so, why.
 - **Signature moment.** The one interaction people would screen-record. It gets outsized polish.
 - **Not for.** Who you deliberately disappoint, and why.
@@ -112,7 +113,7 @@ Go wide, then narrow:
 3. Check availability live (domains, handles, stores, trademark databases), never from memory. A name you can't own is a hypothesis, not a name.
 4. You choose. The name, why it fits and the checks go in PRODUCT.md §Name, and nothing public is built on it until it is confirmed.
 
-Feature and screen names follow the same rule, in the words your users already use, and live in GLOSSARY.md §Terms.
+Feature and screen names follow the same rule, in the words your users already use, and live in GLOSSARY.md §Terms, beside the words people type when they search for them (Always-On · Being Found).
 
 ```prompt title="Name the Product"
 Help me name {{?PRODUCT: from the thesis and core concept in PRODUCT.md}}. Talk first; don't write any file until I choose.

@@ -37,10 +37,19 @@ const ORDER = [
   ["Ship", "Launch, watch, learn, improve the setup itself"],
 ] as const;
 
+// Google's site-name markup: WebSite with name and url, on the home page only. SoftwareApplication would earn no rich
+// result here, since Google requires a rating or review for it and Off the Mode has none to show.
+const websiteJsonLd = { "@context": "https://schema.org", "@type": "WebSite", name: "Off the Mode", url: `${SITE_URL}/` };
+
 export default function Home() {
   const zips = commands.map((c) => ({ name: c.name, href: `/skills/${c.name}.zip` }));
   return (
     <>
+      <script
+        type="application/ld+json"
+        // JSON-LD is data, not code; "<" is escaped so the text can never close the script tag (Next's JSON-LD guide).
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c") }}
+      />
       <header className="bar">
         <div className="wrap">
           <a className="mark" href="/">Off the <span>Mode</span></a>

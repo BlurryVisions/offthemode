@@ -19,6 +19,7 @@ Every phase of the method still applies on mobile. This guide covers what change
 - [ ] Google Play: Data safety form, current target API level, prominent disclosure; new personal developer accounts need a closed test with 12 or more opted-in testers for 14 continuous days
 - [ ] Over-the-air updates (EAS Update, Shorebird) only for JS or Dart code and assets, never a change of the app's primary purpose; anything native needs a store build; pin the update runtime to the native build
 - [ ] Phased release and staged rollout gated on crash-free sessions; a remote-config kill switch shipped before you need it; store screenshots captured from the real app on the demo seed, in moment-of-value order (P8, Landing as Demo)
+- [ ] The store listing written for store search (Always-On · Being Found): fields in the words people type, from GLOSSARY.md; no "#1", "Best" or "Top"; universal links and App Links so one address opens the app or the web page; an internal app uses unlisted (Apple) or private (Google Play) distribution, decided before the first upload
 - [ ] Device matrix: smallest and largest phones; a 2 to 4 GB Android on the oldest supported OS; largest text, bold text, reduced motion, VoiceOver, TalkBack; RTL and Devanagari locales; offline, flaky 3G, an incoming call, an hour in the background, a permission revoked in Settings; cutouts and a foldable
 
 ```prompt title="Mobile Platform Pass"

@@ -7,16 +7,21 @@ const display = Martian_Mono({ subsets: ["latin"], axes: ["wdth"], variable: "--
 const body = Schibsted_Grotesk({ subsets: ["latin"], variable: "--font-body", display: "swap" });
 const mono = Fragment_Mono({ subsets: ["latin"], weight: "400", variable: "--font-mono", display: "swap" });
 
+// Written in the words a builder searches with: the tool's name, "plan first", "AI coding tool". The share title
+// leaves the site name out and og:site_name carries it, as Apple's link-preview guide (TN3156) asks. That X falls
+// back to the og:* tags is unconfirmed (its docs don't load), so the card repeats them.
+const shareTitle = "Make your AI coding tool plan first and build in the right order";
+const shareText =
+  "Left alone, your AI builds the average. Off the Mode makes Claude Code, Cursor, Codex or any AI coding tool plan first, build in order and hold an elite bar.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Off the Mode",
+  title: "Off the Mode · make your AI coding tool plan first and build in the right order",
   description:
-    "A prompt-engineering setup that makes Claude, Cursor or any AI coding tool plan first, build in the right order, and hold an elite bar. Add it with one link.",
-  openGraph: {
-    title: "Off the Mode",
-    description: "Left alone, your AI builds the average. Off the Mode makes it plan first, build in order, and hold an elite bar.",
-    type: "website",
-  },
+    "A free, open-source setup that makes Claude Code, Cursor, Codex or any AI coding tool plan before it builds, work in the right order and hold an elite bar. Add it with one link: an MCP server or a skills pack.",
+  alternates: { canonical: "/" },
+  openGraph: { title: shareTitle, description: shareText, url: "/", siteName: "Off the Mode", type: "website" },
+  twitter: { card: "summary_large_image", title: shareTitle, description: shareText },
 };
 
 export const viewport: Viewport = {

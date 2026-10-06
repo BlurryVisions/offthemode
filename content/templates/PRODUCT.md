@@ -13,6 +13,7 @@ For {{PERSON}} who {{STRUGGLE}}, {{?PROJECT_NAME}} is the {{FRAME}} that {{THE_O
 ## Person, job, moment
 - Person: {{a specific person in a specific situation}} · evidence {{observed, heard or hypothesis}}
 - Jobs, ranked (keep a job only if a real person has it and it changes what gets built or cut): 1. When {{SITUATION}}, I want to {{MOTIVATION}}, so I can {{OUTCOME}} · evidence {{observed, heard or hypothesis}}
+- Found by: {{the words they type and where: search, AI answers, an app store, or not meant to be found}} · evidence {{observed, heard or hypothesis}}
 - Moment of value: {{what they see or feel}} (how soon, and in how many steps: §Experience promises) · evidence {{observed, heard or hypothesis}}
 - Signature moment: {{the one interaction or result people would show someone else, or none yet}}
 - Not for: {{who we deliberately disappoint, and why}}

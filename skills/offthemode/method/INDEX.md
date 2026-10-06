@@ -26,12 +26,13 @@ One file per guide. Open only the guide for the work in front of you: RULES.md �
 - `18-always-on-words-voice.md` · Always-On · Words & Voice
 - `19-always-on-real-data.md` · Always-On · Real Data
 - `20-always-on-accessibility-performance-budgets.md` · Always-On · Accessibility & Performance Budgets
-- `21-always-on-instrumentation.md` · Always-On · Instrumentation
-- `22-always-on-agent-orchestration.md` · Always-On · Agent Orchestration
-- `23-always-on-prompt-library.md` · Always-On · Prompt Library
-- `24-always-on-revisits.md` · Always-On · Revisits
-- `25-mobile-addendum.md` · Mobile Addendum
-- `26-prompt-craft-toolkit.md` · Prompt Craft Toolkit
-- `27-anti-patterns.md` · Anti-patterns
-- `28-how-to-add-it.md` · How to add it
-- `29-the-daily-loop.md` · The daily loop
+- `21-always-on-being-found.md` · Always-On · Being Found · working rules: `rules/21-always-on-being-found.md`
+- `22-always-on-instrumentation.md` · Always-On · Instrumentation
+- `23-always-on-agent-orchestration.md` · Always-On · Agent Orchestration
+- `24-always-on-prompt-library.md` · Always-On · Prompt Library
+- `25-always-on-revisits.md` · Always-On · Revisits
+- `26-mobile-addendum.md` · Mobile Addendum
+- `27-prompt-craft-toolkit.md` · Prompt Craft Toolkit
+- `28-anti-patterns.md` · Anti-patterns
+- `29-how-to-add-it.md` · How to add it
+- `30-the-daily-loop.md` · The daily loop

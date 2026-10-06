@@ -17,6 +17,7 @@ Each part of the method is there because building with AI goes wrong in a specif
 | STATE.md and DECISIONS.md | Every session starts cold: the AI re-reads the code to find where things stand and reopens decisions that were already made. |
 | GLOSSARY.md | Nobody outside the build can say what the product does in plain words, and the code, the copy and the chat use three names for one thing. |
 | P8 · Ship & Operate, and Instrumentation | Hosted is not shipped: no launch, no monitoring, no loop from real use back to the product. |
+| Always-On · Being Found | Search is left to a launch-day checklist after rendering, addresses and words were chosen without it, so the pages strangers should find stay invisible and private ones can show up. |
 | Always-On · Agent Orchestration | One AI in one session does everything, including reviewing its own work. |
 | Evidence in PRODUCT.md, and the Five-Person Test | Every judge is a model or the builder; nobody checks that real people reach the moment of value. |
 | P3 · Visual Language (PRODUCT.md §Feeling, DESIGN.md) | "Unique" is defined against the average instead of toward a real point of view, so it drifts into the next trend. |

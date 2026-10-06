@@ -65,6 +65,8 @@ Save references as images in `.offthemode/design/refs/` with a one-line note eac
 
 Saturated traits live in DESIGN.md §Saturated and need a written product reason in DECISIONS.md. Anti-slop skills are a floor, not a ceiling: when everyone installs the same one, its escape routes become the next average.
 
+> **Rule:** A reference is taken to heart, never as a script. Name what makes it work and take that, as the extraction note does ("take the type scale, not the colour"), then go further: a better version, a fresh idea or an extension. A reference copied whole makes you one more copy of it. The same holds for every suggestion (Product-First Doctrine).
+
 ```prompt title="Saturation Check"
 For each trait in .offthemode/design/directions/*.md and .offthemode/DESIGN.md (faces, colour strategy, grid model, surface treatment, motion signature, layout device), estimate how saturated it is. Search if you can (Fonts In Use, Framer and Webflow template marketplaces, recent design-award galleries, all from the last 12 months); otherwise say you are estimating. Roughly 20+ hits, or a match in DESIGN.md §Saturated, means mainstream: keep it only with a written product reason, or replace it with a move derived from a §Taste tension.
 Output: Trait | Evidence | Verdict (keep with reason | replace) | Replacement.

@@ -11,7 +11,7 @@ Last revisited: {{?DATE}}. For anyone: a new teammate, an investor, your family.
 - Words you'll hear: {{?product word}}: {{?what it means, in a short phrase}}
 
 ## Terms
-One word per concept, used the same way in code, UI and copy.
-| Term | Never call it | In code | In UI |
-|---|---|---|---|
-| {{?TERM}} | {{?SYNONYMS_TO_AVOID}} | `{{?TypeName}}` | {{?user-facing word}} |
+One word per concept, used the same way in code, UI and copy. People search with holds the words people type when they look for the thing, collected from real people (Always-On · Being Found). Those words may go in page titles, descriptions, headings, link text, alt text and store fields, wherever they are true, while the UI keeps the Term. A word goes in one column, never both: Never call it keeps it out of everything people read.
+| Term | Never call it | People search with | In code | In UI |
+|---|---|---|---|---|
+| {{?TERM}} | {{?SYNONYMS_TO_AVOID}} | {{WORDS_PEOPLE_TYPE}} | `{{?TypeName}}` | {{?user-facing word}} |
