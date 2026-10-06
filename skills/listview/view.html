@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-AQnPS4sPy1NR3/bB63PyWq/R2OGMN/TciKAeXtCLSOE='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-iZtNTAqN+43TQCl8W0xmUHInRbeBtU3NSddOGMl8Rp8='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The view: your project's checklist and plan on one page · Off the Mode</title>
@@ -281,15 +281,10 @@ details[open] > summary .plus{color:var(--ink)}
 .it-detail .none{color:var(--ink-faint)}
 .ref{font-family:var(--f-data); font-size:var(--fs-inline); text-decoration-style:dotted}
 .ref-d{white-space:nowrap}
-/* revision cloud: red scallops around what the latest revision touched */
-.cloud{position:relative}
-.cloud::before{content:""; position:absolute; inset:var(--s-2) var(--s-3); pointer-events:none; background:
-  radial-gradient(circle at 50% 100%, transparent calc(var(--cloud-r) - var(--w-mid)), var(--red) calc(var(--cloud-r) - var(--w-mid)) var(--cloud-r), transparent var(--cloud-r)) top left / calc(var(--cloud-r) * 2) var(--cloud-r) repeat-x,
-  radial-gradient(circle at 50% 0, transparent calc(var(--cloud-r) - var(--w-mid)), var(--red) calc(var(--cloud-r) - var(--w-mid)) var(--cloud-r), transparent var(--cloud-r)) bottom left / calc(var(--cloud-r) * 2) var(--cloud-r) repeat-x,
-  radial-gradient(circle at 100% 50%, transparent calc(var(--cloud-r) - var(--w-mid)), var(--red) calc(var(--cloud-r) - var(--w-mid)) var(--cloud-r), transparent var(--cloud-r)) top left / var(--cloud-r) calc(var(--cloud-r) * 2) repeat-y,
-  radial-gradient(circle at 0 50%, transparent calc(var(--cloud-r) - var(--w-mid)), var(--red) calc(var(--cloud-r) - var(--w-mid)) var(--cloud-r), transparent var(--cloud-r)) top right / var(--cloud-r) calc(var(--cloud-r) * 2) repeat-y}
-.cloud > .items{padding-right:var(--s-4)}
-.bay.cloud > .cloud-tag{position:absolute; z-index:1; top:calc(var(--s-2) - var(--tag) * .7 + var(--w-hair)); right:var(--s-9); line-height:0}
+/* changed in the latest checklist update: one small mark after the sentence, explained in the legend */
+.chg{display:inline-flex; align-items:center; justify-content:center; margin-left:var(--s-2); color:var(--red); vertical-align:baseline; cursor:help}
+.chg-dot::before{content:""; width:.5em; height:.5em; border-radius:50%; background:currentColor}
+.chg-sym{font-family:var(--f-data); font-weight:700; font-size:1.25em; line-height:1}
 details.fold > summary{cursor:pointer; list-style:none; display:inline-flex; gap:var(--s-3); align-items:baseline; font-size:var(--fs-4)}
 details.fold > summary::-webkit-details-marker{display:none}
 details.fold[open] > summary{margin-bottom:var(--s-5)}
@@ -431,7 +426,6 @@ strong{font-weight:var(--wt-semi)}
   .primary{width:100%; justify-content:center}
   .reads li{grid-template-columns:var(--s-6) minmax(0,1fr); gap:var(--s-1) var(--s-4)}
   .reads li > :last-child{grid-column:2}
-  .bay.cloud > .cloud-tag{right:var(--s-7)}
 }
 @media (prefers-reduced-motion: reduce){ .stamp.landing{animation:none} }
 @media print{ .paper-set,.btn-quiet,.primary{display:none} }
@@ -812,7 +806,7 @@ function keyCell(ctx) {
   }).join("");
   const legend = MARK_ORDER.map((m) => `<li title="${MARK_SAYS[m]}"><i class="mk mk-${m}" aria-hidden="true"></i>${MARK_WORD[m]}<span class="n">${ctx.n[m]}</span></li>`).join("");
   return `<div class="cell cell-key"><span class="lab">Key plan · how far the core is</span>${rows.length ? `<ol class="kp">${kp}</ol>` : '<p class="psub">No fragments yet.</p>'}` +
-    `<ul class="legend">${legend}</ul><p class="scale">Scale: 1 square = 1 item · dropped items are left out of the x/y counts</p></div>`;
+    `<ul class="legend">${legend}</ul><p class="scale">Scale: 1 square = 1 item · dropped items are left out of the x/y counts</p>${ctx.cloudRevs && ctx.cloudRevs.length ? `<p class="scale">${chg(ctx.cloudRevs[ctx.cloudRevs.length - 1], ctx)} = changed in the latest checklist update; the list of updates is below</p>` : ""}</div>`;
 }
 function projectCell(d, ctx) {
   const frags = (ctx.c.fragments || []).length, items = ctx.items.length;
@@ -866,17 +860,26 @@ function tbHTML(d, ctx) {
     '<div class="cell"><button type="button" class="btn-quiet" data-open>Open another .offthemode folder</button></div></div></aside>';
 }
 
+/* The change mark: "dot" draws a small red dot; any other value is drawn as that symbol. The author chose the up
+   arrow: a dot reads as a full stop, and "!" as a problem. */
+const CHANGED = "↑";
+const plainDate = (v) => { const m = String(v || "").match(/(\d{4})-(\d{2})-(\d{2})/); return m ? `${+m[3]} ${MONTHS[+m[2] - 1].charAt(0)}${MONTHS[+m[2] - 1].slice(1).toLowerCase()} ${m[1]}` : String(v || ""); };
+const chg = (rev, ctx) => {
+  const when = ctx.cloudDate ? ` on ${plainDate(ctx.cloudDate)}` : "";
+  const say = `Changed${when}, in checklist update ${rev}`;
+  return `<span class="chg ${CHANGED === "dot" ? "chg-dot" : "chg-sym"}" title="${esc(say)}" role="img" aria-label="${esc(say)}">${CHANGED === "dot" ? "" : esc(CHANGED)}</span>`;
+};
 /* ---------- A: the board ---------- */
 function itemHTML(it, ctx) {
   let text = String(it.text || ""), hold = "";
   const k = text.indexOf(" · blocked on: ");
   if (k >= 0) { hold = text.slice(k + 15); text = text.slice(0, k); }
   const notes = ctx.nextByRef[it.id] || [], rev = ctx.cloudByRef[it.id];
-  const tags = notes.map(hex).join("") + (rev ? delta(rev, "red", `changed in revision ${rev}`) : "");
+  const tags = notes.map(hex).join("");
   const has = it.doneWhen || it.evidence || it.guide || it.dropped;
-  const cls = `it m-${esc(it.mark)}${notes.length ? " next" : ""}${rev ? " cloud" : ""}`;
+  const cls = `it m-${esc(it.mark)}${notes.length ? " next" : ""}`;
   const head = `<i class="mk mk-${esc(it.mark)}" aria-hidden="true"></i><span class="it-id">${esc(it.id)}</span>` +
-    `<span class="it-text"><span class="sr">${MARK_WORD[it.mark]}: </span>${inline(text)}${hold ? `<span class="hold"><b>Hold</b>blocked on ${inline(hold)}</span>` : ""}</span>` +
+    `<span class="it-text"><span class="sr">${MARK_WORD[it.mark]}: </span>${inline(text)}${rev ? chg(rev, ctx) : ""}${hold ? `<span class="hold"><b>Hold</b>blocked on ${inline(hold)}</span>` : ""}</span>` +
     `<span class="it-tags">${tags}${has ? '<span class="plus" aria-hidden="true">+</span>' : ""}</span>`;
   if (!has) return `<li class="${cls}" id="it-${slug(it.id)}"><div class="row">${head}</div></li>`;
   let dl = it.dropped ? `<dt class="lab">Dropped because</dt><dd>${inline(it.dropped)}</dd>` : "";
@@ -893,10 +896,9 @@ function bayHTML(f, ctx, isFoundation) {
   if (f.dependsOn && f.dependsOn !== "none") meta += `<div><dt class="lab">Built after</dt><dd>${inline(f.dependsOn)}</dd></div>`;
   if (f.verify) meta += `<div><dt class="lab">Proven</dt><dd>${f.verify === "early" ? "item by item, as each is built" : "at completion, when the whole fragment runs end to end"}</dd></div>`;
   if (isFoundation) meta += '<div><dt class="lab">Under</dt><dd>every fragment</dd></div>';
-  return `<section class="bay${rev ? " cloud" : ""}" id="frag-${slug(id)}" aria-labelledby="fh-${slug(id)}">` +
-    (rev ? `<span class="cloud-tag">${delta(rev, "red big", `changed in revision ${rev}`)}</span>` : "") +
+  return `<section class="bay" id="frag-${slug(id)}" aria-labelledby="fh-${slug(id)}">` +
     `<div class="bay-meta"><div class="bay-head"><span class="bub" aria-hidden="true">${esc(id)}</span><p class="bay-count">${count}</p></div>` +
-    `<h3 id="fh-${slug(id)}"><span class="sr">${esc(id)} </span>${esc(isFoundation ? "Foundation" : f.name)}</h3>${meta ? `<dl>${meta}</dl>` : ""}</div>` +
+    `<h3 id="fh-${slug(id)}"><span class="sr">${esc(id)} </span>${esc(isFoundation ? "Foundation" : f.name)}${rev ? chg(rev, ctx) : ""}</h3>${meta ? `<dl>${meta}</dl>` : ""}</div>` +
     `<ol class="items">${items.map((it) => itemHTML(it, ctx)).join("")}</ol></section>`;
 }
 const zoneHead = (z, title, meta) => `<span class="zl" aria-hidden="true">${z}</span><header class="vt"><span class="bub" aria-hidden="true">${z}</span>` +
@@ -988,7 +990,7 @@ function clouds(changes) {
     revs.push(i + 1);
     for (const r of findRefs(ch.text)) if (!r.startsWith("D-")) byRef[r] = i + 1;
   });
-  return { cloudByRef: byRef, cloudRevs: revs };
+  return { cloudByRef: byRef, cloudRevs: revs, cloudDate: revs.length ? latest : "" };
 }
 function buildCtx(d, read) {
   const c = d.checklist, items = allItems(c), n = counts(items);

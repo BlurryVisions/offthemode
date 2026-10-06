@@ -145,3 +145,4 @@ Dropped: (native) frame budget, because there is no native app · (UI) empty, lo
 - 2026-10-07 · added F4.6 (the being-found guide), F4.7 (suggestions, not scripts) and F7.8 (the site follows the guide): from the author's SEO reel, checked against official sources and extended
 - 2026-10-07 · F7.8 verified live; its Search Console step dropped by the author's choice (no ownership of the vercel.app address yet)
 - 2026-10-07 · lasscrobits recorded (the first new-project run); F5.7 dropped and F5.5 rewritten as a quality check, not a count (D-016); F5.8 added: setup talks in plain words
+- 2026-10-07 · the view: a changed item now gets a red up arrow after its sentence (tooltip and legend say "changed in the latest checklist update") instead of the red scallop cloud, which read as a warning (the author, on the lasscrobits board)
