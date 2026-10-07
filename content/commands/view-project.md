@@ -1,9 +1,9 @@
 ---
-name: listview
-title: List View
-description: Open the project's .offthemode/ notes as one page in the browser, read on this computer. Use when the user says /listview or wants to see the project at a glance. Writes nothing in the project.
+name: view-project
+title: View Project
+description: Open the project's .offthemode/ notes as one page in the browser, read on this computer. Use when the user says /view-project or wants to see the project at a glance. Writes nothing in the project.
 ---
-# Off the Mode · list view
+# Off the Mode · view project
 
 Open the project's `.offthemode/` notes as one page in the user's browser: the checklist, the plan, the plain summary, the decisions, where things stand and the last check against the core concept. This writes nothing in the project, only one temporary file, so the user typing the command is the go: run it at once, with no plan to approve first.
 
@@ -14,4 +14,4 @@ Open the project's `.offthemode/` notes as one page in the user's browser: the c
    - With the skills, copy `view.html` from this skill's folder to the temporary file (`cp`, or `Copy-Item` on Windows) in place of the download, so it works offline.
 3. If you can't run commands, or a step fails, say so and give the link instead: https://offthemode.vercel.app/view, where the user opens the `.offthemode` folder; nothing is uploaded.
 
-Reply in one or two lines: the page is a snapshot of the notes as they are now (run /listview again after they change), nothing from the project left the computer, and the temporary file's path.
+Reply in one or two lines: the page is a snapshot of the notes as they are now (run /view-project again after they change), nothing from the project left the computer, and the temporary file's path.

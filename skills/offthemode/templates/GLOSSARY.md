@@ -1,4 +1,4 @@
-GLOSSARY · two parts: a plain summary of the project for people (kept by /glossaryrevisit, under 300 words), then the term list the code and copy use (a term earns a row only if it could be named two ways and the mix-up would cost something).
+GLOSSARY · two parts: a plain summary of the project for people (kept by /revisit-glossary, under 300 words), then the term list the code and copy use (a term earns a row only if it could be named two ways and the mix-up would cost something).
 
 ## In plain words
 Last revisited: {{?DATE}}. For anyone: a new teammate, an investor, your family. No technical words.

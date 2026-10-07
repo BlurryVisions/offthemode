@@ -1,7 +1,7 @@
-// Runs /listview's own command line on a project, with the built page in place of the download, opens the result in
+// Runs /view-project's own command line on a project, with the built page in place of the download, opens the result in
 // headless Chrome, and checks that the page draws the checklist header's counts and the project is left as it was.
-// usage: npm run test:listview                     (this repo's .offthemode/)
-//        npm run test:listview -- ~/other-project
+// usage: npm run test:view-project                     (this repo's .offthemode/)
+//        npm run test:view-project -- ~/other-project
 // Local only, not in CI: it needs Google Chrome (CHROME=/path/to/chrome for another one), Node 22 or later (for its
 // WebSocket) and the built page (npm run content).
 import { spawn, execFileSync } from "node:child_process";
@@ -24,7 +24,7 @@ function expect(ok, what) {
   if (!ok) failures++;
 }
 function stop(what) {
-  console.error(`test-listview: ${what}`);
+  console.error(`test-view-project: ${what}`);
   process.exit(1);
 }
 if (!existsSync(NOTES)) stop(`${PROJECT} has no .offthemode/ folder`);
@@ -33,8 +33,8 @@ if (!existsSync(CHROME)) stop(`no Chrome at ${CHROME}: set CHROME to its path`);
 
 // 1. The line comes from the command itself, so the test runs what users run. Two swaps only: the built page in place
 // of the live one, and echo in place of open, so the test opens no window of its own.
-const body = readFileSync(join(ROOT, "content/commands/listview.md"), "utf8");
-const line = body.match(/`(OUT="\$\{TMPDIR[^`]*)`/)?.[1] ?? stop("content/commands/listview.md: no macOS and Linux line found");
+const body = readFileSync(join(ROOT, "content/commands/view-project.md"), "utf8");
+const line = body.match(/`(OUT="\$\{TMPDIR[^`]*)`/)?.[1] ?? stop("content/commands/view-project.md: no macOS and Linux line found");
 const cmd = line.replace(LIVE, pathToFileURL(BUILT).href).replace(/ && open "\$OUT"$/, ' && echo "$OUT"');
 if (cmd.includes(LIVE) || !cmd.endsWith('echo "$OUT"')) stop("the line no longer downloads the view and ends with open; update this test with it");
 
@@ -50,7 +50,7 @@ const noteNames = readdirSync(NOTES).filter((f) => f.endsWith(".md")).sort();
 const notesHash = () => createHash("sha256").update(noteNames.map((f) => f + readFileSync(join(NOTES, f), "latin1")).join("\0")).digest("hex");
 const before = { git: status(), notes: notesHash() };
 
-const tmp = mkdtempSync(join(tmpdir(), "offthemode-listview-"));
+const tmp = mkdtempSync(join(tmpdir(), "offthemode-view-project-"));
 const want = join(tmp, "offthemode-view.html");
 let out;
 try {
@@ -85,7 +85,7 @@ try {
 const header = readFileSync(join(NOTES, "CHECKLIST.md"), "utf8").match(/^Last revisit:[^\n]*·\s*Verified\s*(\d+)\s*\/\s*(\d+)/m);
 expect(Boolean(header), `CHECKLIST.md header · ${header ? `Verified ${header[1]}/${header[2]}` : "no Verified count"}`);
 expect(header && drawn.verified === header[1] && drawn.total === header[2], `drawn at once · ${drawn.verified}/${drawn.total} verified, the same as the header`);
-expect(/snapshot/i.test(drawn.status) && drawn.status.includes("/listview"), `status line · says it is a snapshot made by /listview: "${drawn.status}"`);
+expect(/snapshot/i.test(drawn.status) && drawn.status.includes("/view-project"), `status line · says it is a snapshot made by /view-project: "${drawn.status}"`);
 expect(!drawn.errors.length, `no script error${drawn.errors.length ? `: ${drawn.errors.join(" | ")}` : ""}`);
 const away = drawn.requests.filter((u) => !/^(file:|data:|https:\/\/fonts\.(googleapis|gstatic)\.com\/)/.test(u));
 expect(!away.length, `requests · only the file itself and its fonts (${drawn.requests.length} in all)${away.length ? `; also ${away.join(", ")}` : ""}`);

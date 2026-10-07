@@ -26,7 +26,7 @@ The easiest way is the skills. This one line, pasted into a terminal, installs a
 curl -fsSL https://offthemode.vercel.app/skills/offthemode-skills.zip -o /tmp/offthemode-skills.zip && unzip -o /tmp/offthemode-skills.zip -x README.md -d ~/.claude/skills
 ```
 
-The skills are files on your machine, so they work in auto mode, Claude Code's default, with no extra step. The commands are then `/offthemode`, `/listrevisit`, `/listview`, `/revisit-state`, `/reassess`, `/commentrevisit` and `/glossaryrevisit`.
+The skills are files on your machine, so they work in auto mode, Claude Code's default, with no extra step. The commands are then `/offthemode`, `/revisit-checklist`, `/view-project`, `/revisit-state`, `/reassess`, `/revisit-comments` and `/revisit-glossary`.
 
 Or use the link. Run this once; `--scope user` makes it available in every project on your machine:
 
@@ -34,7 +34,7 @@ Or use the link. Run this once; `--scope user` makes it available in every proje
 claude mcp add --transport http --scope user offthemode https://offthemode.vercel.app/mcp
 ```
 
-In auto mode, the safety check blocks tools from a server you just added until you allow them. Type `/permissions` and add the allow rule `mcp__offthemode`, or switch the session to Manual mode once and approve the tool when it asks. Run `claude mcp list` to check that `offthemode` shows as connected. The commands appear as `/mcp__offthemode__offthemode`, `/mcp__offthemode__listrevisit` and so on.
+In auto mode, the safety check blocks tools from a server you just added until you allow them. Type `/permissions` and add the allow rule `mcp__offthemode`, or switch the session to Manual mode once and approve the tool when it asks. Run `claude mcp list` to check that `offthemode` shows as connected. The commands appear as `/mcp__offthemode__offthemode`, `/mcp__offthemode__revisit-checklist` and so on.
 
 #### Cursor and VS Code
 
@@ -73,7 +73,7 @@ Windsurf, Zed, Cline and other tools that speak MCP over HTTP: add a remote serv
 
 #### Skills pack
 
-The skills are the same commands, guides and templates as plain files, so nothing is fetched while you work. All seven belong together: setup follows the listrevisit and reassess instructions, the guides live in the offthemode skill, and the view page in the listview skill. Put the folders where your tool loads skills:
+The skills are the same commands, guides and templates as plain files, so nothing is fetched while you work. All seven belong together: setup follows the revisit-checklist and reassess instructions, the guides live in the offthemode skill, and the view page in the view-project skill. Put the folders where your tool loads skills:
 
 | Tool | For one project | For every project |
 |---|---|---|
@@ -148,9 +148,9 @@ Code a guide calls for, such as design tokens, scripts and tests, is ordinary pr
 
 Say "set up off the mode" again on a project that is already set up and you get its status: where things stand, and what's next on the checklist.
 
-To read the folder without opening each file, type `/listview` or say "list view": it opens the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess as one page in your browser, and writes nothing in the project. Or open the view at https://offthemode.vercel.app/view and pick the `.offthemode` folder; Chrome remembers it for next time. Either way the files are read on your machine and nothing is uploaded. Setup, `listrevisit`, `reassess` and `glossaryrevisit` end with both:
+To read the folder without opening each file, type `/view-project` or say "view the project": it opens the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess as one page in your browser, and writes nothing in the project. Or open the view at https://offthemode.vercel.app/view and pick the `.offthemode` folder; Chrome remembers it for next time. Either way the files are read on your machine and nothing is uploaded. Setup, `revisit-checklist`, `reassess` and `revisit-glossary` end with both:
 
-See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+See it as a page: /view-project, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 > **Pro move:** Commit `.offthemode/` with your code. Every teammate and every AI session, in any tool, then works from the same product, rules and state.
 

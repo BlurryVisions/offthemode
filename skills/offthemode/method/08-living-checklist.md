@@ -1,26 +1,26 @@
 ## Living Checklist
 
-> **Output:** `.offthemode/CHECKLIST.md`: the core concept split into fragments, each item with a provable done-when, kept true by one command, `listrevisit`.
+> **Output:** `.offthemode/CHECKLIST.md`: the core concept split into fragments, each item with a provable done-when, kept true by one command, `revisit-checklist`.
 
-Your core concept lives in PRODUCT.md §Core concept, written during P1. The checklist breaks it into **fragments**: the separate pieces of the core, finished one after another. Each fragment has a few items, and each item says how you will know it is done. The file is a map, not a gate: fragments are listed in build order (what others depend on first, then the one nearest the moment of value), and you can still work on anything in any order. Sessions stay free-form and nothing has to be ticked while you work, because `listrevisit` catches up afterwards by reading what changed in git.
+Your core concept lives in PRODUCT.md §Core concept, written during P1. The checklist breaks it into **fragments**: the separate pieces of the core, finished one after another. Each fragment has a few items, and each item says how you will know it is done. The file is a map, not a gate: fragments are listed in build order (what others depend on first, then the one nearest the moment of value), and you can still work on anything in any order. Sessions stay free-form and nothing has to be ticked while you work, because `revisit-checklist` catches up afterwards by reading what changed in git.
 
-**One command, checklist only.** `listrevisit` builds the checklist the first time, when the file is missing or still the blank template. After that, run it on its own to see where you stand, or with a note (`listrevisit add CSV export to reports`) to change the list. Type `/listrevisit` with the skills pack, `/mcp__offthemode__listrevisit` through the link in Claude Code, or just say "list revisit". It edits only .offthemode/CHECKLIST.md, never code or other docs. If a change also affects the vision or the architecture, it names the doc to update and leaves that to you.
+**One command, checklist only.** `revisit-checklist` builds the checklist the first time, when the file is missing or still the blank template. After that, run it on its own to see where you stand, or with a note (`revisit-checklist add CSV export to reports`) to change the list. Type `/revisit-checklist` with the skills pack, `/mcp__offthemode__revisit-checklist` through the link in Claude Code, or just say "revisit the checklist". It edits only .offthemode/CHECKLIST.md, never code or other docs. If a change also affects the vision or the architecture, it names the doc to update and leaves that to you.
 
 **It talks first.** Every run starts with a report: what it found and exactly what it would change in the file. Nothing is written until you say go. Then it applies the change and tells you what it did.
 
 | You run | It reports | After your go |
 |---|---|---|
-| `listrevisit` with no checklist yet | The core concept split into fragments, in build order, one line each | Writes the file; anything already built is marked `[x]`, never `[v]` |
-| `listrevisit` | Commits since the last revisit mapped to items, the results of the cheap checks, each mark it would move with its evidence, and work that matches no item | Updates the marks, the header and the verified count |
-| `listrevisit <idea or change>` | The fragment it belongs in (or a new one), the job in PRODUCT.md it serves, what it disturbs, and the exact diff to the list | Applies the diff and logs one line per change |
+| `revisit-checklist` with no checklist yet | The core concept split into fragments, in build order, one line each | Writes the file; anything already built is marked `[x]`, never `[v]` |
+| `revisit-checklist` | Commits since the last revisit mapped to items, the results of the cheap checks, each mark it would move with its evidence, and work that matches no item | Updates the marks, the header and the verified count |
+| `revisit-checklist <idea or change>` | The fragment it belongs in (or a new one), the job in PRODUCT.md it serves, what it disturbs, and the exact diff to the list | Applies the diff and logs one line per change |
 
 > **Rule:** An item is marked verified only with evidence the command can cite: a passing test by name, a measured number, a screenshot, a commit. "Built" and "verified" are separate marks, because the gap between them is where AI tools claim done.
 
 **When a fragment can be verified depends on the product.** Some fragments can be proven on their own, early: a hard interaction, a speed limit, a platform constraint. Many can't. An AI data analyst only proves itself end to end: a real question goes in, correct SQL runs, the right answer comes out, and that needs the whole chain to exist. So each fragment says `Verify: early` or `Verify: on completion`. An on-completion fragment's done-when is an end-to-end run with real inputs (for a model-driven core, the eval set passing). Neither mode is better; the checklist just records which one each fragment is.
 
-**The elite bar.** Every fragment ends with one item, "quality bars met". The bars cover correctness, speed, experience, code and safety, and each names the command in RULES.md §Commands that measures it. Bars that don't apply get deleted with a reason: a backend-only product drops the UI ones. A number a bar checks is a key in RULES.md §Budgets, never written into the bar, so a threshold changes in one place; a bar whose key the product doesn't hold checks nothing numeric. `listrevisit` measures what it can and says plainly what it couldn't measure, instead of calling it passing.
+**The elite bar.** Every fragment ends with one item, "quality bars met". The bars cover correctness, speed, experience, code and safety, and each names the command in RULES.md §Commands that measures it. Bars that don't apply get deleted with a reason: a backend-only product drops the UI ones. A number a bar checks is a key in RULES.md §Budgets, never written into the bar, so a threshold changes in one place; a bar whose key the product doesn't hold checks nothing numeric. `revisit-checklist` measures what it can and says plainly what it couldn't measure, instead of calling it passing.
 
-> **Why:** A free-form session is good at momentum and bad at memory. The checklist is the memory, and `listrevisit` is the one step that has to be honest, so it runs checks instead of trusting claims.
+> **Why:** A free-form session is good at momentum and bad at memory. The checklist is the memory, and `revisit-checklist` is the one step that has to be honest, so it runs checks instead of trusting claims.
 
 The file starts from the CHECKLIST.md template (from get_template or the skill's templates/ folder). It has these parts:
 
@@ -48,8 +48,8 @@ The bars themselves live in one place, the Quality bars part of the CHECKLIST.md
 
 The command runs the steps below. In a tool without the skills pack or the link, paste this prompt instead.
 
-```prompt title="List Revisit"
-# Off the Mode · list revisit
+```prompt title="Revisit Checklist"
+# Off the Mode · revisit checklist
 
 Input: the user's note, whatever they typed after the command. Empty means show the status; otherwise it is a new feature, idea or change. Edit only `.offthemode/CHECKLIST.md`: never code, never other files. Talk first, then do: explain what you found and exactly what you will create or change, wait for the user's go, then do it and say what you did.
 
@@ -69,5 +69,5 @@ Show the user the fragments in order, one line each, and wait for their ok. Then
 
 Reply in at most 25 lines: progress per fragment with its Verify mode (F2 ■■■□□ 3/5 · on completion), what moved since last time and why, untracked work, risks (failing bars, items stuck at [x], blocked fragments), and the next 3 items.
 
-End with this line: See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+End with this line: See it as a page: /view-project, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 ```

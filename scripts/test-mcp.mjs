@@ -46,25 +46,26 @@ for (const version of ["2024-11-05", "2025-06-18"]) {
 }
 
 const tools = (await rpc("tools/list")).tools.map((t) => t.name).sort();
-const wantTools = ["commentrevisit", "get_method", "get_template", "glossaryrevisit", "listrevisit", "listview", "offthemode", "reassess", "revisit-state"];
+const wantTools = ["get_method", "get_template", "offthemode", "reassess", "revisit-checklist", "revisit-comments", "revisit-glossary", "revisit-state", "view-project"];
 expect(JSON.stringify(tools) === JSON.stringify(wantTools), `tools/list · ${tools.join(", ")}`);
 
 const note = "add CSV export to reports";
-const lr = (await rpc("tools/call", { name: "listrevisit", arguments: { note } })).content[0].text;
-expect(lr.includes(`User's note: ${note}`) && lr.includes("# Off the Mode · list revisit") && lr.includes('get_template tool: "CHECKLIST.md"') && !lr.includes("<template"),
-  "tools/call listrevisit · note and instructions, template fetched on demand (not inlined)");
+const lr = (await rpc("tools/call", { name: "revisit-checklist", arguments: { note } })).content[0].text;
+expect(lr.includes(`User's note: ${note}`) && lr.includes("# Off the Mode · revisit checklist") && lr.includes('get_template tool: "CHECKLIST.md"') && !lr.includes("<template"),
+  "tools/call revisit-checklist · note and instructions, template fetched on demand (not inlined)");
 expect(lr.includes("only the first word of the note") && lr.includes("the user's own words") && !/\{\{\??NOTE/.test(lr),
-  "tools/call listrevisit · says what to do with a cut-off note; no raw placeholder");
+  "tools/call revisit-checklist · says what to do with a cut-off note; no raw placeholder");
 
-for (const name of ["offthemode", "reassess", "commentrevisit", "glossaryrevisit", "listview", "revisit-state"]) {
+for (const name of ["offthemode", "reassess", "revisit-comments", "revisit-glossary", "view-project", "revisit-state"]) {
   const t = (await rpc("tools/call", { name, arguments: {} })).content[0].text;
   // Size guard: commands carry instructions only, so a status check stays cheap (~4 chars per token). Raised from 6000
-  // to 8000 on 2026-10-07 (D-015) because squeezing under 6000 had started to cost clarity; quality wins over the guard.
-  expect(t.length > 500 && t.length < 8000 && t.includes("Off the Mode"), `tools/call ${name} · ${t.length} chars (~${Math.round(t.length / 4)} tokens, limit 2000)`);
+  // to 8000 on 2026-10-07 (D-015) because squeezing under 6000 had started to cost clarity, and to 9000 on 2026-10-08
+  // (D-023) for setup's old-name upgrade; quality wins over the guard.
+  expect(t.length > 500 && t.length < 9000 && t.includes("Off the Mode"), `tools/call ${name} · ${t.length} chars (~${Math.round(t.length / 4)} tokens, limit 2250)`);
   if (name === "offthemode") expect(t.startsWith("Set up Off the Mode:") && !t.includes("Off the Mode · Set up"), "tools/call offthemode · header names it once");
-  // listview gives a line for each shell, each writing every note as a <template data-offthemode-file>, and the skills' offline copy.
-  if (name === "listview") expect(t.includes(`curl -fsSL https://offthemode.vercel.app/view -o "$OUT"`) && t.includes("Invoke-WebRequest https://offthemode.vercel.app/view") && (t.match(/<template data-offthemode-file=/g) ?? []).length === 2 && t.includes("view.html"),
-    "tools/call listview · the macOS and Linux line, the PowerShell line, the skills' view.html");
+  // view-project gives a line for each shell, each writing every note as a <template data-offthemode-file>, and the skills' offline copy.
+  if (name === "view-project") expect(t.includes(`curl -fsSL https://offthemode.vercel.app/view -o "$OUT"`) && t.includes("Invoke-WebRequest https://offthemode.vercel.app/view") && (t.match(/<template data-offthemode-file=/g) ?? []).length === 2 && t.includes("view.html"),
+    "tools/call view-project · the macOS and Linux line, the PowerShell line, the skills' view.html");
 }
 
 const tpl = (await rpc("tools/call", { name: "get_template", arguments: { name: "RULES.md" } })).content[0].text;
@@ -84,8 +85,8 @@ expect(plain.startsWith("## Always-On · Words & Voice") && !plain.includes("###
 
 const prompts = (await rpc("prompts/list")).prompts.map((p) => p.name).sort();
 expect(prompts.length === 7, `prompts/list · ${prompts.join(", ")}`);
-const pr = await rpc("prompts/get", { name: "listrevisit", arguments: { note } });
-expect(pr.messages?.[0]?.content?.text?.includes(`User's note: ${note}`), "prompts/get listrevisit");
+const pr = await rpc("prompts/get", { name: "revisit-checklist", arguments: { note } });
+expect(pr.messages?.[0]?.content?.text?.includes(`User's note: ${note}`), "prompts/get revisit-checklist");
 
 const resources = (await rpc("resources/list")).resources;
 expect(resources.length >= 30, `resources/list · ${resources.length} resources`);

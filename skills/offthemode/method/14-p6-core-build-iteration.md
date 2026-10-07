@@ -10,7 +10,7 @@
 - Never edit a test to make it pass. Tests, snapshots and exemptions change only when the spec changes.
 - Two failed attempts at the same fix: climb one rung of the ladder in When it keeps getting it wrong. Never a third try from the same context.
 - A change to prompts, model ids, retrieval or the core contract runs the evals.
-- Finish with the checks in RULES.md §Commands, and name the CHECKLIST.md item it closes; listrevisit records the mark and the evidence.
+- Finish with the checks in RULES.md §Commands, and name the CHECKLIST.md item it closes; revisit-checklist records the mark and the evidence.
 - Open the whole guide for a new vertical slice, a refactor checkpoint or a drift check.
 <!-- /offthemode:rules -->
 
@@ -34,7 +34,7 @@ Restate the slice in 5 lines: person, job, moment of value, the single primary a
 5. States: every column of the ROUTES.md state inventory, copy per .offthemode/VOICE.md.
 6. Tests: failing logic tests first, then one end-to-end happy path, one abuse path (wrong user, malformed input, replay), and an end-to-end test of the journey step.
 7. Entry points behind the flag, off in production.
-8. Verify: every check in RULES.md §Commands passes, the slice actually ran, and you looked at its screens at each of screenshot_sizes (RULES.md §Budgets). Name the CHECKLIST.md item it closes (listrevisit records the mark and the evidence) and tell me what you did.
+8. Verify: every check in RULES.md §Commands passes, the slice actually ran, and you looked at its screens at each of screenshot_sizes (RULES.md §Budgets). Name the CHECKLIST.md item it closes (revisit-checklist records the mark and the evidence) and tell me what you did.
 List every new visible action and why it can't be inferred or defaulted. Touch only the fence; if you need more, stop and explain.
 ```
 

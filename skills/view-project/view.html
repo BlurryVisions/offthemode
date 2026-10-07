@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-F7pHXkX/ZQiLfUo0yT/6fv0Lt9MgBz84npJC7QQLzY0='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tnAzNacF/6r4m5XPB96oZj/zUcMhIgv/zSErHFaFZvs='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The view: your project's checklist and plan on one page · Off the Mode</title>
@@ -600,7 +600,7 @@ function parseProject(files) {
   };
 }
 // The view: draws a project's .offthemode/ notes as one sheet. Files are read with the File API, in this tab only,
-// or from the copies /listview embeds in a local copy of this page; nothing is sent anywhere (the build's CSP allows
+// or from the copies /view-project embeds in a local copy of this page; nothing is sent anywhere (the build's CSP allows
 // no connection). parseProject comes from view-parse.mjs above.
 
 const MARK_ORDER = ["verified", "built", "doing", "todo", "dropped"];
@@ -611,11 +611,11 @@ const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "
 const SETUP = "/offthemode (the setup) adds it on your go";
 // The files the sheet draws, its zone for each, and the command that writes it.
 const FILES = [
-  { zone: "A", file: "CHECKLIST.md", title: "Checklist board", shows: "every fragment and item, its mark and its proof", writer: "/listrevisit builds it from PRODUCT.md" },
+  { zone: "A", file: "CHECKLIST.md", title: "Checklist board", shows: "every fragment and item, its mark and its proof", writer: "/revisit-checklist builds it from PRODUCT.md" },
   { zone: "B", file: "STATE.md", title: "Where things stand", shows: "what is true now, the next steps, what is waiting", writer: "/offthemode (the setup) adds it on your go; your AI keeps it current and /revisit-state saves it" },
   { zone: "C", file: "PRODUCT.md", title: "The plan", shows: "who it is for, the core concept, what it refuses", writer: SETUP },
   { zone: "D", file: "DECISIONS.md", title: "Decisions", shows: "each decision, why, and what was turned down", writer: SETUP },
-  { zone: "E", file: "GLOSSARY.md", title: "Plain summary", shows: "the project in plain words, one word for each thing", writer: "/glossaryrevisit writes it" },
+  { zone: "E", file: "GLOSSARY.md", title: "Plain summary", shows: "the project in plain words, one word for each thing", writer: "/revisit-glossary writes it" },
   { zone: "F", file: "REASSESS.md", title: "Reassess", shows: "the last health check: on course, drifting or off course", writer: "/reassess saves it if you say so", optional: true },
 ];
 const RULES = { file: "RULES.md", writer: SETUP };
@@ -779,9 +779,9 @@ function revisitStamp(ctx) {
     `<span class="d">${esc(stampDate(when))}</span><span class="k">${ctx.verified} of ${ctx.total} verified</span></p>`;
 }
 function stampCell(ctx) {
-  if (!ctx.hasChecklist) return '<div class="cell cell-stamp"><span class="lab">Stamps</span><div class="blank-stamp">Nothing to stamp yet: there is no checklist to count. /listrevisit builds it from PRODUCT.md.</div></div>';
+  if (!ctx.hasChecklist) return '<div class="cell cell-stamp"><span class="lab">Stamps</span><div class="blank-stamp">Nothing to stamp yet: there is no checklist to count. /revisit-checklist builds it from PRODUCT.md.</div></div>';
   const c = ctx.c, off = c.verified !== null && (c.verified !== ctx.verified || c.total !== ctx.total);
-  const note = off ? `<p class="st-note">The top line of CHECKLIST.md says ${c.verified} of ${c.total}. Its marks add up to ${ctx.verified} of ${ctx.total}, which is what the stamps show. /listrevisit brings the top line up to date.</p>` : "";
+  const note = off ? `<p class="st-note">The top line of CHECKLIST.md says ${c.verified} of ${c.total}. Its marks add up to ${ctx.verified} of ${ctx.total}, which is what the stamps show. /revisit-checklist brings the top line up to date.</p>` : "";
   return `<div class="cell cell-stamp"><span class="lab">Stamps · reassess and revisit</span><div class="stamps">${reviewStamp(ctx)}${revisitStamp(ctx)}</div>${note}</div>`;
 }
 function missingCell(ctx) {
@@ -813,9 +813,9 @@ function projectCell(d, ctx) {
   const sub = ctx.hasChecklist ? `${frags} fragment${frags === 1 ? "" : "s"}${ctx.c.foundation?.length ? " and the foundation" : ""}, ${items} item${items === 1 ? "" : "s"}` : "No checklist yet";
   return '<div class="cell cell-project"><div class="cell-head"><span class="lab">Project</span><button type="button" class="btn-quiet" data-open>Open another folder</button></div>' +
     `<h1 class="pname" id="pname" tabindex="-1">${esc(d.name || "Your project")}</h1><p class="psub">${sub}</p>` +
-    (ctx.snapshot ? `<p class="psub">A snapshot made by /listview.${esc(skippedNote(ctx.skipped))} Run it again after the notes change.</p>` : "") + "</div>";
+    (ctx.snapshot ? `<p class="psub">A snapshot made by /view-project.${esc(skippedNote(ctx.skipped))} Run it again after the notes change.</p>` : "") + "</div>";
 }
-// Names the notes a /listview snapshot could not read, for the project cell and the status line.
+// Names the notes a /view-project snapshot could not read, for the project cell and the status line.
 const skippedNote = (list) => (list.length ? ` Could not read ${list.join(", ")}, so ${list.length === 1 ? "it is" : "they are"} left out.` : "");
 // The drafting names stay as tooltips: diazo paper in light, cyanotype in dark.
 function paperToggle() {
@@ -970,7 +970,7 @@ function plainHTML(d, ctx) {
     `<details class="fold"><summary><span class="plus" aria-hidden="true">+</span>${terms.rows.length} terms, with what never to call them</summary><div class="tbl-wrap"><table class="sched"><thead><tr>` +
     (terms.head || []).map((h) => `<th scope="col">${esc(h)}</th>`).join("") + "</tr></thead><tbody>" +
     terms.rows.map((r) => `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`).join("") + "</tbody></table></div></details></div></div>" : "";
-  return open + (plain || '<div class="lr"><div class="l"><h3>Not written</h3></div><div class="r"><p class="pointer">GLOSSARY.md has no plain-words summary yet. /glossaryrevisit writes it.</p></div></div>') + sched + "</section>";
+  return open + (plain || '<div class="lr"><div class="l"><h3>Not written</h3></div><div class="r"><p class="pointer">GLOSSARY.md has no plain-words summary yet. /revisit-glossary writes it.</p></div></div>') + sched + "</section>";
 }
 function reassessHTML(ctx) {
   const r = ctx.reassess;
@@ -1022,7 +1022,7 @@ function renderProject(read) {
   document.getElementById("pname").focus({ preventScroll: true });
   const files = `${ctx.count} file${ctx.count === 1 ? "" : "s"}`;
   status.textContent = read.snapshot
-    ? `A snapshot of ${files} from ${read.folder}, made by /listview.${skippedNote(ctx.skipped)} Run /listview again after the notes change. Nothing was sent.`
+    ? `A snapshot of ${files} from ${read.folder}, made by /view-project.${skippedNote(ctx.skipped)} Run /view-project again after the notes change. Nothing was sent.`
     : `Read ${files} from ${read.folder} on this computer. Nothing was sent.`;
   return d.name || read.folder;
 }
@@ -1106,8 +1106,8 @@ async function load(name, list) {
   return renderProject(read);
 }
 
-/* ---------- a snapshot from /listview ---------- */
-// /listview copies this page and adds each note after </html> as <template data-offthemode-file="NAME.md">, its
+/* ---------- a snapshot from /view-project ---------- */
+// /view-project copies this page and adds each note after </html> as <template data-offthemode-file="NAME.md">, its
 // bytes in base64; the HTML parser moves them into <body>. Templates are not scripts, so the CSP stays as built.
 function readEmbedded(templates) {
   const files = {}, unread = [];
@@ -1129,7 +1129,7 @@ function loadSnapshot(templates) {
   const { files, unread } = readEmbedded(templates);
   if (!KNOWN.some((k) => k in files)) {
     const why = unread.length ? `${unread.join(", ")} could not be read` : "it holds none of the Off the Mode files";
-    renderEntry(`This page came from /listview, but ${why}. Run /listview again in the project folder that holds .offthemode.`);
+    renderEntry(`This page came from /view-project, but ${why}. Run /view-project again in the project folder that holds .offthemode.`);
     return;
   }
   renderProject({ files, folder: ".offthemode", snapshot: true, skipped: unread });
@@ -1239,7 +1239,7 @@ function loadFaces() {
 }
 const fontsheet = document.querySelector('link[rel="stylesheet"]');
 if (fontsheet?.sheet) loadFaces(); else fontsheet?.addEventListener("load", loadFaces);
-// A snapshot from /listview draws at once; otherwise the entry, with Reopen if Chrome remembers a folder.
+// A snapshot from /view-project draws at once; otherwise the entry, with Reopen if Chrome remembers a folder.
 // A browser that stores nothing (blocked site data, some private windows) gets the normal open button.
 const embedded = document.querySelectorAll("template[data-offthemode-file]");
 if (embedded.length) loadSnapshot(embedded);

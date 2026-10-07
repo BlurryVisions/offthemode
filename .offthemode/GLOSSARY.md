@@ -1,4 +1,4 @@
-GLOSSARY · two parts: a plain summary of the project for people (kept by /glossaryrevisit, under 300 words), then the term list the code and copy use (a term earns a row only if it could be named two ways and the mix-up would cost something).
+GLOSSARY · two parts: a plain summary of the project for people (kept by /revisit-glossary, under 300 words), then the term list the code and copy use (a term earns a row only if it could be named two ways and the mix-up would cost something).
 
 ## In plain words
 Last revisited: 2026-09-30. For anyone: a new teammate, an investor, your family. No technical words.
@@ -20,7 +20,7 @@ One word per concept, used the same way in code, UI and copy.
 |---|---|---|---|
 | guide | sheet (in anything people read), doc, chapter | `Sheet`, `sheets` in lib/content.ts (a follow-up renames them to guide) | guide |
 | working rules | summary, short version | `rules` on a sheet; `<!-- offthemode:rules -->` in content/method/BLUEPRINT.md | working rules |
-| command | prompt, tool (for the idea itself) | `Command`, content/commands/*.md | /offthemode, /listrevisit and the rest |
+| command | prompt, tool (for the idea itself) | `Command`, content/commands/*.md | /offthemode, /revisit-checklist and the rest |
 | the link | the API, the endpoint | `MCP_URL`, app/mcp/route.ts | the link |
 | the skills | skills pack, plugin | skills/, public/skills/*.zip | the skills |
 | fragment | feature, module, epic | F1 to F7 in .offthemode/CHECKLIST.md | piece |

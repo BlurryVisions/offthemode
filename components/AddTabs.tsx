@@ -82,7 +82,7 @@ export function AddTabs({ mcpUrl, skillsZip, cursorLink, vscodeLink, repoUrl, zi
                 <b>One paste: the skills.</b> Run this once in a terminal (in VS Code: Terminal, then New Terminal). It
                 installs all seven skills for every project. They are files on your machine, so they work in auto mode with
                 no extra step, and the commands are simply <span className="inline">/offthemode</span>,{" "}
-                <span className="inline">/listrevisit</span> and so on.
+                <span className="inline">/revisit-checklist</span> and so on.
               </p>
               <Copy text={claudeLine} label="the Claude Code install command" />
               <p>
@@ -99,7 +99,7 @@ export function AddTabs({ mcpUrl, skillsZip, cursorLink, vscodeLink, repoUrl, zi
               <Copy text="mcp__offthemode" label="the allow rule" />
               <p>
                 Run <span className="inline">claude mcp list</span> to check that <span className="inline">offthemode</span> shows
-                as connected. The commands then show up as <span className="inline">/mcp__offthemode__listrevisit</span> and so
+                as connected. The commands then show up as <span className="inline">/mcp__offthemode__revisit-checklist</span> and so
                 on, or just say what you want.
               </p>
             </>
@@ -146,7 +146,7 @@ export function AddTabs({ mcpUrl, skillsZip, cursorLink, vscodeLink, repoUrl, zi
             <>
               <p>
                 No server at all: the skills are files your AI tool loads from its skills folder. Install all seven together.
-                Setup hands over to listrevisit and reassess, so one skill on its own is not enough.
+                Setup hands over to revisit-checklist and reassess, so one skill on its own is not enough.
               </p>
               <ul>
                 <li>

@@ -4,4 +4,6 @@ Standing rule, only for a project that has a .offthemode/ folder holding RULES.m
 - Before your first change in a session, read .offthemode/RULES.md and .offthemode/STATE.md, unless you already read them in this session, and follow RULES.md.
 - Before you plan or do a kind of work, open the guide that RULES.md §Guides names for it with get_method, as §Guides says.
 
-When the user asks to set up Off the Mode or for its status, use the offthemode tool. When the user asks for them: listrevisit (the checklist), reassess (the code against the core concept), commentrevisit (code comments only), glossaryrevisit (the plain-words summary), listview (the project as a page in the browser). revisit-state (save where things stand): when the user asks, and on your own where RULES.md says.
+When the user asks to set up Off the Mode or for its status, use the offthemode tool. When the user asks for them: revisit-checklist (the checklist), reassess (the code against the core concept), revisit-comments (code comments only), revisit-glossary (the plain-words summary), view-project (the project as a page in the browser). revisit-state (save where things stand): when the user asks, and on your own where RULES.md says.
+
+A project's notes may still use the old command names: listrevisit is now revisit-checklist, listview is view-project, commentrevisit is revisit-comments, glossaryrevisit is revisit-glossary.

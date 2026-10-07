@@ -55,9 +55,9 @@ const calls = [/\bfetch\s*\(/, /\bXMLHttpRequest\b/, /\bWebSocket\b/, /\bEventSo
   .map((re) => page.match(re)?.[0]).filter(Boolean);
 expect(!calls.length, `page · no network call${calls.length ? ` (found ${calls.join(", ")})` : ""}`);
 
-// 4. /listview appends the notes after </html> as <template data-offthemode-file> elements, so the page's own
-// script must look for them (npm run test:listview runs the whole path in a browser).
-expect(scripts.some((s) => s.includes("template[data-offthemode-file]")), "page · its script reads the notes /listview embeds (template[data-offthemode-file])");
+// 4. /view-project appends the notes after </html> as <template data-offthemode-file> elements, so the page's own
+// script must look for them (npm run test:view-project runs the whole path in a browser).
+expect(scripts.some((s) => s.includes("template[data-offthemode-file]")), "page · its script reads the notes /view-project embeds (template[data-offthemode-file])");
 
 console.log(failures ? `\n${failures} failed` : "\nall passed");
 process.exit(failures ? 1 : 0);

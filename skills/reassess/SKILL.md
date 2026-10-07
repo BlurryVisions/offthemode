@@ -13,13 +13,13 @@ Reassess what has been built against the core concept. Report only: edit nothing
 3. Find drift: code that serves no job in PRODUCT.md, complexity the concept doesn't need, anything a refusal or tie-breaker rules out, architecture that works against the concept or breaks an experience promise (a flow slower than the time-to-value target, a confirm dialog the promises don't allow, no offline use where it is promised), and core pieces that exist only as stubs, mocks or hardcoded data.
 4. If the core can run, propose one real input and the exact command you will run to push it through the whole chain, preferring test or seed data to live data so nothing real is sent, charged or changed. Wait for the user's go, then run it and note where it breaks or degrades.
 
-Reply in at most 30 lines: alignment in one line (on course · drifting · off course) with the reason; then the gaps by severity, each with its evidence (file, function or run), the smallest change that realigns it, and, if it belongs in the checklist, the exact note for the listrevisit command.
+Reply in at most 30 lines: alignment in one line (on course · drifting · off course) with the reason; then the gaps by severity, each with its evidence (file, function or run), the smallest change that realigns it, and, if it belongs in the checklist, the exact note for the revisit-checklist command.
 
 Then offer to save the report. On the user's go, write it to `.offthemode/REASSESS.md`, replacing any earlier one: first line `REASSESS · <YYYY-MM-DD> · <on course | drifting | off course>`, then the report as shown.
 
-End with this line: See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+End with this line: See it as a page: /view-project, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 ## Files
 - The guides and all the templates are in the offthemode skill, next to this one: `../offthemode/method/` (`INDEX.md` lists the guides; their working rules are in `../offthemode/method/rules/`) and `../offthemode/templates/`.
-- The other commands named here are sibling skills in the same skills folder: listrevisit is `../listrevisit/SKILL.md`.
+- The other commands named here are sibling skills in the same skills folder: revisit-checklist is `../revisit-checklist/SKILL.md`.
 - Install all 7 Off the Mode skills together; they read each other's files.

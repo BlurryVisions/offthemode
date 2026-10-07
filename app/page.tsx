@@ -7,25 +7,25 @@ const skillsZip = `${SITE_URL}/skills/offthemode-skills.zip`;
 
 const TOUCHES: Record<string, string> = {
   offthemode: "The .offthemode/ folder, plus one line you approve so your tool loads it; if you say yes, your usual setup in ~/.offthemode/ME.md",
-  listrevisit: "The checklist",
+  "revisit-checklist": "The checklist",
   reassess: "Only its own report, if you say so",
-  commentrevisit: "Code comments only",
-  glossaryrevisit: "The plain-words summary",
-  listview: "Nothing in your project: one temporary page",
+  "revisit-comments": "Code comments only",
+  "revisit-glossary": "The plain-words summary",
+  "view-project": "Nothing in your project: one temporary page",
   "revisit-state": "Where things stand, and new decisions",
 };
 const WHAT: Record<string, string> = {
   offthemode: "Sets up your project, new or existing, or tells you where it stands",
-  listrevisit: "Shows the checklist, or adds a new feature or idea to it",
+  "revisit-checklist": "Shows the checklist, or adds a new feature or idea to it",
   reassess: "Checks what's built against your core concept",
-  commentrevisit: "Removes stale or noisy comments, adds a why where code can't explain itself",
-  glossaryrevisit: "Refreshes a summary of the project anyone can understand",
-  listview: "Opens your project as a page in your browser",
+  "revisit-comments": "Removes stale or noisy comments, adds a why where code can't explain itself",
+  "revisit-glossary": "Refreshes a summary of the project anyone can understand",
+  "view-project": "Opens your project as a page in your browser",
   "revisit-state": "Saves where things stand, so a fresh session picks up from here; your AI also runs it on its own after changing files",
 };
-const ARG: Record<string, string> = { listrevisit: " [idea]", commentrevisit: " [path]" };
+const ARG: Record<string, string> = { "revisit-checklist": " [idea]", "revisit-comments": " [path]" };
 // The order people meet them in: set up first, then the rest from most to least used.
-const SEQUENCE = ["offthemode", "listrevisit", "revisit-state", "listview", "reassess", "commentrevisit", "glossaryrevisit"];
+const SEQUENCE = ["offthemode", "revisit-checklist", "revisit-state", "view-project", "reassess", "revisit-comments", "revisit-glossary"];
 const byUse = [...commands].sort((a, b) => SEQUENCE.indexOf(a.name) - SEQUENCE.indexOf(b.name));
 
 const ORDER = [
@@ -167,7 +167,7 @@ export default function Home() {
                 </tbody>
               </table>
             </div>
-            <p className="note">You can always just say it instead: &ldquo;run listrevisit&rdquo;, &ldquo;reassess the project&rdquo;.</p>
+            <p className="note">You can always just say it instead: &ldquo;run revisit-checklist&rdquo;, &ldquo;reassess the project&rdquo;.</p>
           </div>
         </section>
 

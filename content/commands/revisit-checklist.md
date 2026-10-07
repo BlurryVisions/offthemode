@@ -1,12 +1,12 @@
 ---
-name: listrevisit
-title: List Revisit
-description: Show, build or update the checklist in .offthemode/CHECKLIST.md. Use when the user says /listrevisit, asks where the project stands, or adds a feature or idea. Edits only the checklist.
+name: revisit-checklist
+title: Revisit Checklist
+description: Show, build or update the checklist in .offthemode/CHECKLIST.md. Use when the user says /revisit-checklist, asks where the project stands, or adds a feature or idea. Edits only the checklist.
 argument: note
 argument_hint: empty for status, or a new feature, idea or change
 templates: CHECKLIST.md
 ---
-# Off the Mode · list revisit
+# Off the Mode · revisit checklist
 
 Input: the user's note, whatever they typed after the command. Empty means show the status; otherwise it is a new feature, idea or change. Edit only `.offthemode/CHECKLIST.md`: never code, never other files. Talk first, then do: explain what you found and exactly what you will create or change, wait for the user's go, then do it and say what you did.
 
@@ -26,4 +26,4 @@ Show the user the fragments in order, one line each, and wait for their ok. Then
 
 Reply in at most 25 lines: progress per fragment with its Verify mode (F2 ■■■□□ 3/5 · on completion), what moved since last time and why, untracked work, risks (failing bars, items stuck at [x], blocked fragments), and the next 3 items.
 
-End with this line: See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+End with this line: See it as a page: /view-project, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).

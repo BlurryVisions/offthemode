@@ -1,4 +1,4 @@
-// One source (content/) -> every delivery: skills/ (committed, taken straight from GitHub; the listview skill also
+// One source (content/) -> every delivery: skills/ (committed, taken straight from GitHub; the view-project skill also
 // carries the built view page), lib/content.generated.json (MCP server + website), public/method/, public/view/ and public/skills/*.zip.
 // `--check` builds in memory and fails if skills/ on disk differs from content/ or the view page breaks its rules.
 // With `--committed` (CI passes it) it also fails if skills/ in the last commit differs, so GitHub serves the same
@@ -73,13 +73,13 @@ const commands = readdirSync(join(ROOT, "content/commands")).filter((f) => f.end
 
 const ENTRY = "offthemode";
 // The command that joins the notes with the view page; its skill carries the page, so it works offline.
-const VIEWER = "listview";
+const VIEWER = "view-project";
 for (const n of [ENTRY, VIEWER]) if (!commands.some((c) => c.name === n)) fail(`the command "${n}" is missing`);
 const known = new Set(commands.map((c) => c.name));
 // A command named in a body, not as part of a path (.offthemode/) or a tool id (mcp__offthemode__x).
 const mentions = (body, name) => new RegExp(`(?<![\\w./-])${name}(?![\\w/-])`).test(body);
 for (const c of commands) {
-  for (const ref of ["listrevisit", "reassess", "commentrevisit", "glossaryrevisit", "listview", "revisit-state"]) {
+  for (const ref of ["revisit-checklist", "reassess", "revisit-comments", "revisit-glossary", "view-project", "revisit-state"]) {
     if (c.body.includes(ref) && !known.has(ref)) fail(`${c.name}: mentions "${ref}", which doesn't exist`);
   }
 }

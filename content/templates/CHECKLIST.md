@@ -1,7 +1,7 @@
 # Checklist · {{?PROJECT_NAME}}
 Last revisit: {{?DATE}} · Verified {{?V}}/{{?TOTAL}}
 
-A map, not a gate. Fragments are listed in build order and Foundation items are placed by phase: keep to that order when you can. When you work in another order, /listrevisit catches up and updates this file.
+A map, not a gate. Fragments are listed in build order and Foundation items are placed by phase: keep to that order when you can. When you work in another order, /revisit-checklist catches up and updates this file.
 Marks: [ ] todo · [~] in progress · [x] built, not proven · [v] verified, evidence cited · [-] dropped, reason kept
 Verify: early = can be proven on its own · on completion = only an end-to-end run proves it
 

@@ -2,7 +2,7 @@
 
 Left alone, every AI coding tool returns the mode of its training data, meaning the most common answer: the most common stack, the most common landing page, the most common happy-path code. Off the Mode pulls your AI off that average. It is a prompt-engineering setup that makes your AI plan first, build in order and hold an elite bar on your project, new or existing: web, mobile, backend or data, a weekend build or a complex product. It works with any AI coding tool, including Claude, Cursor, VS Code, Windsurf and Codex. Add it by pasting https://offthemode.vercel.app/mcp into your tool, or by putting the skills pack in your tool's skills folder.
 
-In your project it adds the `.offthemode/` folder, plus one line you approve so your tool loads it. Setup writes six core files there: PRODUCT.md (what you are building and for whom), RULES.md (the standards every change is held to), CHECKLIST.md (the core, split into fragments), GLOSSARY.md (the product in plain words), STATE.md (where things stand) and DECISIONS.md (what was decided and why). Some guides add an optional document to the same folder when their work needs one; How to add it lists them all. Your AI loads RULES.md and STATE.md at the start of every session, and you keep working free-form. Seven commands do the upkeep: `offthemode`, `listrevisit`, `reassess`, `commentrevisit`, `glossaryrevisit`, `listview` and `revisit-state`. Every command except `listview` and `revisit-state` talks first: it tells you what it found and exactly what it will change, waits for your go, then does it and says what it did. `listview` changes nothing in your project, so it opens its page at once, and `revisit-state` only saves where things stand, so it saves at once.
+In your project it adds the `.offthemode/` folder, plus one line you approve so your tool loads it. Setup writes six core files there: PRODUCT.md (what you are building and for whom), RULES.md (the standards every change is held to), CHECKLIST.md (the core, split into fragments), GLOSSARY.md (the product in plain words), STATE.md (where things stand) and DECISIONS.md (what was decided and why). Some guides add an optional document to the same folder when their work needs one; How to add it lists them all. Your AI loads RULES.md and STATE.md at the start of every session, and you keep working free-form. Seven commands do the upkeep: `offthemode`, `revisit-checklist`, `reassess`, `revisit-comments`, `revisit-glossary`, `view-project` and `revisit-state`. Every command except `view-project` and `revisit-state` talks first: it tells you what it found and exactly what it will change, waits for your go, then does it and says what it did. `view-project` changes nothing in your project, so it opens its page at once, and `revisit-state` only saves where things stand, so it saves at once.
 
 You do not read this method front to back. Each guide covers one kind of work. RULES.md §Guides maps each kind of work to its guide, and your AI opens the matching guide before it plans or does that work. Each phase guide starts with short working rules: for a change inside an existing product, your AI opens just those; it opens the whole guide when it starts that phase or changes what the phase built. How to add it says where the guides come from. You can read any guide yourself: The Pipeline shows the order, and Product-First Doctrine shows the lens used at every step.
 
@@ -18,7 +18,7 @@ The method runs in one order: the product lens, rules, plan, look and feel, back
 | P0 · Constitution | Standing rules and memory that make every prompt stronger | RULES.md, STATE.md, DECISIONS.md, loaded by your tool at every session start |
 | Expertise Injection | Load the judgment of the people who invented the tools, not a job title | Expert judgment written into RULES.md; reviews by a second, fresh AI session |
 | P1 · Vision & Skeleton | A vision precise enough that two AI tools would build the same product | PRODUCT.md, SKELETON.md |
-| Living Checklist | The plan as core fragments with provable done-whens: work free-form, revisit the list any time | CHECKLIST.md, `listrevisit` |
+| Living Checklist | The plan as core fragments with provable done-whens: work free-form, revisit the list any time | CHECKLIST.md, `revisit-checklist` |
 | P2 · Core Spike | Optional: prove a fragment marked "Verify: early" before building on it, when it can be proven on its own | A verdict with numbers, the core contract, a feel test with 3 people |
 | P3 · Visual Language | A real point of view, not the average's, locked in as code | PRODUCT.md §Feeling, DESIGN.md, design tokens, a specimen page, audits |
 | P4 · Backend & Infra | Boring, strong and ready to host from the first commit | Schema, API contract or sync engine, environments; choices in DECISIONS.md |
@@ -27,7 +27,7 @@ The method runs in one order: the product lens, rules, plan, look and feel, back
 | P6 · Core Build & Iteration | The core built as small, fenced, verified slices | Slices behind flags, baselines, evals, checklist items closed with evidence |
 | P7 · Security Hardening | Audit the controls that were built in from day one | SECURITY.md, red-team findings |
 | P8 · Ship & Operate | Hosted is not shipped | Launch checklist, landing page as a live demo, runbook, lessons added to RULES.md |
-| Always-On rails | Verification, words, real data, budgets, being found, instrumentation, orchestration, prompts, revisits | Check scripts, evals, VOICE.md, seed data, RULES.md §Budgets, the Being Found Audit, prompt templates, `reassess`, `commentrevisit`, `glossaryrevisit` |
+| Always-On rails | Verification, words, real data, budgets, being found, instrumentation, orchestration, prompts, revisits | Check scripts, evals, VOICE.md, seed data, RULES.md §Budgets, the Being Found Audit, prompt templates, `reassess`, `revisit-comments`, `revisit-glossary` |
 
 This is not a waterfall. P1 and P2 form one loop. P4 and P5 run in parallel once a mock server exists. P6 loops dozens of times, and P7 only audits controls that RULES.md §Safety, P4 and P6 already built. The Always-On rails run under every phase from the first commit.
 
@@ -79,7 +79,7 @@ The laws below sit under every guide and template in this method. Each one state
 | 2 | The mode is the default | For an underspecified request, the model's best guess is the most typical answer | "No hero. The first screen is the product on sample data. One display face. Colour strategy per DESIGN.md." | Hero, three cards, Inter, gradient | Constraint Stack; PRODUCT.md §Refusals |
 | 3 | Reasons generalize, bare rules don't | A reason carries the principle to cases you didn't name | "Don't derive state in effects: it adds a render with stale values and a second source of truth." | Rules obeyed to the letter, missed in spirit | Every line in RULES.md carries its reason |
 | 4 | Show, don't adjective | "Modern, clean, premium" sat next to millions of templates, so they decode to those templates | "Headline --text-display, body --text-base, two weights; motion --dur-quick with --ease-out, transform and opacity only; take refs/04.png's whitespace, not its colours." | Adjective soup | Anchor to References; design tokens (named values for type, colour, spacing and motion) |
-| 5 | Talk first, plan before code | Once code exists, the model reads it as evidence and defends it | "Tell me what you found and exactly what you will change. No code until I say go." For a large change: "Two architectures with tradeoffs, no code." | Sunk-cost patching; changes you never agreed to | Every Off the Mode command talks first and waits for your go, except `listview` and `revisit-state`, which only show or save where things stand |
+| 5 | Talk first, plan before code | Once code exists, the model reads it as evidence and defends it | "Tell me what you found and exactly what you will change. No code until I say go." For a large change: "Two architectures with tradeoffs, no code." | Sunk-cost patching; changes you never agreed to | Every Off the Mode command talks first and waits for your go, except `view-project` and `revisit-state`, which only show or save where things stand |
 | 6 | Verification is the prompt | An AI can only fix what it can observe | "Screenshot / at phone, tablet and wide widths, before and after. Done means the checks pass and it actually ran." | "Should work" | RULES.md §Done means verified; Prove It Works |
 | 7 | One concern per turn, fenced | With several goals the easiest one wins; anything not fenced off reads as fair game | "Only the refresh race in src/auth/refresh.ts. If the fix needs other files, stop and say why." | 14-file changes you can neither review nor revert | Change Request |
 | 8 | Context is a budget, and it rots | Dead attempts left in the history get repeated; when a tool shortens a long session on its own, it decides what is forgotten | "Save STATE.md with revisit-state, then start a fresh session." For wide reading, one scout reads once and writes a short brief that every other agent shares word for word. | The marathon session | STATE.md, kept current as the work happens |
@@ -169,7 +169,7 @@ Show the new path, the new totals and each cut's technical consequences. After m
 - The project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) stay where they are and win on project specifics: never move or merge them. A line that contradicts the code, another rule or an Off the Mode standard, or is out of date, is shown with its fix and changed only on the user's go, recorded in DECISIONS.md. Besides those fixes, the one auto-load line is the only addition, also on the user's go.
 - Before deciding anything, search DECISIONS.md, so a settled choice is not argued again.
 - A correction given once goes in STATE.md §Corrections seen once, with the date. Given a second time, propose one line for RULES.md §Project specifics with its reason, and add it on the user's go.
-- Keep STATE.md current without asking: at the end of any reply that changes a project file or concludes a decision, follow revisit-state's steps (present tense, no history, never the same line twice) and append any new decision to DECISIONS.md. While an Off the Mode command runs, it touches only what the command names, and STATE.md catches up after it. The user can also type revisit-state.
+- Keep STATE.md current without asking: once at the end of any reply that modifies project files or concludes a decision, after its last edit, follow revisit-state's steps (present tense, no history, never the same line twice) and append any new decision to DECISIONS.md. While an Off the Mode command runs, it touches only what the command names, and STATE.md catches up after it. An agent another session started leaves .offthemode/ alone. The user can also type revisit-state.
 - Open the whole guide to set up or redo the rules, wire the auto-load, or prune RULES.md.
 <!-- /offthemode:rules -->
 
@@ -286,7 +286,7 @@ When you connect through the MCP link, the server also repeats the instruction t
 
 Your AI has no memory between sessions, so the project is its memory. Chat history is not storage. Start a fresh session between unrelated tasks (/clear in Claude Code), and let the files carry what matters.
 
-- STATE.md is rewritten, not added to: at the end of any reply that changes a file or settles a decision, your AI runs `revisit-state` by itself (after any other command has finished), and you can type it whenever you want, for example before a fresh session. Each thing has one line, so running it again never adds anything twice. The next session needs the present, not a diary.
+- STATE.md is rewritten, not added to: once at the end of any reply that changes files or settles a decision, after its last edit, your AI runs `revisit-state` by itself (after any other command has finished) and, when it changed something, says so in one line, and you can type it whenever you want, for example before a fresh session. Each thing has one line, so running it again never adds anything twice. The next session needs the present, not a diary.
 - DECISIONS.md is appended to, never rewritten. It is the record of why, so no later session argues a settled choice again or quietly reverses it.
 
 #### A STATE.md that works
@@ -697,27 +697,27 @@ Show the RISKS.md rows you would add, mark the ones needing a P2 spike, and list
 
 ## Living Checklist
 
-> **Output:** `.offthemode/CHECKLIST.md`: the core concept split into fragments, each item with a provable done-when, kept true by one command, `listrevisit`.
+> **Output:** `.offthemode/CHECKLIST.md`: the core concept split into fragments, each item with a provable done-when, kept true by one command, `revisit-checklist`.
 
-Your core concept lives in PRODUCT.md §Core concept, written during P1. The checklist breaks it into **fragments**: the separate pieces of the core, finished one after another. Each fragment has a few items, and each item says how you will know it is done. The file is a map, not a gate: fragments are listed in build order (what others depend on first, then the one nearest the moment of value), and you can still work on anything in any order. Sessions stay free-form and nothing has to be ticked while you work, because `listrevisit` catches up afterwards by reading what changed in git.
+Your core concept lives in PRODUCT.md §Core concept, written during P1. The checklist breaks it into **fragments**: the separate pieces of the core, finished one after another. Each fragment has a few items, and each item says how you will know it is done. The file is a map, not a gate: fragments are listed in build order (what others depend on first, then the one nearest the moment of value), and you can still work on anything in any order. Sessions stay free-form and nothing has to be ticked while you work, because `revisit-checklist` catches up afterwards by reading what changed in git.
 
-**One command, checklist only.** `listrevisit` builds the checklist the first time, when the file is missing or still the blank template. After that, run it on its own to see where you stand, or with a note (`listrevisit add CSV export to reports`) to change the list. Type `/listrevisit` with the skills pack, `/mcp__offthemode__listrevisit` through the link in Claude Code, or just say "list revisit". It edits only .offthemode/CHECKLIST.md, never code or other docs. If a change also affects the vision or the architecture, it names the doc to update and leaves that to you.
+**One command, checklist only.** `revisit-checklist` builds the checklist the first time, when the file is missing or still the blank template. After that, run it on its own to see where you stand, or with a note (`revisit-checklist add CSV export to reports`) to change the list. Type `/revisit-checklist` with the skills pack, `/mcp__offthemode__revisit-checklist` through the link in Claude Code, or just say "revisit the checklist". It edits only .offthemode/CHECKLIST.md, never code or other docs. If a change also affects the vision or the architecture, it names the doc to update and leaves that to you.
 
 **It talks first.** Every run starts with a report: what it found and exactly what it would change in the file. Nothing is written until you say go. Then it applies the change and tells you what it did.
 
 | You run | It reports | After your go |
 |---|---|---|
-| `listrevisit` with no checklist yet | The core concept split into fragments, in build order, one line each | Writes the file; anything already built is marked `[x]`, never `[v]` |
-| `listrevisit` | Commits since the last revisit mapped to items, the results of the cheap checks, each mark it would move with its evidence, and work that matches no item | Updates the marks, the header and the verified count |
-| `listrevisit <idea or change>` | The fragment it belongs in (or a new one), the job in PRODUCT.md it serves, what it disturbs, and the exact diff to the list | Applies the diff and logs one line per change |
+| `revisit-checklist` with no checklist yet | The core concept split into fragments, in build order, one line each | Writes the file; anything already built is marked `[x]`, never `[v]` |
+| `revisit-checklist` | Commits since the last revisit mapped to items, the results of the cheap checks, each mark it would move with its evidence, and work that matches no item | Updates the marks, the header and the verified count |
+| `revisit-checklist <idea or change>` | The fragment it belongs in (or a new one), the job in PRODUCT.md it serves, what it disturbs, and the exact diff to the list | Applies the diff and logs one line per change |
 
 > **Rule:** An item is marked verified only with evidence the command can cite: a passing test by name, a measured number, a screenshot, a commit. "Built" and "verified" are separate marks, because the gap between them is where AI tools claim done.
 
 **When a fragment can be verified depends on the product.** Some fragments can be proven on their own, early: a hard interaction, a speed limit, a platform constraint. Many can't. An AI data analyst only proves itself end to end: a real question goes in, correct SQL runs, the right answer comes out, and that needs the whole chain to exist. So each fragment says `Verify: early` or `Verify: on completion`. An on-completion fragment's done-when is an end-to-end run with real inputs (for a model-driven core, the eval set passing). Neither mode is better; the checklist just records which one each fragment is.
 
-**The elite bar.** Every fragment ends with one item, "quality bars met". The bars cover correctness, speed, experience, code and safety, and each names the command in RULES.md §Commands that measures it. Bars that don't apply get deleted with a reason: a backend-only product drops the UI ones. A number a bar checks is a key in RULES.md §Budgets, never written into the bar, so a threshold changes in one place; a bar whose key the product doesn't hold checks nothing numeric. `listrevisit` measures what it can and says plainly what it couldn't measure, instead of calling it passing.
+**The elite bar.** Every fragment ends with one item, "quality bars met". The bars cover correctness, speed, experience, code and safety, and each names the command in RULES.md §Commands that measures it. Bars that don't apply get deleted with a reason: a backend-only product drops the UI ones. A number a bar checks is a key in RULES.md §Budgets, never written into the bar, so a threshold changes in one place; a bar whose key the product doesn't hold checks nothing numeric. `revisit-checklist` measures what it can and says plainly what it couldn't measure, instead of calling it passing.
 
-> **Why:** A free-form session is good at momentum and bad at memory. The checklist is the memory, and `listrevisit` is the one step that has to be honest, so it runs checks instead of trusting claims.
+> **Why:** A free-form session is good at momentum and bad at memory. The checklist is the memory, and `revisit-checklist` is the one step that has to be honest, so it runs checks instead of trusting claims.
 
 The file starts from the CHECKLIST.md template (from get_template or the skill's templates/ folder). It has these parts:
 
@@ -745,7 +745,7 @@ The bars themselves live in one place, the Quality bars part of the CHECKLIST.md
 
 The command runs the steps below. In a tool without the skills pack or the link, paste this prompt instead.
 
-<!-- offthemode:command listrevisit -->
+<!-- offthemode:command revisit-checklist -->
 
 ## P2 · Core Spike
 
@@ -1802,7 +1802,7 @@ Zero additions to L1 beyond a palette hint; every command reachable without a ke
 - Never edit a test to make it pass. Tests, snapshots and exemptions change only when the spec changes.
 - Two failed attempts at the same fix: climb one rung of the ladder in When it keeps getting it wrong. Never a third try from the same context.
 - A change to prompts, model ids, retrieval or the core contract runs the evals.
-- Finish with the checks in RULES.md §Commands, and name the CHECKLIST.md item it closes; listrevisit records the mark and the evidence.
+- Finish with the checks in RULES.md §Commands, and name the CHECKLIST.md item it closes; revisit-checklist records the mark and the evidence.
 - Open the whole guide for a new vertical slice, a refactor checkpoint or a drift check.
 <!-- /offthemode:rules -->
 
@@ -1826,7 +1826,7 @@ Restate the slice in 5 lines: person, job, moment of value, the single primary a
 5. States: every column of the ROUTES.md state inventory, copy per .offthemode/VOICE.md.
 6. Tests: failing logic tests first, then one end-to-end happy path, one abuse path (wrong user, malformed input, replay), and an end-to-end test of the journey step.
 7. Entry points behind the flag, off in production.
-8. Verify: every check in RULES.md §Commands passes, the slice actually ran, and you looked at its screens at each of screenshot_sizes (RULES.md §Budgets). Name the CHECKLIST.md item it closes (listrevisit records the mark and the evidence) and tell me what you did.
+8. Verify: every check in RULES.md §Commands passes, the slice actually ran, and you looked at its screens at each of screenshot_sizes (RULES.md §Budgets). Name the CHECKLIST.md item it closes (revisit-checklist records the mark and the evidence) and tell me what you did.
 List every new visible action and why it can't be inferred or defaulted. Touch only the fence; if you need more, stop and explain.
 ```
 
@@ -2846,44 +2846,44 @@ Changelog: v4 references assigned by me, no recommendation (a generator grading 
 
 ## Always-On · Revisits
 
-> **Output:** five commands that each touch only what they own: `listrevisit` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md` only on your go, `commentrevisit` edits code comments only, `glossaryrevisit` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`, and `revisit-state` saves where things stand to `.offthemode/STATE.md` and new decisions to `.offthemode/DECISIONS.md`; plus `listview`, which opens the folder as one page in your browser and writes nothing in the project.
+> **Output:** five commands that each touch only what they own: `revisit-checklist` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md` only on your go, `revisit-comments` edits code comments only, `revisit-glossary` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`, and `revisit-state` saves where things stand to `.offthemode/STATE.md` and new decisions to `.offthemode/DECISIONS.md`; plus `view-project`, which opens the folder as one page in your browser and writes nothing in the project.
 
-Off the Mode has seven commands. `offthemode` sets up a project or shows its status, and `listview` shows it as a page. The other five are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else.
+Off the Mode has seven commands. `offthemode` sets up a project or shows its status, and `view-project` shows it as a page. The other five are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else.
 
 Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the link in Claude Code) or just say them: "reassess the project".
 
-> **Rule:** Every command except `listview` and `revisit-state` talks first. It explains what it found and exactly what it will change, waits for your go, then does it and tells you what it did. `reassess` changes no code and no other file: its report is the result. It asks for a go before it runs a real input through the core, and before it saves the report. `listview` and `revisit-state` act at once: `listview` writes nothing in the project, and `revisit-state` only saves where things stand, with the earlier version kept in git where the project uses it, so your AI also runs it by itself after a reply that changes files or settles a decision.
+> **Rule:** Every command except `view-project` and `revisit-state` talks first. It explains what it found and exactly what it will change, waits for your go, then does it and tells you what it did. `reassess` changes no code and no other file: its report is the result. It asks for a go before it runs a real input through the core, and before it saves the report. `view-project` and `revisit-state` act at once: `view-project` writes nothing in the project, and `revisit-state` only saves where things stand, with the earlier version kept in git where the project uses it, so your AI also runs it by itself after a reply that changes files or settles a decision.
 
 | Command | Its one job | Touches |
 |---|---|---|
-| `listrevisit [note]` | Shows the checklist, or places a new feature or idea where it belongs | `.offthemode/CHECKLIST.md` |
+| `revisit-checklist [note]` | Shows the checklist, or places a new feature or idea where it belongs | `.offthemode/CHECKLIST.md` |
 | `reassess` | Compares what has actually been built with the core concept | Only its own report, `.offthemode/REASSESS.md`, if you say so |
-| `commentrevisit [path]` | Makes code comments true, necessary and useful | Comments only, never code |
-| `glossaryrevisit` | Keeps a plain-words summary of the project that anyone can understand | The "In plain words" part of `.offthemode/GLOSSARY.md` |
-| `listview` | Opens your project as a page in your browser | Nothing in your project: one temporary page |
+| `revisit-comments [path]` | Makes code comments true, necessary and useful | Comments only, never code |
+| `revisit-glossary` | Keeps a plain-words summary of the project that anyone can understand | The "In plain words" part of `.offthemode/GLOSSARY.md` |
+| `view-project` | Opens your project as a page in your browser | Nothing in your project: one temporary page |
 | `revisit-state` | Saves where things stand, so a fresh session picks up from here | `.offthemode/STATE.md`, and new decisions in `.offthemode/DECISIONS.md` |
 
-`listrevisit` is covered in Living Checklist, and `revisit-state` in P0 · Constitution, under Memory across sessions. The others:
+`revisit-checklist` is covered in Living Checklist, and `revisit-state` in P0 · Constitution, under Memory across sessions. The others:
 
-**`reassess` reads the code, not the docs.** Docs describe intentions; the code is what exists. It compares the code with the core concept in PRODUCT.md: what serves it, what drifted from it, what is missing, and what was built that serves no job at all. When the core can run, it proposes one real input and the exact command, using test or seed data so nothing real is sent, charged or changed, and after your go pushes it through the whole chain: the only honest check for a product that proves itself end to end. It edits nothing else, the checklist included. At the end it offers to save the report to `.offthemode/REASSESS.md`, replacing the last one; the first line gives the date and whether the project is on course, drifting or off course. If it finds work to capture, it gives you the exact note to pass to `listrevisit`.
+**`reassess` reads the code, not the docs.** Docs describe intentions; the code is what exists. It compares the code with the core concept in PRODUCT.md: what serves it, what drifted from it, what is missing, and what was built that serves no job at all. When the core can run, it proposes one real input and the exact command, using test or seed data so nothing real is sent, charged or changed, and after your go pushes it through the whole chain: the only honest check for a product that proves itself end to end. It edits nothing else, the checklist included. At the end it offers to save the report to `.offthemode/REASSESS.md`, replacing the last one; the first line gives the date and whether the project is on course, drifting or off course. If it finds work to capture, it gives you the exact note to pass to `revisit-checklist`.
 
-**`commentrevisit` edits comments and nothing else.** It removes comments that lie (the code changed, the comment didn't), comments that narrate what the next line obviously does, commented-out code, and TODOs with no checklist id. It adds a short why where the code can't explain itself: a workaround, an invariant (a condition the code must always keep true), a magic number, a security decision. It proves it touched only comments: the diff (the list of changed lines) holds no code changes, and the checks still pass. When a comment reveals a bug, it reports the bug instead of fixing it.
+**`revisit-comments` edits comments and nothing else.** It removes comments that lie (the code changed, the comment didn't), comments that narrate what the next line obviously does, commented-out code, and TODOs with no checklist id. It adds a short why where the code can't explain itself: a workaround, an invariant (a condition the code must always keep true), a magic number, a security decision. It proves it touched only comments: the diff (the list of changed lines) holds no code changes, and the checks still pass. When a comment reveals a bug, it reports the bug instead of fixing it.
 
-**`glossaryrevisit` is for people, not AI tools.** The top of `.offthemode/GLOSSARY.md` says what the project is, who it's for, what problem it solves, what works today and what's coming, in words anyone understands. No stack, no jargon, no feature lists: you could read it aloud to a relative or open a pitch with it. "Working today" comes from the code and the checklist, not from the plan, so it stays honest. The Terms list below it is left alone.
+**`revisit-glossary` is for people, not AI tools.** The top of `.offthemode/GLOSSARY.md` says what the project is, who it's for, what problem it solves, what works today and what's coming, in words anyone understands. No stack, no jargon, no feature lists: you could read it aloud to a relative or open a pitch with it. "Working today" comes from the code and the checklist, not from the plan, so it stays honest. The Terms list below it is left alone.
 
-**`listview` shows the folder as a page.** The view shows `.offthemode/` at a glance: the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess. `listview` gets you there in one step: your AI tool runs one command line that joins the notes with the view page into one temporary file and opens it in your browser. Nothing is uploaded and nothing in the project is written. The page is a snapshot, so run `listview` again after the notes change. With the skills, the page comes from the listview skill's folder, so it works offline. In a tool that can't run commands, open https://offthemode.vercel.app/view and pick the `.offthemode` folder: the page reads the files in your browser and sends nothing anywhere, and Chrome remembers the folder for next time. `listrevisit`, `reassess` and `glossaryrevisit` end with both ways:
+**`view-project` shows the folder as a page.** The view shows `.offthemode/` at a glance: the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess. `view-project` gets you there in one step: your AI tool runs one command line that joins the notes with the view page into one temporary file and opens it in your browser. Nothing is uploaded and nothing in the project is written. The page is a snapshot, so run `view-project` again after the notes change. With the skills, the page comes from the view-project skill's folder, so it works offline. In a tool that can't run commands, open https://offthemode.vercel.app/view and pick the `.offthemode` folder: the page reads the files in your browser and sends nothing anywhere, and Chrome remembers the folder for next time. `revisit-checklist`, `reassess` and `revisit-glossary` end with both ways:
 
-See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+See it as a page: /view-project, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 For a tool where the commands aren't set up, these prompts do the same jobs by hand.
 
 <!-- offthemode:command reassess -->
 
-<!-- offthemode:command commentrevisit -->
+<!-- offthemode:command revisit-comments -->
 
-<!-- offthemode:command glossaryrevisit -->
+<!-- offthemode:command revisit-glossary -->
 
-<!-- offthemode:command listview -->
+<!-- offthemode:command view-project -->
 
 ## Mobile Addendum
 
@@ -3038,7 +3038,7 @@ The easiest way is the skills. This one line, pasted into a terminal, installs a
 curl -fsSL https://offthemode.vercel.app/skills/offthemode-skills.zip -o /tmp/offthemode-skills.zip && unzip -o /tmp/offthemode-skills.zip -x README.md -d ~/.claude/skills
 ```
 
-The skills are files on your machine, so they work in auto mode, Claude Code's default, with no extra step. The commands are then `/offthemode`, `/listrevisit`, `/listview`, `/revisit-state`, `/reassess`, `/commentrevisit` and `/glossaryrevisit`.
+The skills are files on your machine, so they work in auto mode, Claude Code's default, with no extra step. The commands are then `/offthemode`, `/revisit-checklist`, `/view-project`, `/revisit-state`, `/reassess`, `/revisit-comments` and `/revisit-glossary`.
 
 Or use the link. Run this once; `--scope user` makes it available in every project on your machine:
 
@@ -3046,7 +3046,7 @@ Or use the link. Run this once; `--scope user` makes it available in every proje
 claude mcp add --transport http --scope user offthemode https://offthemode.vercel.app/mcp
 ```
 
-In auto mode, the safety check blocks tools from a server you just added until you allow them. Type `/permissions` and add the allow rule `mcp__offthemode`, or switch the session to Manual mode once and approve the tool when it asks. Run `claude mcp list` to check that `offthemode` shows as connected. The commands appear as `/mcp__offthemode__offthemode`, `/mcp__offthemode__listrevisit` and so on.
+In auto mode, the safety check blocks tools from a server you just added until you allow them. Type `/permissions` and add the allow rule `mcp__offthemode`, or switch the session to Manual mode once and approve the tool when it asks. Run `claude mcp list` to check that `offthemode` shows as connected. The commands appear as `/mcp__offthemode__offthemode`, `/mcp__offthemode__revisit-checklist` and so on.
 
 #### Cursor and VS Code
 
@@ -3085,7 +3085,7 @@ Windsurf, Zed, Cline and other tools that speak MCP over HTTP: add a remote serv
 
 #### Skills pack
 
-The skills are the same commands, guides and templates as plain files, so nothing is fetched while you work. All seven belong together: setup follows the listrevisit and reassess instructions, the guides live in the offthemode skill, and the view page in the listview skill. Put the folders where your tool loads skills:
+The skills are the same commands, guides and templates as plain files, so nothing is fetched while you work. All seven belong together: setup follows the revisit-checklist and reassess instructions, the guides live in the offthemode skill, and the view page in the view-project skill. Put the folders where your tool loads skills:
 
 | Tool | For one project | For every project |
 |---|---|---|
@@ -3160,9 +3160,9 @@ Code a guide calls for, such as design tokens, scripts and tests, is ordinary pr
 
 Say "set up off the mode" again on a project that is already set up and you get its status: where things stand, and what's next on the checklist.
 
-To read the folder without opening each file, type `/listview` or say "list view": it opens the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess as one page in your browser, and writes nothing in the project. Or open the view at https://offthemode.vercel.app/view and pick the `.offthemode` folder; Chrome remembers it for next time. Either way the files are read on your machine and nothing is uploaded. Setup, `listrevisit`, `reassess` and `glossaryrevisit` end with both:
+To read the folder without opening each file, type `/view-project` or say "view the project": it opens the checklist, the plan, the plain summary, the decisions, where things stand and the last reassess as one page in your browser, and writes nothing in the project. Or open the view at https://offthemode.vercel.app/view and pick the `.offthemode` folder; Chrome remembers it for next time. Either way the files are read on your machine and nothing is uploaded. Setup, `revisit-checklist`, `reassess` and `revisit-glossary` end with both:
 
-See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+See it as a page: /view-project, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 > **Pro move:** Commit `.offthemode/` with your code. Every teammate and every AI session, in any tool, then works from the same product, rules and state.
 
@@ -3198,25 +3198,25 @@ Normal sessions stay free-form. You say what you want in plain words; the files 
 2. **Say what you want.** One concern at a time: a feature, a fix, a screen.
 3. **It opens the guide.** RULES.md §Guides maps each kind of work to a guide; your AI opens the matching one before planning, once per session. For a change inside what exists, the guide's working rules are enough.
 4. **It talks first.** It says what it understood, what it will change and what it isn't sure of, as hypotheses ("I think X, because Y"), and confirms each one before building on it. A small fix (a typo, a one-line change) gets one line and goes ahead; anything bigger waits for your go, with a real plan when it touches data, contracts or many files.
-5. **It builds in build order.** CHECKLIST.md lists the fragments in the order they depend on each other, core first, and your AI follows that order, held to RULES.md. You can still ask for anything at any time; listrevisit catches up.
+5. **It builds in build order.** CHECKLIST.md lists the fragments in the order they depend on each other, core first, and your AI follows that order, held to RULES.md. You can still ask for anything at any time; revisit-checklist catches up.
 6. **It verifies before it says done.** The checks pass, the thing actually ran, and screens were looked at on phone, tablet and wide widths.
-7. **It records the work.** STATE.md is updated with where things stand, decisions go to DECISIONS.md, your AI names the checklist item the work closes (listrevisit records the mark and the evidence), and a correction you had to make twice becomes a proposed line in RULES.md §Project specifics, added on your go.
+7. **It records the work.** STATE.md is updated with where things stand, decisions go to DECISIONS.md, your AI names the checklist item the work closes (revisit-checklist records the mark and the evidence), and a correction you had to make twice becomes a proposed line in RULES.md §Project specifics, added on your go.
 8. **Review in a fresh session** when the change matters: a second AI session asked to review, with no memory of building it.
 
 > **Why:** A fresh session with an up-to-date STATE.md picks up where the last one stopped, with none of the stale context. So when a piece of work ends, run `revisit-state` and start a fresh session, rather than waiting for the window to run out.
 
 ### When to run each command
 
-Every command except `listview` and `revisit-state` talks first: it explains what it found and exactly what it will change, waits for your go, then does it and says what it did. `listview` writes nothing in the project, so it opens its page at once, and `revisit-state` only saves where things stand, so it saves at once.
+Every command except `view-project` and `revisit-state` talks first: it explains what it found and exactly what it will change, waits for your go, then does it and says what it did. `view-project` writes nothing in the project, so it opens its page at once, and `revisit-state` only saves where things stand, so it saves at once.
 
 | Command | Run it |
 |---|---|
 | `offthemode` | Once per project, to set it up; later, any time you want the status |
-| `listrevisit` | To see what's next, or when a new feature or idea comes up, so it lands in the right place on the checklist |
-| `listview` | Whenever you want the whole project at a glance, as a page in your browser |
+| `revisit-checklist` | To see what's next, or when a new feature or idea comes up, so it lands in the right place on the checklist |
+| `view-project` | Whenever you want the whole project at a glance, as a page in your browser |
 | `revisit-state` | Your AI runs it by itself after work changes files or settles a decision; type it before you start a fresh session, or whenever you want where things stand saved for sure |
 | `reassess` | After every few pieces of work, before a milestone, or whenever the product feels like it is drifting from the core concept |
-| `commentrevisit` | Before a merge, or when comments feel stale |
-| `glossaryrevisit` | After a milestone, or before you show the project to someone |
+| `revisit-comments` | Before a merge, or when comments feel stale |
+| `revisit-glossary` | After a milestone, or before you show the project to someone |
 
 Some guides add their own rhythm on top: a Refactor Checkpoint during the core build, a Complexity Audit weekly while surfaces grow, the Five-Person Test whenever the core journey changes shape, and a Weekly Signal Review after launch.

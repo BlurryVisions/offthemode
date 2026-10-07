@@ -22,16 +22,16 @@ Then, whenever you want:
 | Command | What it does | What it can change |
 |---|---|---|
 | `/offthemode` | Sets up the project, or tells you where it stands | The `.offthemode/` folder, plus one line you approve so your tool loads it; if you say yes, your usual setup in `~/.offthemode/ME.md` |
-| `/listrevisit [idea]` | Shows the checklist, or adds a new feature or idea to it | The checklist |
-| `/listview` | Opens your project as a page in your browser | Nothing in your project: one temporary page |
+| `/revisit-checklist [idea]` | Shows the checklist, or adds a new feature or idea to it | The checklist |
+| `/view-project` | Opens your project as a page in your browser | Nothing in your project: one temporary page |
 | `/revisit-state` | Saves where things stand, so a fresh session picks up from here; your AI also runs it on its own after changing files | Where things stand, and new decisions |
 | `/reassess` | Checks what's built against your core concept | Only its own report, if you say so |
-| `/commentrevisit [path]` | Cleans up code comments | Comments only |
-| `/glossaryrevisit` | Refreshes a plain-words summary anyone can understand | The summary |
+| `/revisit-comments [path]` | Cleans up code comments | Comments only |
+| `/revisit-glossary` | Refreshes a plain-words summary anyone can understand | The summary |
 
 Your normal coding sessions stay free. Nothing forces the checklist on you.
 
-See it as a page: /listview, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
+See it as a page: /view-project, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).
 
 ## What goes into your project
 
