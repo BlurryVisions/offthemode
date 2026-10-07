@@ -1,25 +1,29 @@
 STATE · updated 2026-10-07 · under 40 lines · rewritten, not appended, whenever a real piece of work ends
 
 ## Now
-Live at https://offthemode.vercel.app (MCP at /mcp, method at /method, the view at /view), repo public at https://github.com/BlurryVisions/offthemode; a push to main deploys. Six commands, including /listview. The view draws a project's .offthemode/ folder on one sheet with nothing uploaded. New on 2026-10-07: the guide Always-On · Being Found (search, AI answers, app stores, or not at all, built from 143 facts on official pages), the rule that suggestions are taken to heart but never as a script, and the site's own robots.txt, sitemap, share image and search titles. Checklist 34/62 verified.
+Live at https://offthemode.vercel.app (MCP at /mcp, method at /method, the view at /view), repo public at https://github.com/BlurryVisions/offthemode; a push to main deploys (RULES.md §Shipping). Six commands, including /listview. 31 guides, including Always-On · Being Found. Setup asks how a project ships in its first round and keeps the user's usual in ~/.offthemode/ME.md on their go (D-017). The view marks a changed item with a red up arrow. The site follows its own Being Found guide: robots.txt (training crawlers blocked, D-014), sitemap, share image, and Google Search Console verified by the author on 2026-10-07. Checklist 35/63 verified. Last commit ddf0299.
 
 ## Next (item 1 is where the next session starts)
 1. A scripted dry run for what the real runs couldn't cover, kept as npm run eval (CHECKLIST F6.6): a chat with no file access (F5.2) and a product with no web UI (F5.6); lasscrobits (2026-10-06) covered a new project
-2. Generate the method's "Load the Rules" prompt from content/server/instructions.md (F1.4): done when a grep finds one wording of the standing rule
-3. Make setup's messages plain enough that nobody has to ask what they mean (F5.8, from the lasscrobits run)
+2. Make setup's messages plain enough that nobody has to ask what they mean (F5.8, from the lasscrobits run)
+3. Generate the method's "Load the Rules" prompt from content/server/instructions.md (F1.4): done when a grep finds one wording of the standing rule
 
 ## In flight
 - nothing in this repo
 
 ## Unverified
-- the view in Safari and Firefox, and through a real folder dialog or drag and drop (only Chrome's file input was driven by script): CHECKLIST F8.1
+- the view in Safari and Firefox, a real folder dialog, drag and drop, and Chrome's real "Reopen" prompt (F8.1, F8.8)
 - reassess saving REASSESS.md in a real run (F8.4)
-- setup's new paths (no file access, outdated-file check, one go before writing): only an agent dry run proves them (CHECKLIST F5.2 to F5.6)
-- claude.ai accepts each per-skill zip now that argument-hint is gone and every description is 200 characters or less: a real upload (F3.5)
+- setup's no-file-access and no-UI paths, and the shipping step after its fixes (F5.2, F5.6, F5.9): only a dry run proves them
+- claude.ai accepting each per-skill zip (F3.5): skipped while the author's claude.ai is an org account
 
 ## Waiting on me · known broken · do not touch
+- The author: submit sitemap.xml in Search Console if not done yet; optional Bing import. Run /offthemode once in lasscrobits, Supersense and mlix so they pick up the Shipping section (and, where missing, "Found by" and the suggestions rule).
+- The offthemode command is at 7861 of the MCP test's 8000-character guard: raise the guard (D-015) rather than cut a rule when it next grows.
+- next dev writes a Next.js block into AGENTS.md: commit it when it appears (the author said ok, 2026-10-07).
 - In Claude Code auto mode, the MCP tools need the allow rule mcp__offthemode; the skills need none.
 - The code calls a guide Sheet (lib/content.ts); people read "guide". Rename when that code is next touched (GLOSSARY.md §Terms).
 
 ## Corrections seen once (date · what)
 - 2026-09-30 · explain what a technical rule is for, in everyday words, before asking for a decision on it
+- 2026-10-07 · say exactly which steps finished and which didn't after an interruption; never "done" while a step is pending
