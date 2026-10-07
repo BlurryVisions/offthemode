@@ -1,5 +1,5 @@
 # Checklist · Off the Mode
-Last revisit: 2026-10-07 · Verified 34/64
+Last revisit: 2026-10-07 · Verified 35/64
 
 A map, not a gate. Build in any order; /listrevisit reconciles and updates this file.
 Marks: [ ] todo · [~] in progress · [x] built, not proven · [v] verified, evidence cited · [-] dropped, reason kept
@@ -23,7 +23,7 @@ For the person: whichever way they add it, they get the same, current method.
 
 ### F2 · The link: the MCP server hands out commands, templates and guides · depends on: F1 · Verify: early
 For the person: one pasted link and their tool has every command, and it never sees their code.
-- [x] F2.1 7 command tools, 7 prompts, get_template, get_method and resources answer · done when: `npm run test:mcp` passes against the live URL · guide: p4-backend-infra · evidence: built; the live MCP test must see the seventh command (revisit-state) after the deploy
+- [v] F2.1 7 command tools, 7 prompts, get_template, get_method and resources answer · done when: `npm run test:mcp` passes against the live URL · guide: p4-backend-infra · evidence: MCP_URL=https://offthemode.vercel.app/mcp npm run test:mcp after the 2026-10-07 deploy of 46b05b8: tools/list shows the 7 command tools plus get_template and get_method, prompts/list the 7 prompts, all passed
 - [v] F2.2 the server stores and logs nothing it is sent · done when: app/mcp/route.ts and lib/content.ts contain no storage or logging of arguments · guide: p7-security-hardening · evidence: grep of app/mcp/route.ts and lib/content.ts finds no console, file writes, fetch, kv, redis or verboseLogs (2026-09-30)
 - [v] F2.3 the server's instructions apply only to projects with a .offthemode/ folder · done when: every step in the instructions text is conditioned on the folder · guide: p4-backend-infra · evidence: `npm run test:mcp` · 'instructions: conditioned on .offthemode/, point to §Guides' (local, 2026-09-30)
 - [v] F2.4 no idle subscription streams on a stateless server · done when: a live subscriptions/listen call is refused at once · guide: p4-backend-infra · evidence: `npm run test:mcp` · 'subscriptions/listen 2026-07-28 · refused in 7 ms' (local, 2026-09-30)
@@ -152,3 +152,4 @@ Dropped: (native) frame budget, because there is no native app · (UI) empty, lo
 - 2026-10-07 · Google Search Console ownership added to the site (the author's property); the sitemap submission is theirs
 - 2026-10-07 · added F6.7: /revisit-state, a seventh command that saves STATE.md and new decisions when the user types it; the AI also keeps STATE.md current in any reply that changes a file or settles a decision (D-020); F2.1 back to [x] until the live MCP test sees it
 - 2026-10-07 · F6.7: /revisit-state also runs on its own after a reply that changes files or settles a decision, and never writes the same thing twice (D-021)
+- 2026-10-07 · after the deploy of 46b05b8: F2.1 verified by the live MCP test (9 tools, 7 prompts, revisit-state included); F6.7 waits for a real session
