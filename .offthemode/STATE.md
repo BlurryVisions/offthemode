@@ -1,7 +1,7 @@
 STATE · updated 2026-10-08 · under 40 lines · present tense, kept current as the work happens, saved in full by /revisit-state
 
 ## Now
-Live at https://offthemode.vercel.app (MCP at /mcp, method at /method, the view at /view), repo public at https://github.com/BlurryVisions/offthemode; a push to main deploys (RULES.md §Shipping). Seven commands, the newest /revisit-state (D-020, D-021): the AI runs it on its own after a reply that changes a file or settles a decision, the user can type it, and it never writes the same thing twice. 31 guides, including Always-On · Being Found. Setup asks how a project ships in its first round and keeps the user's usual in ~/.offthemode/ME.md on their go (D-017). The view marks a changed item with a red up arrow. The site follows its own Being Found guide: robots.txt (training crawlers blocked, D-014), sitemap, share image, and Google Search Console verified by the author on 2026-10-07. Built here, not yet committed or deployed: the renames (D-023: /revisit-checklist, /view-project, /revisit-comments, /revisit-glossary) and the once-per-reply automatic save that skips git and says so in one line (D-022); the live site still has the old names. The reassess of 2026-10-08 is saved in REASSESS.md: on course, 8 gaps that matter, not yet on the checklist. Checklist 34/64 verified (F2.1 waits for the live test after the deploy). Last commit 53533ed.
+Live at https://offthemode.vercel.app (MCP at /mcp, method at /method, the view at /view), repo public at https://github.com/BlurryVisions/offthemode; a push to main deploys (RULES.md §Shipping). Seven commands, the newest /revisit-state (D-020, D-021): the AI runs it on its own after a reply that changes a file or settles a decision, the user can type it, and it never writes the same thing twice. 31 guides, including Always-On · Being Found. Setup asks how a project ships in its first round and keeps the user's usual in ~/.offthemode/ME.md on their go (D-017). The view marks a changed item with a red up arrow. The site follows its own Being Found guide: robots.txt (training crawlers blocked, D-014), sitemap, share image, and Google Search Console verified by the author on 2026-10-07. The four commands are renamed (D-023: /revisit-checklist, /view-project, /revisit-comments, /revisit-glossary), and the automatic save runs once per reply, skips git and ends with "STATE.md updated" when it changed something (D-022, D-024). The reassess of 2026-10-08 is saved in REASSESS.md: on course, 8 gaps that matter, not yet on the checklist. Checklist 35/64 verified. Last commit 33c418e, live and passing the live MCP test. Last commit 53533ed.
 
 ## Next (item 1 is where the next session starts; agreed with the author 2026-10-07, in this order)
 1. Prove /revisit-state in a real session (F6.7): done when one typed run changes only STATE.md and DECISIONS.md (git status), a second run right after changes nothing, a reply that changes several files ends with one unasked run, no git call and one line saying STATE.md was updated, and a helper agent changes no .offthemode/ file
@@ -13,7 +13,7 @@ Live at https://offthemode.vercel.app (MCP at /mcp, method at /method, the view 
 7. Generate the method's "Load the Rules" prompt from content/server/instructions.md (F1.4): done when a grep finds one wording of the standing rule
 
 ## In flight
-- D-022 and D-023: built, npm run check, build, test:mcp, test:view and test:view-project pass locally, reviewed and fixed; not committed (.claude/launch.json, a local preview config, stays out of git)
+- nothing pending in git; .claude/launch.json, a local preview config, stays out of git
 
 ## Unverified
 - the view in Safari and Firefox, a real folder dialog, drag and drop, and Chrome's real "Reopen" prompt (F8.1, F8.8)
@@ -29,6 +29,7 @@ Live at https://offthemode.vercel.app (MCP at /mcp, method at /method, the view 
 - The offthemode command is at 8293 of the MCP test's 9000-character guard (D-023): raise the guard (D-015) rather than cut a rule when it next grows.
 - next dev writes a Next.js block into AGENTS.md: commit it when it appears (the author said ok, 2026-10-07).
 - In Claude Code auto mode, the MCP tools need the allow rule mcp__offthemode; the skills need none.
+- Node on the author's Mac fails to start since a Homebrew update replaced simdjson (libsimdjson.33 gone): the author runs brew upgrade node; until then, prefix node commands with DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/Cellar/simdjson/4.6.4/lib
 - The code calls a guide Sheet (lib/content.ts); people read "guide". Rename when that code is next touched (GLOSSARY.md §Terms).
 
 ## Corrections seen once (date · what)
