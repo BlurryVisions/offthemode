@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   openGraph: { title: shareTitle, description: shareText, url: "/", siteName: "Off the Mode", type: "website" },
   twitter: { card: "summary_large_image", title: shareTitle, description: shareText },
+  // Google Search Console ownership of https://offthemode.vercel.app/ (a URL-prefix property). Public by design: it
+  // proves control of the site and grants nothing. Removing it makes Search Console lose the verification.
+  verification: { google: "czzGMyLr3iGBAv3qTDnqZehaydIP__OzpzIUoLCcFaU" },
 };
 
 export const viewport: Viewport = {
