@@ -64,7 +64,7 @@ Project retro for {{?PRODUCT_NAME}}. Read .offthemode/DECISIONS.md, STATE.md, CH
 5. Taste: from the best and worst screens, what to keep and what to avoid, as lines for PRODUCT.md §Feeling and .offthemode/DESIGN.md; flag any pattern we used that has since become common in templates.
 6. Estimates: planned against actual per phase, and the root cause of the biggest miss, as a DECISIONS.md entry.
 7. One product lesson per phase that the vision questions should cover next time, and whether my approvals at the checkpoints changed a decision, as a DECISIONS.md entry.
-Change nothing until I approve each diff. When done, rewrite STATE.md to say where things stand.
+Change nothing until I approve each diff. When done, save where things stand with revisit-state's steps.
 ```
 
 > **Pro move:** Starting a new project? After setup, copy the RULES.md lines from this retro that are true of every project you build (not just this one) into the new project's RULES.md. The standards travel with you, and each project still holds its own complete set.

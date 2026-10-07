@@ -79,7 +79,7 @@ const known = new Set(commands.map((c) => c.name));
 // A command named in a body, not as part of a path (.offthemode/) or a tool id (mcp__offthemode__x).
 const mentions = (body, name) => new RegExp(`(?<![\\w./-])${name}(?![\\w/-])`).test(body);
 for (const c of commands) {
-  for (const ref of ["listrevisit", "reassess", "commentrevisit", "glossaryrevisit", "listview"]) {
+  for (const ref of ["listrevisit", "reassess", "commentrevisit", "glossaryrevisit", "listview", "revisit-state"]) {
     if (c.body.includes(ref) && !known.has(ref)) fail(`${c.name}: mentions "${ref}", which doesn't exist`);
   }
 }

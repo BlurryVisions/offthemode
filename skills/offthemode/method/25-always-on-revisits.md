@@ -1,12 +1,12 @@
 ## Always-On · Revisits
 
-> **Output:** four on-demand commands that each touch only what they own: `listrevisit` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md` only on your go, `commentrevisit` edits code comments only, and `glossaryrevisit` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`; plus `listview`, which opens the folder as one page in your browser and writes nothing in the project.
+> **Output:** five commands that each touch only what they own: `listrevisit` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md` only on your go, `commentrevisit` edits code comments only, `glossaryrevisit` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`, and `revisit-state` saves where things stand to `.offthemode/STATE.md` and new decisions to `.offthemode/DECISIONS.md`; plus `listview`, which opens the folder as one page in your browser and writes nothing in the project.
 
-Off the Mode has six commands. `offthemode` sets up a project or shows its status, and `listview` shows it as a page. The other four are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else.
+Off the Mode has seven commands. `offthemode` sets up a project or shows its status, and `listview` shows it as a page. The other five are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else.
 
 Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the link in Claude Code) or just say them: "reassess the project".
 
-> **Rule:** Every command that can change your project talks first. It explains what it found and exactly what it will change, waits for your go, then does it and tells you what it did. `reassess` changes no code and no other file: its report is the result. It asks for a go before it runs a real input through the core, and before it saves the report. `listview` is the one command that acts at once: it writes nothing in the project, so typing it is the go.
+> **Rule:** Every command except `listview` and `revisit-state` talks first. It explains what it found and exactly what it will change, waits for your go, then does it and tells you what it did. `reassess` changes no code and no other file: its report is the result. It asks for a go before it runs a real input through the core, and before it saves the report. `listview` and `revisit-state` act at once: `listview` writes nothing in the project, and `revisit-state` only saves where things stand, with the earlier version kept in git where the project uses it, so your AI also runs it by itself after a reply that changes files or settles a decision.
 
 | Command | Its one job | Touches |
 |---|---|---|
@@ -15,8 +15,9 @@ Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the
 | `commentrevisit [path]` | Makes code comments true, necessary and useful | Comments only, never code |
 | `glossaryrevisit` | Keeps a plain-words summary of the project that anyone can understand | The "In plain words" part of `.offthemode/GLOSSARY.md` |
 | `listview` | Opens your project as a page in your browser | Nothing in your project: one temporary page |
+| `revisit-state` | Saves where things stand, so a fresh session picks up from here | `.offthemode/STATE.md`, and new decisions in `.offthemode/DECISIONS.md` |
 
-`listrevisit` is covered in Living Checklist. The others:
+`listrevisit` is covered in Living Checklist, and `revisit-state` in P0 · Constitution, under Memory across sessions. The others:
 
 **`reassess` reads the code, not the docs.** Docs describe intentions; the code is what exists. It compares the code with the core concept in PRODUCT.md: what serves it, what drifted from it, what is missing, and what was built that serves no job at all. When the core can run, it proposes one real input and the exact command, using test or seed data so nothing real is sent, charged or changed, and after your go pushes it through the whole chain: the only honest check for a product that proves itself end to end. It edits nothing else, the checklist included. At the end it offers to save the report to `.offthemode/REASSESS.md`, replacing the last one; the first line gives the date and whether the project is on course, drifting or off course. If it finds work to capture, it gives you the exact note to pass to `listrevisit`.
 

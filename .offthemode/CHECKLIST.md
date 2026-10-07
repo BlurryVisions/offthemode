@@ -1,5 +1,5 @@
 # Checklist · Off the Mode
-Last revisit: 2026-10-07 · Verified 35/63
+Last revisit: 2026-10-07 · Verified 34/64
 
 A map, not a gate. Build in any order; /listrevisit reconciles and updates this file.
 Marks: [ ] todo · [~] in progress · [x] built, not proven · [v] verified, evidence cited · [-] dropped, reason kept
@@ -23,7 +23,7 @@ For the person: whichever way they add it, they get the same, current method.
 
 ### F2 · The link: the MCP server hands out commands, templates and guides · depends on: F1 · Verify: early
 For the person: one pasted link and their tool has every command, and it never sees their code.
-- [v] F2.1 6 command tools, 6 prompts, get_template, get_method and resources answer · done when: `npm run test:mcp` passes against the live URL · guide: p4-backend-infra · evidence: MCP_URL=https://offthemode.vercel.app/mcp npm run test:mcp after the 2026-10-02 deploy of 305ee2a: tools/list shows the 6 command tools plus get_template and get_method, prompts/list the 6 prompts, all passed
+- [x] F2.1 7 command tools, 7 prompts, get_template, get_method and resources answer · done when: `npm run test:mcp` passes against the live URL · guide: p4-backend-infra · evidence: built; the live MCP test must see the seventh command (revisit-state) after the deploy
 - [v] F2.2 the server stores and logs nothing it is sent · done when: app/mcp/route.ts and lib/content.ts contain no storage or logging of arguments · guide: p7-security-hardening · evidence: grep of app/mcp/route.ts and lib/content.ts finds no console, file writes, fetch, kv, redis or verboseLogs (2026-09-30)
 - [v] F2.3 the server's instructions apply only to projects with a .offthemode/ folder · done when: every step in the instructions text is conditioned on the folder · guide: p4-backend-infra · evidence: `npm run test:mcp` · 'instructions: conditioned on .offthemode/, point to §Guides' (local, 2026-09-30)
 - [v] F2.4 no idle subscription streams on a stateless server · done when: a live subscriptions/listen call is refused at once · guide: p4-backend-infra · evidence: `npm run test:mcp` · 'subscriptions/listen 2026-07-28 · refused in 7 ms' (local, 2026-09-30)
@@ -72,6 +72,7 @@ For the person: whenever they ask, they learn where they stand, without being sl
 - [v] F6.4 reassess notes reach the checklist in the setup chain · done when: in a dry run, every "note for listrevisit" from reassess appears as an item · guide: none · evidence: Supersense trial (end to end, 2026-10-01): the reassess summary is under ## Changes and its drift points became items (sql_guard, alerts, connections)
 - [x] F6.5 listrevisit asks for a go once · done when: a status run with a note has one wait, not two · guide: none · evidence: listrevisit shows one report and waits for one go; needs a run
 - [ ] F6.6 an eval of the instructions themselves · done when: `npm run eval` runs a scripted dry run of both doors, with 0 unfilled placeholders and the turns counted · guide: always-on-verification-loop · evidence:
+- [x] F6.7 /revisit-state saves where things stand at once · done when: typed in a real session, it brings STATE.md up to date (or says it already was), appends only decisions not yet in DECISIONS.md, replies in at most 8 lines and changes no other file (git status); run again right away, it changes nothing; after a reply that changes a file, the AI runs it unasked · guide: none · evidence: built (D-020); needs a real run
 - [ ] F6.Q Quality bars met for F6 · evidence:
 
 ### F7 · The website: pick your tool, add it in one step · depends on: F2, F3 · Verify: early
@@ -149,3 +150,5 @@ Dropped: (native) frame budget, because there is no native app · (UI) empty, lo
 - 2026-10-07 · the view: a changed item now gets a red up arrow after its sentence (tooltip and legend say "changed in the latest checklist update") instead of the red scallop cloud, which read as a warning (the author, on the lasscrobits board)
 - 2026-10-07 · added F5.9: setup asks how a project ships once, in its first round, and keeps the answers as the user's usual in ~/.offthemode/ME.md on their go (D-017)
 - 2026-10-07 · Google Search Console ownership added to the site (the author's property); the sitemap submission is theirs
+- 2026-10-07 · added F6.7: /revisit-state, a seventh command that saves STATE.md and new decisions when the user types it; the AI also keeps STATE.md current in any reply that changes a file or settles a decision (D-020); F2.1 back to [x] until the live MCP test sees it
+- 2026-10-07 · F6.7: /revisit-state also runs on its own after a reply that changes files or settles a decision, and never writes the same thing twice (D-021)

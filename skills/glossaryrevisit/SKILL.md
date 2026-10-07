@@ -23,4 +23,4 @@ End with this line: See it as a page: /listview, or https://offthemode.vercel.ap
 ## Files
 - Templates are in `templates/` next to this file: `templates/GLOSSARY.md`. Open one only when you are about to write that file or compare a filled file with it.
 - The guides and all the templates are in the offthemode skill, next to this one: `../offthemode/method/` (`INDEX.md` lists the guides; their working rules are in `../offthemode/method/rules/`) and `../offthemode/templates/`.
-- Install all 6 Off the Mode skills together; they read each other's files.
+- Install all 7 Off the Mode skills together; they read each other's files.

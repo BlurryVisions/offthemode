@@ -10,7 +10,7 @@ Some classics are simply a law broken, and The Laws cover them: adjective soup, 
 | "Make it better" | With no target, the model does something visible, usually more | Name the axis and the evidence: "the primary action loses to the sidebar; make it win without adding elements" |
 | Letting the AI pick the stack | Its default is whatever dominated its training data, and that brings the default look with it | Derive the stack from the product's constraints and record it as a D-### entry in DECISIONS.md |
 | Pasting code instead of pointing at files | Pasted code goes stale and loses its callers | Point at paths (most tools accept `@path`); paste only what the AI can't reach |
-| Arguing with a derailed session | Each correction adds more of the wrong path | Rewind to before it went wrong if your tool can; otherwise have STATE.md brought up to date and start a fresh session |
+| Arguing with a derailed session | Each correction adds more of the wrong path | Rewind to before it went wrong if your tool can; otherwise run revisit-state and start a fresh session |
 | The bloated rules file | 800 lines compete for attention on every turn | Keep RULES.md readable in a minute; depth lives in the guides, opened only for the work that needs them |
 | Not reading diffs | Drive-by renames and loosened types pass the checks | Read `git diff --stat` first, then every hunk; one commit per checkpoint |
 | Tests that agree with the code | Written afterward, they encode the bugs | Test-First, and the tests stay fixed while the code is written |

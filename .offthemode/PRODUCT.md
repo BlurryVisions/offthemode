@@ -36,7 +36,7 @@ Must never look or feel like: a stock landing page or an untouched component-lib
 | Hard thing inside | How the user never has to deal with it | Escape hatch for experts |
 |---|---|---|
 | a 30-guide method | the rules open the right guide's short working rules for each kind of work | the whole guide (get_method with full: true) and /method |
-| keeping a plan honest over months | four revisit commands, run when the user asks | editing .offthemode/ files by hand |
+| keeping a plan honest over months | five revisit commands, run when the user asks; revisit-state also runs on its own after work changes files or settles a decision | editing .offthemode/ files by hand |
 | reading an existing codebase | setup reads the code before asking anything | answering its questions differently |
 Evidence: observed (the built commands and server), hypothesis for how it feels to use
 
@@ -44,7 +44,7 @@ Evidence: observed (the built commands and server), hypothesis for how it feels 
 | Promise | Target |
 |---|---|
 | Time to the moment of value | about 10 minutes on a small project, longer on a large codebase; one paste or one click, then "set up off the mode" |
-| Confirm dialogs allowed | none on the site; commands wait for a go before they write (talk first) |
+| Confirm dialogs allowed | none on the site; commands wait for a go before they write (talk first), except /revisit-state, which saves only STATE.md and DECISIONS.md, when typed or after work changes files or settles a decision (D-020, D-021) |
 | Works offline | the skills do; the link needs the internet |
 
 ## Success and constraints

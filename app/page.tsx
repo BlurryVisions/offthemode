@@ -12,6 +12,7 @@ const TOUCHES: Record<string, string> = {
   commentrevisit: "Code comments only",
   glossaryrevisit: "The plain-words summary",
   listview: "Nothing in your project: one temporary page",
+  "revisit-state": "Where things stand, and new decisions",
 };
 const WHAT: Record<string, string> = {
   offthemode: "Sets up your project, new or existing, or tells you where it stands",
@@ -20,10 +21,11 @@ const WHAT: Record<string, string> = {
   commentrevisit: "Removes stale or noisy comments, adds a why where code can't explain itself",
   glossaryrevisit: "Refreshes a summary of the project anyone can understand",
   listview: "Opens your project as a page in your browser",
+  "revisit-state": "Saves where things stand, so a fresh session picks up from here; your AI also runs it on its own after changing files",
 };
 const ARG: Record<string, string> = { listrevisit: " [idea]", commentrevisit: " [path]" };
 // The order people meet them in: set up first, then the rest from most to least used.
-const SEQUENCE = ["offthemode", "listrevisit", "listview", "reassess", "commentrevisit", "glossaryrevisit"];
+const SEQUENCE = ["offthemode", "listrevisit", "revisit-state", "listview", "reassess", "commentrevisit", "glossaryrevisit"];
 const byUse = [...commands].sort((a, b) => SEQUENCE.indexOf(a.name) - SEQUENCE.indexOf(b.name));
 
 const ORDER = [
@@ -147,7 +149,7 @@ export default function Home() {
           <div className="wrap">
             <div className="head">
               <span className="label">Commands</span>
-              <h2 className="title" id="commands">Six commands, each with one job</h2>
+              <h2 className="title" id="commands">Seven commands, each with one job</h2>
             </div>
             <div className="tablewrap">
               <table>
@@ -192,7 +194,7 @@ export default function Home() {
             <div className="promises">
               <div className="promise">
                 <h3>Never slows you down</h3>
-                <p>Your sessions stay free-form. Nothing forces the checklist on you; the revisits catch up when you ask.</p>
+                <p>Your sessions stay free-form. Nothing forces the checklist on you; the revisits catch up when you ask, and your AI keeps where things stand saved as it works.</p>
               </div>
               <div className="promise">
                 <h3>One folder, plus one line</h3>

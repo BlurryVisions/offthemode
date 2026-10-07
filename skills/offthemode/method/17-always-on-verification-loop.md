@@ -173,7 +173,7 @@ Before you tell me this is done, prove it.
 3. Critique the screenshots against .offthemode/DESIGN.md: grid, type scale, spacing tokens, exactly one primary action, anything that reads as a default template. Fix, then shoot again.
 4. Exercise the unhappy paths: empty, loading, error, offline, 10x content, the largest text size.
 5. If prompts, model ids, retrieval settings or the core contract changed, run the evals. A drop past the gate in RULES.md §Budgets blocks.
-6. Rewrite .offthemode/STATE.md and append any decision you made to .offthemode/DECISIONS.md.
+6. Save where things stand with revisit-state's steps: STATE.md, and only the decisions DECISIONS.md doesn't hold yet.
 7. Report: verified (with the evidence), unverified (and why), skipped. Name any CHECKLIST.md item this finishes, with its evidence.
 Never write "should work". Write "verified by X" or "unverified".
 ```

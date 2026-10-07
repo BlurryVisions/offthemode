@@ -1,4 +1,4 @@
-STATE · updated {{?DATE}} · under 40 lines · rewritten, not appended, whenever a real piece of work ends
+STATE · updated {{?DATE}} · under 40 lines · present tense, kept current as the work happens, saved in full by /revisit-state
 
 ## Now
 {{?Two to four sentences of present truth: what works end to end, what is half-built, what is broken.}}
@@ -16,4 +16,4 @@ STATE · updated {{?DATE}} · under 40 lines · rewritten, not appended, wheneve
 - {{?ITEM}}: {{?why}}
 
 ## Corrections seen once (date · what)
-- {{?DATE}} · {{?what I corrected, in one line}} (given a second time, it becomes a proposed RULES.md line and leaves this list)
+- {{?DATE}} · {{?what I corrected, in one line}} (given a second time, it becomes a proposed RULES.md line and leaves this list once that line is added)

@@ -8,7 +8,7 @@
 - The project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) stay where they are and win on project specifics: never move or merge them. A line that contradicts the code, another rule or an Off the Mode standard, or is out of date, is shown with its fix and changed only on the user's go, recorded in DECISIONS.md. Besides those fixes, the one auto-load line is the only addition, also on the user's go.
 - Before deciding anything, search DECISIONS.md, so a settled choice is not argued again.
 - A correction given once goes in STATE.md §Corrections seen once, with the date. Given a second time, propose one line for RULES.md §Project specifics with its reason, and add it on the user's go.
-- When a piece of work ends, rewrite STATE.md (present tense, no history) and append any decision to DECISIONS.md.
+- Keep STATE.md current without asking: at the end of any reply that changes a project file or concludes a decision, follow revisit-state's steps (present tense, no history, never the same line twice) and append any new decision to DECISIONS.md. While an Off the Mode command runs, it touches only what the command names, and STATE.md catches up after it. The user can also type revisit-state.
 - Open the whole guide to set up or redo the rules, wire the auto-load, or prune RULES.md.
 <!-- /offthemode:rules -->
 
@@ -125,7 +125,7 @@ When you connect through the MCP link, the server also repeats the instruction t
 
 Your AI has no memory between sessions, so the project is its memory. Chat history is not storage. Start a fresh session between unrelated tasks (/clear in Claude Code), and let the files carry what matters.
 
-- STATE.md is rewritten, not added to, when a piece of work ends. The next session needs the present, not a diary.
+- STATE.md is rewritten, not added to: at the end of any reply that changes a file or settles a decision, your AI runs `revisit-state` by itself (after any other command has finished), and you can type it whenever you want, for example before a fresh session. Each thing has one line, so running it again never adds anything twice. The next session needs the present, not a diary.
 - DECISIONS.md is appended to, never rewritten. It is the record of why, so no later session argues a settled choice again or quietly reverses it.
 
 #### A STATE.md that works
@@ -184,17 +184,24 @@ Reply with:
 Then follow RULES.md §How to work: a small fix (a typo, a one-line change) goes ahead after one line saying what will change; anything else waits for my "go". Nothing is built on a hypothesis until it is confirmed.
 ```
 
-When a piece of work ends, paste this so the next session starts where this one stopped.
+Your AI runs `revisit-state` by itself after a reply that changes files or settles a decision; run it yourself before you start a fresh session to be sure. It saves where things stand, so the next session starts where this one stopped. In a tool where the commands aren't set up, paste it:
 
-```prompt title="Session End Handoff"
-End the session, in this order:
-1. Rewrite .offthemode/STATE.md from scratch: present tense, no history, under 40 lines. A fresh session with no chat context must be able to start item 1 of Next, so name the files, the commands and the done-check.
-2. Append a DECISIONS.md entry for every decision made this session. There should be no silent ones; if you find one, list it as a hypothesis for me to confirm.
-3. Sort every correction I gave. First time: add it to the corrections-seen-once list in STATE.md. Second time: propose one line for RULES.md §Project specifics, imperative and specific, with its reason. A matter of taste: propose a line for .offthemode/DESIGN.md or PRODUCT.md §Feeling. A flaw in a prompt I pasted: propose the fixed prompt. A rule broken again although it is already in RULES.md: propose a check (a lint rule, a test or a script in §Commands).
-4. List everything claimed but not verified as unverified in STATE.md. The next session trusts this file.
-5. Propose edits for any RULES.md line that proved wrong, stale or in conflict with another.
-6. Run {{?CHECK_CMD}}. If the project uses git, propose a commit "{{type}}: {{summary}}" with the D- ids in the body.
-Do steps 1, 2 and 4 now. Reply with a five-line summary, then the proposals from steps 3, 5 and 6. Apply them only after I say go.
+```prompt title="Revisit State"
+# Off the Mode · revisit state
+
+Save where things stand, so the next session can start from here with no chat history. Run it when the user types it or asks for it, and on your own at the end of any reply that changed a project file or concluded a decision. It writes only `.offthemode/STATE.md` and `.offthemode/DECISIONS.md`, and, where the project uses git, git keeps their earlier versions, so it saves without asking, with no plan to approve first. While another Off the Mode command is running, wait until it has finished.
+
+If no `.offthemode/` folder holding RULES.md is found here or in a folder above: when the user asked, say the project isn't set up yet and offer the offthemode command, which sets it up; run on its own, do nothing and say nothing.
+
+Sources: this session so far, the files as they are now, and, if the project uses git, what changed since STATE.md was last saved: `git status`, and `git log --since="<the date on STATE.md's first line> 00:00"` (a bare date counts from the current time of day and misses that day's earlier commits). Files and git are fact; the chat says what was meant and decided.
+
+Never write the same thing twice, so it can run as often as it needs to. STATE.md is updated in place, never added to: each fact, step, item and correction has one line, so update the line that already says it, even in other words, instead of adding another. Search DECISIONS.md before adding to it. Run twice in a row, it changes nothing the second time.
+
+1. Update `.offthemode/STATE.md` in place, keeping its sections and, word for word, every line that is still true: present tense, no history, under 40 lines, the first line dated today. A fresh session with no chat must be able to start item 1 of Next from this file alone, so name the files, the commands and the done-check. List everything claimed but not proven as unverified, because the next session trusts this file.
+2. Append a `.offthemode/DECISIONS.md` entry, in the file's own format, for each decision from these sources that DECISIONS.md doesn't hold yet, even in other words, with the user's own words as the reason where there are some. A decision that changes an earlier entry gets a new entry naming the one it changes; the earlier entry's text stays as it is, and when the new entry replaces it whole, its status becomes "superseded by D-###", as the file's header says. A choice that isn't clearly settled, including one the code shows but the chat never named, stays out: write it as a question under STATE.md's Waiting on me, and ask it in the reply.
+3. Add each correction the user gave for the first time to STATE.md's Corrections seen once, dated, unless it is already there. A correction the user gave again after it was already on that list has now been given twice: propose where it goes, as From correction to rule in the p0-constitution guide sorts it (a line for RULES.md §Project specifics with its reason; taste, a line for PRODUCT.md §Feeling or `.offthemode/DESIGN.md`; a pasted prompt that misled, its fixed version; a written rule broken again, a check in RULES.md §Commands), and keep it on the list, marked proposed, until that line is added. Propose a fix for any RULES.md line that proved wrong or out of date. Nothing in this step is applied without the user's go; list each proposal still waiting under STATE.md's Waiting on me, so a fresh session still has it.
+
+When the user asked for it, reply in at most 8 lines: what changed in STATE.md, item 1 of Next first; the decisions added, by id; anything waiting for the user's go. When it ran on its own, add nothing to the reply unless this run added a question or proposal to Waiting on me; then ask only what it added. If STATE.md and DECISIONS.md already hold everything the steps above would write, change nothing, not even the date, and when asked, say STATE.md was already up to date.
 ```
 
 ### From correction to rule

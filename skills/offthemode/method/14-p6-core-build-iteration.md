@@ -1,6 +1,6 @@
 ## P6 · Core Build & Iteration
 
-> **Output:** vertical slices merged but switched off in production behind expiring flags, each closing a `.offthemode/CHECKLIST.md` item with its evidence; change requests numbered CR-### in branch names and commit messages; screenshot baselines committed with the tests in `tests/baselines/`; evals gating every change to a model-driven core; refactor checkpoints and drift checks on a cadence; `.offthemode/STATE.md` rewritten as each piece of work ends, and decisions appended to `.offthemode/DECISIONS.md`.
+> **Output:** vertical slices merged but switched off in production behind expiring flags, each closing a `.offthemode/CHECKLIST.md` item with its evidence; change requests numbered CR-### in branch names and commit messages; screenshot baselines committed with the tests in `tests/baselines/`; evals gating every change to a model-driven core; refactor checkpoints and drift checks on a cadence; `.offthemode/STATE.md` kept current as the work happens, and decisions appended to `.offthemode/DECISIONS.md`.
 
 <!-- offthemode:rules -->
 ### Working rules (for a change inside an existing product)
@@ -50,7 +50,7 @@ ACCEPTANCE:
 - [ ] {{OBSERVABLE_CRITERION}}
 - [ ] Net visible actions on {{SURFACE}}: +0, or a reason for each one added
 VERIFY: {{VERIFY_METHOD}}, for example "test X red before, green after", "screenshots at each of screenshot_sizes (RULES.md §Budgets), light and dark, diffed against tests/baselines/, {{?AUDIT_CMD}} clean", or "p95 of Y (the time 95 of 100 runs beat) inside its RULES.md §Budgets limit".
-PROCESS: restate the change in 3 lines with the files you will touch; if any is outside the fence, stop. Wait for my go. Make a checkpoint commit "wip: before CR-{{NNN}}", then the smallest change that meets the criteria. Evidence, not claims. Anything you notice outside the fence becomes a proposed follow-up CR. Finish by running the checks in RULES.md §Commands, commit with "CR-{{NNN}}" in the message, and report the id, a one-line summary, the files and the commit hash. Append any decision to .offthemode/DECISIONS.md; if this ends a piece of work, rewrite .offthemode/STATE.md.
+PROCESS: restate the change in 3 lines with the files you will touch; if any is outside the fence, stop. Wait for my go. Make a checkpoint commit "wip: before CR-{{NNN}}", then the smallest change that meets the criteria. Evidence, not claims. Anything you notice outside the fence becomes a proposed follow-up CR. Finish by running the checks in RULES.md §Commands, commit with "CR-{{NNN}}" in the message, and report the id, a one-line summary, the files and the commit hash. Then save where things stand with revisit-state's steps.
 ```
 
 ### Iteration loops
@@ -74,7 +74,7 @@ Phase 3: refactor, with the suite green after every step.
 
 ```prompt title="Refactor Checkpoint"
 Refactor checkpoint after {{LAST_CR_ID}}; behavior must not change. Survey {{SCOPE}} and rank issues by future cost: duplicated logic, oversized files, imports crossing the boundaries in RULES.md §Code or .offthemode/ARCHITECTURE.md, dead exports, two patterns for one job, expired flags. Propose the refactors whose payoff beats their risk now, each with payoff, risk and files, and stop for my go.
-One commit per approved refactor, the full suite after each, revert on red. No new dependencies, contract changes or visual changes; tests/baselines/ must still match and evals must not regress. Then update .offthemode/ARCHITECTURE.md if the structure moved, append decisions to DECISIONS.md, and rewrite STATE.md.
+One commit per approved refactor, the full suite after each, revert on red. No new dependencies, contract changes or visual changes; tests/baselines/ must still match and evals must not regress. Then update .offthemode/ARCHITECTURE.md if the structure moved, and save where things stand with revisit-state's steps.
 ```
 
 **Git is the undo button.** Your tool's undo tracks file edits, not what shell commands did to your database or dependencies. So: a checkpoint commit before every editing run, a branch per CR, and a main branch that is always green.

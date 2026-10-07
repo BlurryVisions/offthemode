@@ -20,4 +20,4 @@ Reply in one or two lines: the page is a snapshot of the notes as they are now (
 ## Files
 - `view.html`, next to this file, is the view page: copy it to the temporary file in place of the download.
 - The other commands named here are sibling skills in the same skills folder: offthemode is `../offthemode/SKILL.md`.
-- Install all 6 Off the Mode skills together; they read each other's files.
+- Install all 7 Off the Mode skills together; they read each other's files.

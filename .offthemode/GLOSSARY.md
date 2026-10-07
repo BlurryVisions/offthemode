@@ -10,7 +10,7 @@ Last revisited: 2026-09-30. For anyone: a new teammate, an investor, your family
   - splits the heart of the idea into pieces to build one by one, kept as a checklist
   - for a project already under way, says in plain words what it thinks the project is and where it stands
   - checks the work again whenever you ask
-- Where we are: working today, you add it to your AI helper with one link or one download and use its six commands; the website is live. Coming next: timing setup with more builders, and an automatic test of the instructions.
+- Where we are: working today, you add it to your AI helper with one link or one download and use its seven commands; the website is live. Coming next: timing setup with more builders, and an automatic test of the instructions.
 - What we're trying to achieve: work built with AI that stands out instead of looking average.
 - Words you'll hear: the link: a web address your AI helper fetches the instructions from · the skills: the same instructions as files on your computer · command: something you say to it, like "set up off the mode" · core concept: the one idea everything else serves · guide: the advice for one kind of work, such as design
 

@@ -38,7 +38,7 @@ Every agent that follows starts its prompt with this brief, unchanged.
 | Isolated builders | Samples that must not see each other (the three directions in P3, bake-offs) | One fresh session per sample, each in its own copy of the project |
 | Parallel features | Two or three features that share no files | One session each, in separate copies, after shared contracts have landed |
 | Batch run | One mechanical change across many files | Your tool's command-line mode in a loop, one file per run, each run logged |
-| Fresh start | A phase ends, or a session starts to drift | Have STATE.md and DECISIONS.md brought up to date, then open a new session; it loads RULES.md and STATE.md and carries on |
+| Fresh start | A phase ends, or a session starts to drift | Run revisit-state, then open a new session; it loads RULES.md and STATE.md and carries on |
 
 Summarizing a long conversation in place (many tools call this compacting) is for the middle of a task. At a phase boundary, a fresh session with an up-to-date STATE.md is cleaner.
 

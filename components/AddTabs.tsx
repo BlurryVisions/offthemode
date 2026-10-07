@@ -23,7 +23,7 @@ export function AddTabs({ mcpUrl, skillsZip, cursorLink, vscodeLink, repoUrl, zi
     refs.current[next]?.focus();
   };
   const json = (servers: object) => JSON.stringify(servers, null, 2);
-  // One paste installs all six skills. unzip creates only the last folder, so ~/.agents is made first
+  // One paste installs all seven skills. unzip creates only the last folder, so ~/.agents is made first
   // (Claude Code always has ~/.claude).
   const install = (dir: string) =>
     `curl -fsSL ${skillsZip} -o /tmp/offthemode-skills.zip && unzip -o /tmp/offthemode-skills.zip -x README.md -d ${dir}`;
@@ -80,7 +80,7 @@ export function AddTabs({ mcpUrl, skillsZip, cursorLink, vscodeLink, repoUrl, zi
               <p>For Claude Code in the terminal and in its VS Code and JetBrains extensions.</p>
               <p>
                 <b>One paste: the skills.</b> Run this once in a terminal (in VS Code: Terminal, then New Terminal). It
-                installs all six skills for every project. They are files on your machine, so they work in auto mode with
+                installs all seven skills for every project. They are files on your machine, so they work in auto mode with
                 no extra step, and the commands are simply <span className="inline">/offthemode</span>,{" "}
                 <span className="inline">/listrevisit</span> and so on.
               </p>
@@ -145,7 +145,7 @@ export function AddTabs({ mcpUrl, skillsZip, cursorLink, vscodeLink, repoUrl, zi
           {t === "Skills" && (
             <>
               <p>
-                No server at all: the skills are files your AI tool loads from its skills folder. Install all six together.
+                No server at all: the skills are files your AI tool loads from its skills folder. Install all seven together.
                 Setup hands over to listrevisit and reassess, so one skill on its own is not enough.
               </p>
               <ul>
@@ -162,12 +162,12 @@ export function AddTabs({ mcpUrl, skillsZip, cursorLink, vscodeLink, repoUrl, zi
               <Copy text={claudeLine} label="the Claude Code install command" />
               <p>For Codex, Gemini CLI, Cursor or VS Code:</p>
               <Copy text={agentsLine} label="the install command for the other tools" />
-              <p>Or download them, and unzip the six folders into the skills folder yourself.</p>
+              <p>Or download them, and unzip the seven folders into the skills folder yourself.</p>
               <div className="buttons">
                 <a className="btn btn--solid" href="/skills/offthemode-skills.zip" download>Download all skills</a>
                 <a className="btn" href={`${repoUrl}/tree/main/skills`}>Browse on GitHub</a>
               </div>
-              <p>On claude.ai you upload one skill at a time, so each has its own zip. Upload all six:</p>
+              <p>On claude.ai you upload one skill at a time, so each has its own zip. Upload all seven:</p>
               <div className="zips">
                 {zips.map((z) => <a key={z.name} href={z.href} download>{z.name}.zip</a>)}
               </div>

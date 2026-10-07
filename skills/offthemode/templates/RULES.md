@@ -20,7 +20,7 @@ Rules only this project needs, each saying what to do and why, kept apart from t
 - One concern per change. The smallest diff that fully solves it; drive-by refactors become follow-ups.
 - Never build on an assumption. When something is unclear (what I want, how something should behave, what the code does), write it as a hypothesis, "I think X, because Y", so it is clear, then confirm it before building on it: check it in the code or docs, or ask me. Questions come batched and numbered, most important first, each with your recommended answer, in more rounds if needed, until nothing left would change the plan.
 - Take my references and suggestions to heart, never as a script. Keep what makes them work, check their claims against official sources, and before building, say where they could go further: a better version, a fresh idea or an extension.
-- Read STATE.md when you start. When a real piece of work ends, rewrite STATE.md (now, next, in flight, unverified), add a correction I gave for the first time to its Corrections seen once, and add any decision to DECISIONS.md. A correction given twice becomes a proposed line in Project specifics.
+- Read STATE.md when you start, and keep it current without asking: at the end of any reply that changes a project file or concludes a decision, follow revisit-state's steps (STATE.md's now, next, in flight, unverified and corrections I gave for the first time; new decisions in DECISIONS.md), updating the line that already says a thing instead of adding a second one, and saying nothing about it unless it added a question or proposal for my go. While another Off the Mode command runs, it touches only what that command names, and STATE.md catches up after it. A correction given twice becomes a proposed line in Project specifics. I can also type /revisit-state.
 - Sessions stay free. Never force the checklist; /listrevisit catches up afterwards.
 
 ## Guides (open the matching one before the work; once per session is enough)
@@ -82,7 +82,7 @@ Off the Mode has a guide for each kind of work. Before you plan or do work of th
 - Read narrow: search first, then open only the lines you need. Never read generated files, lockfiles or build output; tail logs instead of reading them whole.
 - Scout first: one agent assesses the task, finds the files it actually touches (and what those depend on, not the whole repo), writes a short brief, and decides how many agents the job needs. A small job stays with one.
 - Many agents, one reading: every agent starts with the scout's brief word for word (the shared start is read from cache at a fraction of the price) and its own task after it. Start one first and the rest once it is running, so they read the cache instead of all writing it. Agents return short, structured results.
-- Keep sessions short: when a piece of work ends, update STATE.md and start fresh. A long session re-reads its whole history on every reply.
+- Keep sessions short: when a piece of work ends, suggest /revisit-state and a fresh session. A long session re-reads its whole history on every reply.
 - Open a method sheet or template only when you need it.
 - For big runs, say roughly what they will cost and wait for my go.
 
