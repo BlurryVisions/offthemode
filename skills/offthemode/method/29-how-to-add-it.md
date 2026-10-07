@@ -113,7 +113,7 @@ Open the project in your AI tool and say "set up off the mode". Setup talks firs
 - **New project** (an empty folder, or just an idea). It asks about the product before anything else: what it is, who it's for, the job they need done, the moment they first get value, what it refuses to be, how it should feel. From your answers it writes the files.
 - **Existing project.** It reads the code first: the stack, the commands, the screens and flows that exist. It drafts PRODUCT.md from what the code shows, writes each guess as a hypothesis ("I think the main user is X, because Y") and confirms it with you. RULES.md gets your real stack and commands, and CHECKLIST.md sets what exists against what the core concept needs.
 
-Setup changes no code. It writes the `.offthemode/` folder, plus one line you approve so your tool loads it. The project's own rule files stay where they are: setup adds that one line, and changes another line only when you approve the fix, for a conflict or an out-of-date fact. The folder starts with six core files:
+Setup changes no code. It writes the `.offthemode/` folder, plus one line you approve so your tool loads it. The project's own rule files stay where they are: setup adds that one line, and changes another line only when you approve the fix, for a conflict or an out-of-date fact. If you say yes, it also keeps your usual shipping setup (code host, commit name, hosting) in `~/.offthemode/ME.md`, one small file in your home folder, outside every project, so the next project only asks you to confirm. The folder starts with six core files:
 
 | File | What it holds |
 |---|---|

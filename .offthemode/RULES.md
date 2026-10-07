@@ -14,6 +14,12 @@ Rules only this project needs, each saying what to do and why, kept apart from t
 - Every control is reachable by keyboard, and a closed panel stays out of the tab order.
 - Each command's rendered text stays under the MCP test's 8000-character guard, so a status check stays cheap. Write every rule in full, clear words first; raise the guard with a reason rather than squeeze a rule until it loses meaning (DECISIONS D-015).
 
+## Shipping (how this project goes live; confirmed 2026-10-07, matches ~/.offthemode/ME.md)
+- Code: https://github.com/BlurryVisions/offthemode (public) · the branch that goes live: main
+- Host: Vercel, project offthemode, team x-en · a push to main deploys on its own · deploy command: none needed (fallback: npx vercel deploy --prod)
+- Commits as: BlurryVisions, 5866890+BlurryVisions@users.noreply.github.com, so the author's real name and work email stay out of public history
+- Never push, deploy or publish without my go: what goes live is mine to decide.
+
 ## How to work
 - Talk first, then do. For anything beyond a small fix (a typo, a one-line change), restate the task and your plan in a few lines and wait for my go. Say what you changed when you're done.
 - One concern per change. The smallest diff that fully solves it; drive-by refactors become follow-ups.

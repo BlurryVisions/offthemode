@@ -200,6 +200,7 @@ Start from the RULES.md template (from get_template or the skill's templates/ fo
 |---|---|---|
 | This project | One line on what it is and for whom; platforms; the stack pinned with versions, each with its reason in DECISIONS.md; the project's own rule files, listed as still in force | "Other rule files that stay in force: AGENTS.md." |
 | Project specifics | Rules only this project needs: the stack's known traps, data rules, security boundaries, the boundaries between parts. Kept apart from the Off the Mode standards and never repeating the project's own rule files. A line stays only if it is certain to apply, is not something an AI does anyway, and is costly if missed | "The core loop works offline and syncs later, because the person edits on the train." |
+| Shipping | How the project goes live: where the code lives, the branch that goes live, the host, whether a push deploys, the deploy command, the name commits use. Setup fills it from git and the host's config, asks only what is missing, and offers to keep your answers as your usual in `~/.offthemode/ME.md` (outside every project, never a password, token or key) so the next project only asks you to confirm | "Never push, deploy or publish without my go" |
 | How to work | How doubt is handled, when to wait for your go, how questions are asked | "Anything beyond a small fix: show the plan and wait for my go." |
 | Guides | Each kind of work this project will see, mapped to the guide to open first | "Any screen or visual change: open the Visual Language guide." |
 | Product first | How every proposal ties back to the person and job in PRODUCT.md | "If a request contradicts a PRODUCT.md refusal, quote the line before acting." |
@@ -3132,7 +3133,7 @@ Open the project in your AI tool and say "set up off the mode". Setup talks firs
 - **New project** (an empty folder, or just an idea). It asks about the product before anything else: what it is, who it's for, the job they need done, the moment they first get value, what it refuses to be, how it should feel. From your answers it writes the files.
 - **Existing project.** It reads the code first: the stack, the commands, the screens and flows that exist. It drafts PRODUCT.md from what the code shows, writes each guess as a hypothesis ("I think the main user is X, because Y") and confirms it with you. RULES.md gets your real stack and commands, and CHECKLIST.md sets what exists against what the core concept needs.
 
-Setup changes no code. It writes the `.offthemode/` folder, plus one line you approve so your tool loads it. The project's own rule files stay where they are: setup adds that one line, and changes another line only when you approve the fix, for a conflict or an out-of-date fact. The folder starts with six core files:
+Setup changes no code. It writes the `.offthemode/` folder, plus one line you approve so your tool loads it. The project's own rule files stay where they are: setup adds that one line, and changes another line only when you approve the fix, for a conflict or an out-of-date fact. If you say yes, it also keeps your usual shipping setup (code host, commit name, hosting) in `~/.offthemode/ME.md`, one small file in your home folder, outside every project, so the next project only asks you to confirm. The folder starts with six core files:
 
 | File | What it holds |
 |---|---|

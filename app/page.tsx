@@ -6,7 +6,7 @@ const vscodeLink = `vscode:mcp/install?${encodeURIComponent(JSON.stringify({ nam
 const skillsZip = `${SITE_URL}/skills/offthemode-skills.zip`;
 
 const TOUCHES: Record<string, string> = {
-  offthemode: "The .offthemode/ folder, plus one line you approve so your tool loads it",
+  offthemode: "The .offthemode/ folder, plus one line you approve so your tool loads it; if you say yes, your usual setup in ~/.offthemode/ME.md",
   listrevisit: "The checklist",
   reassess: "Only its own report, if you say so",
   commentrevisit: "Code comments only",
@@ -197,8 +197,8 @@ export default function Home() {
               <div className="promise">
                 <h3>One folder, plus one line</h3>
                 <p>
-                  Everything lives in <span className="inline">.offthemode/</span>, plus one line you approve so your tool
-                  loads it. Your code only changes when you ask your AI to change it.
+                  Everything in your project lives in <span className="inline">.offthemode/</span>, plus one line you approve so your tool
+                  loads it. If you say yes, your usual setup (where your code and hosting live) is kept in one small file in your home folder, so the next project only asks you to confirm. Your code only changes when you ask your AI to change it.
                 </p>
               </div>
               <div className="promise">

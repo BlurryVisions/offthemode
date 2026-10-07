@@ -1,5 +1,5 @@
 # Checklist · Off the Mode
-Last revisit: 2026-10-07 · Verified 35/62
+Last revisit: 2026-10-07 · Verified 35/63
 
 A map, not a gate. Build in any order; /listrevisit reconciles and updates this file.
 Marks: [ ] todo · [~] in progress · [x] built, not proven · [v] verified, evidence cited · [-] dropped, reason kept
@@ -61,6 +61,7 @@ For the person: soon after adding it (about ten minutes on a small project), the
 - [x] F5.6 the rules fit products without a web UI · done when: a dry run on a CLI keeps no UI or server line it can't meet · guide: none · evidence: (UI), (web), (native), (server) tags with delete-when-absent in RULES; needs a CLI dry run
 - [-] F5.7 timed with real people · dropped 2026-10-07 as a pass/fail item (D-016): time depends on the project's complexity, the user's pace and the agents' research; times are noted when they happen (Supersense 39 active minutes, lasscrobits 46, both with real product thinking), and the author may time a quick small-project run later for reference
 - [ ] F5.8 setup talks in plain words · done when: in a real setup run, the user never has to ask what a message means, and a fresh reader finds no unexplained term in setup's messages · guide: always-on-words-voice · evidence: not met in the lasscrobits run (2026-10-06): the user had to ask what "switching chat" meant, said "not clear… in simple words" and "didn't get the phone dashboard homescreen alert", and asked where the view was
+- [x] F5.9 shipping is asked once, then remembered · done when: in a new project with ~/.offthemode/ME.md present, setup fills RULES.md §Shipping from it and asks no shipping question that ME.md, git or the host's config already answers; without it, setup asks once in the first round and offers to save the answers there · guide: p8-ship-operate · evidence: a dry run in an empty new project (2026-10-07) read ~/.offthemode/ME.md and filled the code host and commit name from it, took the repo from git, and asked only the iOS hosting question that neither answers; its 10 findings and a review's 7 were fixed (ME wins over git's global identity, per-platform hosting, sources shown in the one go, branch disagreements, the home folder's .offthemode/ never counts as a project); not yet rerun after the fixes
 - [ ] F5.Q Quality bars met for F5 · evidence:
 
 ### F6 · The health check and revisits keep it honest · depends on: F5 · Verify: on completion
@@ -146,3 +147,4 @@ Dropped: (native) frame budget, because there is no native app · (UI) empty, lo
 - 2026-10-07 · F7.8 verified live; its Search Console step dropped by the author's choice (no ownership of the vercel.app address yet)
 - 2026-10-07 · lasscrobits recorded (the first new-project run); F5.7 dropped and F5.5 rewritten as a quality check, not a count (D-016); F5.8 added: setup talks in plain words
 - 2026-10-07 · the view: a changed item now gets a red up arrow after its sentence (tooltip and legend say "changed in the latest checklist update") instead of the red scallop cloud, which read as a warning (the author, on the lasscrobits board)
+- 2026-10-07 · added F5.9: setup asks how a project ships once, in its first round, and keeps the answers as the user's usual in ~/.offthemode/ME.md on their go (D-017)

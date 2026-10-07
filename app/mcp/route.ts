@@ -42,7 +42,7 @@ const handler = createMcpHandler(
       "get_template",
       {
         title: "Get an Off the Mode template",
-        description: `Returns one of the templates for the project's .offthemode/ folder: ${templateNames.join(", ")}.`,
+        description: `Returns one of the templates: the project's .offthemode/ files, and ME.md for ~/.offthemode/ (the user's usual setup): ${templateNames.join(", ")}.`,
         inputSchema: z.object({ name: z.enum(templateNames) }),
         annotations: { readOnlyHint: true, openWorldHint: false },
       },

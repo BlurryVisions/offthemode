@@ -9,6 +9,12 @@ RULES · {{?PROJECT_NAME}} · read before working. The standards every change is
 Rules only this project needs, each saying what to do and why, kept apart from the Off the Mode standards below and never repeating the project's own rule files. Written at setup from the plan (the stack's known traps, data rules, security boundaries), and added to when a correction has to be given twice. Keep a line only if it is certain to apply, not something an AI does anyway, and costly if missed.
 - {{?PROJECT_RULE: what to do, because why}}
 
+## Shipping (how this project goes live; from git, the host's config and ~/.offthemode/ME.md, confirmed at setup)
+- Code: {{?CODE_HOST | none yet}} · the branch that goes live: {{?LIVE_BRANCH | none yet}}
+- Host: {{?HOSTING | none yet}} · a push to that branch {{?PUSH_DEPLOYS: deploys on its own, or does not}} · deploy command: {{?DEPLOY_CMD | none}}
+- Commits as: {{?COMMIT_IDENTITY: the name and email, from ME.md before git's global one}}
+- Never push, deploy or publish without my go: what goes live is mine to decide.
+
 ## How to work
 - Talk first, then do. For anything beyond a small fix (a typo, a one-line change), restate the task and your plan in a few lines and wait for my go. Say what you changed when you're done.
 - One concern per change. The smallest diff that fully solves it; drive-by refactors become follow-ups.
@@ -81,7 +87,7 @@ Off the Mode has a guide for each kind of work. Before you plan or do work of th
 - For big runs, say roughly what they will cost and wait for my go.
 
 ## Budgets (numbers the product is held to; time to value is in PRODUCT.md §Experience promises)
-Scripts read the json below, and every other file names a key (such as max_file_lines), never its number. Off the Mode sets no speed, weight or accessibility numbers: add a key only when this product should hold one, for example load time or contrast (the always-on-accessibility-performance-budgets guide lists common keys and values). screenshot_sizes is (UI).
+Scripts read the json below, and every other file names a key (such as max_file_lines), never its number. Off the Mode sets no speed, weight or accessibility numbers: add a key only when this product should hold one, for example load time or contrast (the always-on-accessibility-performance-budgets guide lists common keys and values). screenshot_sizes is (UI) and follows the platforms: 390x844 a phone, 820x1180 a tablet, 1440x900 the web; keep only the sizes of the platforms the project ships on.
 ```json
 {
   "max_file_lines": {{MAX_FILE_LINES | 400}}, "max_fn_lines": {{MAX_FN_LINES | 60}},

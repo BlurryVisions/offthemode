@@ -21,7 +21,7 @@ Then, whenever you want:
 
 | Command | What it does | What it can change |
 |---|---|---|
-| `/offthemode` | Sets up the project, or tells you where it stands | The `.offthemode/` folder, plus one line you approve so your tool loads it |
+| `/offthemode` | Sets up the project, or tells you where it stands | The `.offthemode/` folder, plus one line you approve so your tool loads it; if you say yes, your usual setup in `~/.offthemode/ME.md` |
 | `/listrevisit [idea]` | Shows the checklist, or adds a new feature or idea to it | The checklist |
 | `/listview` | Opens your project as a page in your browser | Nothing in your project: one temporary page |
 | `/reassess` | Checks what's built against your core concept | Only its own report, if you say so |
@@ -44,7 +44,7 @@ See it as a page: /listview, or https://offthemode.vercel.app/view (open the .of
   DECISIONS.md   what was decided, and why
 ```
 
-When a guide calls for another document, it goes in `.offthemode/` too. Outside it, setup adds one line that makes your tool load the rules (in CLAUDE.md, AGENTS.md or your tool's rules file), and only after you approve it. If a line in your own rule files is out of date or conflicts, it shows you the fix and changes it only after you approve that too.
+When a guide calls for another document, it goes in `.offthemode/` too. Outside it, setup adds one line that makes your tool load the rules (in CLAUDE.md, AGENTS.md or your tool's rules file), and only after you approve it. If you say yes, it also keeps your usual setup in `~/.offthemode/ME.md`, in your home folder, outside every project. If a line in your own rule files is out of date or conflicts, it shows you the fix and changes it only after you approve that too.
 
 ## Privacy
 

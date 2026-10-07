@@ -18,7 +18,6 @@ Live at https://offthemode.vercel.app (MCP at /mcp, method at /method, the view 
 - claude.ai accepts each per-skill zip now that argument-hint is gone and every description is 200 characters or less: a real upload (F3.5)
 
 ## Waiting on me · known broken · do not touch
-- Pushing to main deploys to production on its own (Vercel is linked to GitHub): push only what should go live.
 - In Claude Code auto mode, the MCP tools need the allow rule mcp__offthemode; the skills need none.
 - The code calls a guide Sheet (lib/content.ts); people read "guide". Rename when that code is next touched (GLOSSARY.md §Terms).
 

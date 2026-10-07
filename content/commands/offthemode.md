@@ -2,7 +2,7 @@
 name: offthemode
 title: Set up Off the Mode
 description: Set up Off the Mode in a new or existing project, or show its status. Use when the user says "set up off the mode" or /offthemode, or wants the project planned and held to an elite bar.
-templates: PRODUCT.md, RULES.md, GLOSSARY.md, STATE.md, DECISIONS.md, CHECKLIST.md
+templates: PRODUCT.md, RULES.md, GLOSSARY.md, STATE.md, DECISIONS.md, CHECKLIST.md, ME.md
 ---
 # Off the Mode · set up
 
@@ -12,15 +12,17 @@ Talk first, then do: say what you found and exactly what you will create or chan
 
 Placeholders: `{{NAME}}` only the user can answer; `{{?NAME}}` you work out from the code or docs, saying where from; `{{NAME | x}}` x is your recommended default, for the user to confirm, never kept silently.
 
-If `.offthemode/` exists, don't start over: summarise STATE.md and CHECKLIST.md briefly. Name each of the six files that is missing or still unfilled, and for each filled file, every section or line the current template has that it lacks. Offer to add them on the user's go.
+If the project's `.offthemode/` exists (not the home folder's, which holds only ME.md), don't start over: summarise STATE.md and CHECKLIST.md briefly. Name each of the six files that is missing or still unfilled, and for each filled file, every section or line the current template has that it lacks. Offer to add them on the user's go. For a missing §Shipping, fill it as the Questions say, and offer to save it to `~/.offthemode/ME.md` as the one go does.
 
-If you can't read or write the files (a plain chat), say so and show each file's full text for the user to save in `.offthemode/`; for an existing project, first ask them to paste the README and key files, or open the project in a coding tool.
+If you can't read or write the files (a plain chat), say so and show each file's full text for the user to save in `.offthemode/`; for an existing project, first ask them to paste the README and key files, or open the project in a coding tool. If you can't read `~/.offthemode/ME.md` (a plain chat, a tool limited to the project, a refused permission), say so and ask the shipping questions; if you can't write it, show its text for the user to save there.
 
 ## Pick the door
 **New project** if there's no application code yet (only config, a README, or nothing), else **existing project**. Say which and why, in one line.
 
 ## Questions (both doors)
-Use everything the user has already said, and never ask it again. Ask only what the code and docs can't answer: batched, numbered, each with your recommended answer, more rounds if needed. Cover every field the templates leave to the user: person and jobs, how people find it, if they should (search, AI answers, an app store), moment of value, core concept, the name and its checks (guide: p1-vision-skeleton), who it's not for, refusals and tie-breakers, feeling and references (UI only), complexity we absorb, experience promises, success and guardrail, constraints (platforms, stack, deadline, budget, team, data), file and function size limits (template defaults, to confirm), and what's next. Suggest no speed, weight or accessibility budgets unless the user asks for one. For any reference the user gives, say what you'd take, check its claims at the official source, and go further.
+Use everything the user has already said, and never ask it again. Ask only what the code and docs can't answer: batched, numbered, each with your recommended answer, more rounds if needed. Cover every field the templates leave to the user: person and jobs, how people find it, if they should (search, AI answers, an app store), moment of value, core concept, the name and its checks (guide: p1-vision-skeleton), who it's not for, refusals and tie-breakers, feeling and references (UI only), complexity we absorb, experience promises, success and guardrail, how it ships, in the first round (where the code lives, the branch that goes live, the host, the name commits use: fill these from git, the host's config and `~/.offthemode/ME.md`, and ask only what is still missing), constraints (platforms, stack, deadline, budget, team, data), file and function size limits (template defaults, to confirm), and what's next. Suggest no speed, weight or accessibility budgets unless the user asks for one. For any reference the user gives, say what you'd take, check its claims at the official source, and go further.
+
+For shipping, use ME.md's hosting and release line only for the project's platform (a web line never fills an iPhone app). For Commits as, ME.md wins over git's global name and email. Where sources disagree rather than miss (a branch named master where ME.md says main), show both in the one go with your recommendation.
 
 ## New project
 1. Ask the Questions about the vision.
@@ -34,7 +36,7 @@ Use everything the user has already said, and never ask it again. Ask only what 
 4. On go, create the files. Run the reassess steps, then listrevisit's to build the checklist from PRODUCT.md and every note in the report. Show the report and the fragments in one message, and ask in it for three things: the go for reassess's real-input run, whether to save its report to `.offthemode/REASSESS.md`, and the ok on the fragments. Record the report's summary under the checklist's ## Changes.
 
 ## The one go (both doors)
-In one message, show: the PRODUCT.md draft; RULES.md Project specifics; the files you will create in `.offthemode/`, one line each; the exact auto-load line and its file; any rule-file fixes; and whether `.offthemode/` goes in git (recommended, so the team shares it). Wait for one go, then do all of it.
+In one message, show: the PRODUCT.md draft; RULES.md Project specifics and Shipping, each Shipping value with its source (git, the host's config, ME.md or the user's answer); the files you will create in `.offthemode/`, one line each; the exact auto-load line and its file; any rule-file fixes; if this repo's git name or email differs from Commits as, the offer to set them for this repo only (`git config` without `--global`); if the branch differs from the usual one and has no commits yet, the offer to rename it; if `~/.offthemode/ME.md` lacks or differs on a line its template has (code host and account, commit name, this platform's hosting and release), whether to save those lines there as the user's usual, adding or updating only them and keeping the rest (never this project's repo address, never a password, token or key); and whether `.offthemode/` goes in git (recommended, so the team shares it). Wait for one go, then do all of it.
 
 ## Writing RULES.md
 Draft Project specifics from what is known now: the stack's known traps (checked against the docs or source of the versions in use, never memory), data rules the domain implies (money in whole cents, every query scoped to the account), security boundaries and, in an existing project, what the code relies on. Keep a line only if it is certain to apply, not something an AI does anyway, and costly if missed (every line is read every session); each says what to do and why.
