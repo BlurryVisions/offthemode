@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { Copy } from "./Copy";
+import { installLine } from "@/lib/install.mjs";
 
 type Props = {
   mcpUrl: string;
@@ -23,12 +24,8 @@ export function AddTabs({ mcpUrl, skillsZip, cursorLink, vscodeLink, repoUrl, zi
     refs.current[next]?.focus();
   };
   const json = (servers: object) => JSON.stringify(servers, null, 2);
-  // One paste installs all seven skills. unzip creates only the last folder, so ~/.agents is made first
-  // (Claude Code always has ~/.claude).
-  const install = (dir: string) =>
-    `curl -fsSL ${skillsZip} -o /tmp/offthemode-skills.zip && unzip -o /tmp/offthemode-skills.zip -x README.md -d ${dir}`;
-  const claudeLine = install("~/.claude/skills");
-  const agentsLine = `mkdir -p ~/.agents/skills && ${install("~/.agents/skills")}`;
+  const claudeLine = installLine(skillsZip, "~/.claude/skills");
+  const agentsLine = installLine(skillsZip, "~/.agents/skills");
 
   return (
     <div>
@@ -86,7 +83,7 @@ export function AddTabs({ mcpUrl, skillsZip, cursorLink, vscodeLink, repoUrl, zi
               </p>
               <Copy text={claudeLine} label="the Claude Code install command" />
               <p>
-                Run it again to update. For one project only, put the folders in that project&apos;s{" "}
+                Run it again to update: it replaces the earlier copy, old names included. For one project only, put the folders in that project&apos;s{" "}
                 <span className="inline">.claude/skills/</span> instead.
               </p>
               <p><b>Or the link</b>, if you want updates to arrive on their own. Run this once. It adds Off the Mode for every project:</p>

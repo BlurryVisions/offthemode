@@ -20,10 +20,10 @@ Then say "set up off the mode" in a Claude session that can open your project fo
 
 #### Claude Code
 
-The easiest way is the skills. This one line, pasted into a terminal, installs all seven for every project:
+The easiest way is the skills. This one line, pasted into a terminal, installs all seven for every project. Run it again to update: it first removes the earlier Off the Mode skills, old names included, so no outdated copy stays behind:
 
 ```bash
-curl -fsSL https://offthemode.vercel.app/skills/offthemode-skills.zip -o /tmp/offthemode-skills.zip && unzip -o /tmp/offthemode-skills.zip -x README.md -d ~/.claude/skills
+curl -fsSL https://offthemode.vercel.app/skills/offthemode-skills.zip -o /tmp/offthemode-skills.zip && (mkdir -p ~/.claude/skills && cd ~/.claude/skills && rm -rf offthemode reassess revisit-checklist revisit-comments revisit-glossary revisit-state view-project listrevisit listview commentrevisit glossaryrevisit && unzip -oq /tmp/offthemode-skills.zip -x README.md)
 ```
 
 The skills are files on your machine, so they work in auto mode, Claude Code's default, with no extra step. The commands are then `/offthemode`, `/revisit-checklist`, `/view-project`, `/revisit-state`, `/reassess`, `/revisit-comments` and `/revisit-glossary`.
@@ -80,10 +80,10 @@ The skills are the same commands, guides and templates as plain files, so nothin
 | Claude Code | `.claude/skills/` | `~/.claude/skills/` |
 | Codex, Gemini CLI, Cursor, VS Code | `.agents/skills/` | `~/.agents/skills/` |
 
-For Claude Code, the one line above installs them. For the other tools, use this line. It makes the folder first, because unzip creates only the last folder of the path:
+For Claude Code, the one line above installs them. For the other tools, use this line:
 
 ```bash
-mkdir -p ~/.agents/skills && curl -fsSL https://offthemode.vercel.app/skills/offthemode-skills.zip -o /tmp/offthemode-skills.zip && unzip -o /tmp/offthemode-skills.zip -x README.md -d ~/.agents/skills
+curl -fsSL https://offthemode.vercel.app/skills/offthemode-skills.zip -o /tmp/offthemode-skills.zip && (mkdir -p ~/.agents/skills && cd ~/.agents/skills && rm -rf offthemode reassess revisit-checklist revisit-comments revisit-glossary revisit-state view-project listrevisit listview commentrevisit glossaryrevisit && unzip -oq /tmp/offthemode-skills.zip -x README.md)
 ```
 
 You can also download the zip from the website, or copy the folders from `skills/` in the repo. The Claude app (desktop or claude.ai) takes one skill per upload, which is the only reason each skill also has its own zip on the website: upload all seven.

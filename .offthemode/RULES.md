@@ -10,6 +10,8 @@ Rules only this project needs, each saying what to do and why, kept apart from t
 - content/ is the only source. Never hand-edit skills/, lib/content.generated.json or public/ (method/, skills/), because `npm run content` overwrites them and the check fails on drift. Commit content/ and skills/ together, because CI runs `node scripts/build-content.mjs --check --committed`.
 - The MCP server stays stateless and read-only: it stores nothing and logs no input, because trust is the product (DECISIONS D-003).
 - Every word a user reads is plain: short sentences, no jargon, because the builders who read it are not all engineers.
+- Every question to me says in everyday words what it decides and how it connects to the work at hand; an example only when the choice is hard to picture, because I answer only what I understand.
+- A change to a template line's wording adds the old wording to content/templates/UPDATES.md (D-026), because a project set up earlier only gets the new line through it.
 - The website and /method share one visual language, the drawing set: diazo paper in light, cyanotype in dark, redlines for change.
 - Every control is reachable by keyboard, and a closed panel stays out of the tab order.
 - Each command's rendered text stays under the MCP test's 10000-character guard (D-025), so a status check stays cheap. Write every rule in full, clear words first; raise the guard with a reason rather than squeeze a rule until it loses meaning (DECISIONS D-015).

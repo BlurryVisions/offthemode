@@ -42,7 +42,7 @@ const handler = createMcpHandler(
       "get_template",
       {
         title: "Get an Off the Mode template",
-        description: `Returns one of the templates: the project's .offthemode/ files, and ME.md for ~/.offthemode/ (the user's usual setup): ${templateNames.join(", ")}.`,
+        description: `Returns one of the templates: the project's .offthemode/ files, ME.md for ~/.offthemode/ (the user's usual setup), and UPDATES.md (the lines the templates replaced, for updating a project set up earlier): ${templateNames.join(", ")}.`,
         inputSchema: z.object({ name: z.enum(templateNames) }),
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
@@ -83,7 +83,7 @@ const handler = createMcpHandler(
       server.registerResource(
         `template-${name}`,
         `offthemode://templates/${name}`,
-        { title: `Template · ${name}`, description: `The .offthemode/${name} template`, mimeType: "text/markdown" },
+        { title: `Template · ${name}`, description: name === "UPDATES.md" ? "The lines the templates replaced, newest first" : `The .offthemode/${name} template`, mimeType: "text/markdown" },
         async (uri: URL) => ({ contents: [{ uri: uri.href, mimeType: "text/markdown", text: templates[name] ?? "" }] }),
       );
     }

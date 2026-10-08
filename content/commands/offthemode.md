@@ -2,7 +2,7 @@
 name: offthemode
 title: Set up Off the Mode
 description: Set up Off the Mode in a new or existing project, or show its status. Use when the user says "set up off the mode" or /offthemode, or wants the project planned and held to an elite bar.
-templates: PRODUCT.md, RULES.md, GLOSSARY.md, STATE.md, DECISIONS.md, CHECKLIST.md, ME.md
+templates: PRODUCT.md, RULES.md, GLOSSARY.md, STATE.md, DECISIONS.md, CHECKLIST.md, ME.md, UPDATES.md
 ---
 # Off the Mode · set up
 
@@ -12,7 +12,7 @@ Running the command is the request, so never ask whether to start. Say what you 
 
 Placeholders: `{{NAME}}` only the user can answer; `{{?NAME}}` you work out from the code or docs, saying where from; `{{NAME | x}}` x is your recommended default, for the user to confirm, never kept silently.
 
-If the project's `.offthemode/` exists (not the home folder's, which holds only ME.md), don't start over: summarise STATE.md and CHECKLIST.md briefly. Name each of the six files that is missing or still unfilled, and for each filled file, every section or line the current template has that it lacks. Add them in the reply that gets the user's answers, and change any old command name in the project's notes to its new one (listrevisit to revisit-checklist, listview to view-project, commentrevisit to revisit-comments, glossaryrevisit to revisit-glossary), except in DECISIONS.md and the checklist's evidence and ## Changes, which record what happened. For a missing §Shipping, fill it as the Questions say, and offer to save it to `~/.offthemode/ME.md` as the setup message does. For a §Shipping without Reaches, ask whether anyone besides the user uses or depends on the project (until answered, treat it as other people), and quote each line in the project's own rule files or `.claude/settings.json` that waits for a go or asks before every push, with its fix.
+If the project's `.offthemode/` exists (not the home folder's, which holds only ME.md), don't start over: summarise STATE.md and CHECKLIST.md briefly. Name each of the six files that is missing or still unfilled, and for each filled file, every section or line the current template has that it lacks, and every line it still has in a wording `UPDATES.md` lists as replaced. Add them, and replace those as UPDATES.md says, in the reply that gets the user's answers, and change any old command name in the project's notes to its new one (listrevisit to revisit-checklist, listview to view-project, commentrevisit to revisit-comments, glossaryrevisit to revisit-glossary), except in DECISIONS.md and the checklist's evidence and ## Changes, which record what happened. For a missing §Shipping, fill it as the Questions say, and offer to save it to `~/.offthemode/ME.md` as the setup message does. For a §Shipping without Reaches, ask whether anyone besides the user uses or depends on the project (until answered, treat it as other people), and quote each line in the project's own rule files or `.claude/settings.json` that waits for a go or asks before every push, with its fix.
 
 If you can't read or write the files (a plain chat), say so and show each file's full text for the user to save in `.offthemode/`; for an existing project, first ask them to paste the README and key files, or open the project in a coding tool. If you can't read `~/.offthemode/ME.md` (a plain chat, a tool limited to the project, a refused permission), say so and ask the shipping questions; if you can't write it, show its text for the user to save there.
 

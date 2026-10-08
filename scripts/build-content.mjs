@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import { zipSync, strToU8 } from "fflate";
 import { renderMethod } from "./render-method.mjs";
 import { SITE_URL } from "../lib/site-url.mjs";
+import { SKILL_FOLDERS, installLine } from "../lib/install.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CHECK = process.argv.includes("--check");
@@ -75,6 +76,8 @@ const ENTRY = "offthemode";
 // The command that joins the notes with the view page; its skill carries the page, so it works offline.
 const VIEWER = "view-project";
 for (const n of [ENTRY, VIEWER]) if (!commands.some((c) => c.name === n)) fail(`the command "${n}" is missing`);
+// The install removes every skill folder before unzipping, so a new command must be on its list.
+for (const c of commands) if (!SKILL_FOLDERS.includes(c.name)) fail(`lib/install.mjs: SKILL_FOLDERS lacks "${c.name}", so a reinstall would leave its old copy`);
 const known = new Set(commands.map((c) => c.name));
 // A command named in a body, not as part of a path (.offthemode/) or a tool id (mcp__offthemode__x).
 const mentions = (body, name) => new RegExp(`(?<![\\w./-])${name}(?![\\w/-])`).test(body);
@@ -92,6 +95,8 @@ if (!instructions.includes(".offthemode/")) fail("server/instructions.md: the st
 // Each copy of a command as a paste-in prompt is a marker line. The build expands it from content/commands,
 // so the method can't hold a stale hand-written copy.
 const rawBlueprint = read("content/method/BLUEPRINT.md");
+// The method shows the install lines as text, so they are checked against the one source the site uses.
+for (const dir of ["~/.claude/skills", "~/.agents/skills"]) if (!rawBlueprint.includes(installLine(SKILLS_ZIP_URL, dir))) fail(`BLUEPRINT.md: the install line for ${dir} differs from lib/install.mjs`);
 const byName = new Map(commands.map((c) => [c.name, c]));
 const byTitle = new Map(commands.map((c) => [c.title, c]));
 for (const m of rawBlueprint.matchAll(/^```prompt title="([^"]*)"/gm)) {
@@ -262,17 +267,16 @@ function skillFiles() {
 
 // skills/README.md: where the folders go in each tool, and the one-paste install.
 function skillsReadme() {
-  const install = (dir) => `curl -fsSL ${SKILLS_ZIP_URL} -o /tmp/offthemode-skills.zip && unzip -o /tmp/offthemode-skills.zip -x README.md -d ${dir}`;
   return (
     "# Off the Mode · skills\n\n" +
     "Generated from `content/` by `scripts/build-content.mjs`. Edit `content/`, never these files.\n\n" +
     `The ${commands.length} folders belong together: \`${ENTRY}\` sets up a project and runs the others, the revisits read the guides and templates inside \`${ENTRY}/\`, and \`${VIEWER}/\` holds the view page. Put all of them in your tool's skills folder:\n\n` +
     "- Claude Code: `.claude/skills/` in a project, or `~/.claude/skills/` for every project.\n" +
     "- Codex, Gemini CLI, Cursor and VS Code: `.agents/skills/` in a project, or `~/.agents/skills/` for every project.\n\n" +
-    "One paste installs them for every project. Claude Code:\n\n" +
-    "```sh\n" + install("~/.claude/skills") + "\n```\n\n" +
-    "Codex, Gemini CLI, Cursor and VS Code (unzip makes only the last folder, so `mkdir -p` makes `~/.agents` first):\n\n" +
-    "```sh\n" + `mkdir -p ~/.agents/skills && ${install("~/.agents/skills")}` + "\n```\n\n" +
+    "One paste installs them for every project, and replaces any earlier Off the Mode skills, old names included, so no outdated copy stays behind. Claude Code:\n\n" +
+    "```sh\n" + installLine(SKILLS_ZIP_URL, "~/.claude/skills") + "\n```\n\n" +
+    "Codex, Gemini CLI, Cursor and VS Code:\n\n" +
+    "```sh\n" + installLine(SKILLS_ZIP_URL, "~/.agents/skills") + "\n```\n\n" +
     commands.map((c) => `- \`${c.name}\` · ${c.title}`).join("\n") + "\n\n" +
     "The site also offers one zip per skill, only because claude.ai takes one skill per upload. Upload all of them.\n\n" +
     `More: ${REPO_URL}\n`
