@@ -13,17 +13,16 @@ Live at https://offthemode.vercel.app (MCP at /mcp, method at /method, the view 
 7. Prove D-025 in a real session, best with item 1 in lasscrobits: done when answers start the work with a read-back, no reply asks to start, commit or push, finished work goes live in the same reply, and Claude Code's auto mode lets the push through
 8. The rest of the 2026-10-08 log review: suggest a fresh chat at each natural end with the exact first message to type; size the security and infrastructure guides to who the product reaches (a one-person tool gets a short SECURITY.md); STATE.md carries unpushed work, a go not yet used and real dates, never "tomorrow"; a suggestion is made once, then parked in Waiting on me; "it can't work" needs the same proof as "done"
 9. One check for a project Off the Mode joins midway or at the end (D-027): in content/commands/reassess.md, a path for no .offthemode/ (light read, one round asking what it is for before saying it, deep read, check, one real run, verdict last, not proven when the run couldn't happen, report kept only if the owner says); setup's existing door (offthemode.md:33-36) points at those steps; revisit-checklist takes newer reassess notes; reassess reads newer decisions; the view's "saves it if you say so" (content/site/view-page.html:471) matches what reassess does. Done when: setup's door dry-run on supersense at commit 5c0f245 asks who it's for before saying it; /reassess on the aiml lineage site asks first, runs, and gives its verdict before any fix; /reassess on lasscrobits names PRODUCT.md:42 as replaced by D-070
+10. Stop Off the Mode from pushing token burn (from lasscrobits, 2026-10-07 13:15 to 10-08 19:48: 1.7 billion tokens read, 85% by workflow agents; four build agents a third, each 230 to 360 steps re-reading up to 900k tokens every step; ultracode was on in all six sessions). RULES template "No caps: use whatever the job needs" and the agents guide's "Don't cap how many agents run" (BLUEPRINT.md, Always-On · Agent Orchestration) aim at the wrong cost and remove the brake. Proposed, waiting on the author: an agent gets one small task and ends, never a whole fragment; a run of more than three agents shows its cost and waits for the owner's answer, ultracode or not
 
 ## In flight
 - nothing pending in git; .claude/launch.json, a local preview config, stays out of git
 
 ## Unverified
-- the view in Safari and Firefox, a real folder dialog, drag and drop, and Chrome's real "Reopen" prompt (F8.1, F8.8)
-- setup's no-file-access and no-UI paths, and the shipping step after its fixes (F5.2, F5.6, F5.9): only a dry run proves them
-- a project set up before 2026-10-08 working with the new names, through the link's mapping and /offthemode's offer
+- the view in Safari and Firefox, a real folder dialog, drag and drop, and Chrome's real "Reopen" prompt (F8.1, F8.8); claude.ai accepting each per-skill zip (F3.5), skipped while the author's claude.ai is an org account
+- setup's no-file-access and no-UI paths, and the shipping step after its fixes (F5.2, F5.6, F5.9), which only a dry run proves; a project set up before 2026-10-08 working with the new names, through the link's mapping and /offthemode's offer
 - the link's command header (lib/content.ts: "requested by the user or by the project's RULES.md", "as the text below says") in Claude Code auto mode without the allow rule: one tool call
 - /revisit-state in a real session, typed, twice in a row, and on its own (F6.7); D-025 in a real session (Next 7); reassess saving REASSESS.md in a real run (F8.4)
-- claude.ai accepting each per-skill zip (F3.5): skipped while the author's claude.ai is an org account
 
 ## Waiting on me · known broken · do not touch
 - The author, three choices on Next 9 (asked 2026-10-08): the purpose questions come with options but no suggested answer unless the author said it before; on a finished project, /reassess fixes the code problems it finds when told "fix" (verdict first, the same run again after, never commits or pushes); when to make the change (pick: together with Next 5, which also rewrites setup's first message).
@@ -37,3 +36,4 @@ Live at https://offthemode.vercel.app (MCP at /mcp, method at /method, the view 
 - 2026-10-07 · one explanation that never contradicts itself, with a concrete example, not two framings of the same thing
 - 2026-10-07 · finish what was agreed before raising anything new; a new idea goes to the end of Next, not into the current work
 - 2026-10-08 · a fix that only rewords the problem is no fix: find the mechanism behind it and think it through before proposing
+- 2026-10-09 · Off the Mode makes agents work worse: half the author's weekly budget went in 2 days in lasscrobits; the author is disappointed in the vision and in our work on it
