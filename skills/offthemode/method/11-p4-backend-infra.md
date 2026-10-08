@@ -10,7 +10,7 @@
 - Validate input at every boundary (HTTP, webhooks, queue messages, env, vendor responses), then trust the types. Errors use the project's error catalog.
 - A mutation that charges, sends or calls a vendor must be safe to retry, with an idempotency key (one id per request, so a repeat is done only once).
 - Contract changes are additive only, unless the user approves a versioning plan.
-- A new dependency, service or environment variable gets a DECISIONS.md entry and an updated env check, on the user's go.
+- A new dependency, service or environment variable gets a DECISIONS.md entry and an updated env check; a new dependency, or a service that costs money or receives the product's data, is asked in the round.
 - A page meant to be found (PRODUCT.md, Found by) stays rendered on the server or prebuilt, and robots.txt changes only with its DECISIONS.md entry (Always-On · Being Found).
 - Open the whole guide to choose hosting or the data architecture, to add an entity or a service, or to change the API style.
 <!-- /offthemode:rules -->
@@ -62,7 +62,7 @@ The schema comes first in P4, and its nouns become P5's navigation. An invariant
 > **Trap:** Tables generated from UI mocks are screen-shaped and break the moment a second screen needs the same data. Model the domain, then shape view models per screen.
 
 ```prompt title="Data Model With Invariants"
-Read .offthemode/PRODUCT.md, .offthemode/SKELETON.md, .offthemode/GLOSSARY.md and .offthemode/ROUTES.md. No application code yet: show me the design and wait for my go.
+Read .offthemode/PRODUCT.md, .offthemode/SKELETON.md, .offthemode/GLOSSARY.md and .offthemode/ROUTES.md. No application code yet: show me the design, then write the schema.
 Design the data model for {{?PRODUCT_NAME}} as someone who has run {{DATABASE}} at maintainer level. Reason from the engine's real behavior (constraints, locking, index structures, isolation), not ORM tutorials.
 1. Entities named as the user names them (the Terms in GLOSSARY.md, definitions from SKELETON.md §Domain model): who can see or change each, and its lifecycle states.
 2. Relationships: cardinality and deletion semantics (cascade, restrict, soft-delete, archive), each justified.
@@ -93,7 +93,7 @@ Paginate with cursors. Old mobile builds stay live for months, so contract chang
 ```prompt title="Contract-First API"
 From {{SCHEMA_PATH}} and .offthemode/ROUTES.md, define the API contract before any handler exists. Style {{CONTRACT_STYLE}}; clients {{CLIENTS}}.
 Per operation: authentication; the authorization rule (matrix in .offthemode/SECURITY.md); input and output schemas in {{SCHEMA_LIB}}; catalog error codes (problem+json, never ad-hoc strings); idempotency (natural, or Idempotency-Key with storage and replay); cursor pagination and filter/sort params matching the URL state in ROUTES.md; rate-limit bucket; cache semantics; compatibility (additive only, or a versioning plan).
-Show me the contract and wait for my go. Then generate a typed client and a mock server the frontend can use now, and write contract tests (malformed -> 400 problem, no auth -> 401, wrong actor -> 403, success -> the documented shape). Flag screens that need more than one round-trip and propose screen-shaped endpoints. Responses are view models, never raw rows.
+Show me the contract, then generate a typed client and a mock server the frontend can use now, and write contract tests (malformed -> 400 problem, no auth -> 401, wrong actor -> 403, success -> the documented shape). Flag screens that need more than one round-trip and propose screen-shaped endpoints. Responses are view models, never raw rows.
 ```
 
 ### The backbone
@@ -176,7 +176,7 @@ export const env = parsed.data;
 ```
 
 ```prompt title="Prod-Parity Setup"
-Goal: moving {{?PRODUCT_NAME}} from local to {{?DEPLOY_TARGET}} is a non-event; environments differ in config values only. Show me the plan and wait for my go before changing anything.
+Goal: moving {{?PRODUCT_NAME}} from local to {{?DEPLOY_TARGET}} is a non-event; environments differ in config values only. Show me the plan, then build it; anything that writes to my accounts or puts secrets somewhere new waits for my answer.
 1. A one-command local stack ({{COMPOSE_OR_DEVCONTAINER}}) with prod's major versions of {{DATABASE}}, {{QUEUE_OR_CACHE}}, the sync server if any, and S3-compatible storage. No SQLite for dev, no in-memory stand-ins for anything durable in prod.
 2. Boot-time env validation ({{?ENV_CHECK_CMD}}) that fails with key names only; server and client vars split by the framework prefix; .env.example kept in sync; secrets from {{SECRETS_MANAGER}}; secret scanning in pre-commit and CI.
 3. CI: typecheck, lint, unit and contract tests, migrations on an empty DB, seed; block the merge on failure. Migrations run as a release step before new code serves traffic.
@@ -190,7 +190,7 @@ Choose hosting for {{?PRODUCT_NAME}} from workload facts, not popularity. Every 
 Facts: clients {{CLIENTS}}; users at launch / at 12 months {{N_LAUNCH}} / {{N_12MO}}; peak RPS = DAU x sessions x requests per core journey (ROUTES.md) x peak ratio; longest job {{LONGEST_JOB}}; realtime or sync {{REALTIME_OR_SYNC}}; regions {{REGIONS}}; budget {{BUDGET}}; ops appetite {{OPS_APPETITE}}; core envelope from P2 {{?CORE_CONTRACT}}.
 1. Score serverless, edge, managed containers and VPS on: monthly cost at launch, 10x and 100x (egress, storage, seats, per-call APIs {{PAID_APIS}}); cold starts on the core journey; long-running work; WebSockets and sync servers; compute-to-DB latency; lock-in; ops burden.
 2. What breaks first at 10x (connections, a lock, a sequential scan, a vendor rate limit); DB size at 12 months; cost per active user and per core action.
-Output: the matrix with numbers; one recommendation with its strongest reason and a "revisit when"; the escape hatch (jobs behind an interface, storage behind the S3 API) that keeps a future move under a week. Show me all of it and wait for my go; then record it as a D-### entry in .offthemode/DECISIONS.md and summarize it in .offthemode/ARCHITECTURE.md.
+Output: the matrix with numbers; one recommendation with its strongest reason and a "revisit when"; the escape hatch (jobs behind an interface, storage behind the S3 API) that keeps a future move under a week. Show me all of it; once I answer, record it as a D-### entry in .offthemode/DECISIONS.md and summarize it in .offthemode/ARCHITECTURE.md.
 ```
 
 > **Pro move:** Logs give your AI context at runtime too. Give it one command that tails structured logs and recent errors, list it in RULES.md §Commands, and add a line to RULES.md: read runtime evidence before theorizing about a bug. An AI that can observe stops guessing.
@@ -198,7 +198,7 @@ Output: the matrix with numbers; one recommendation with its strongest reason an
 ```prompt title="Failure-Mode Review"
 Review {{SCOPE}} as the engineer on call at 3am. For every dependency and core-journey step in .offthemode/ROUTES.md: what happens when it is slow (its slowest 1 in 100 calls, p99, ten times slower), down, returns garbage, or succeeds twice? What does the user see (no matching state in the ROUTES.md state inventory is a finding)? Which invariant is at risk? How do we find out ("a user tells us" is a finding)? How do we recover, with the exact command?
 Also cover: a deploy mid-request, a migration failing halfway, 1M queued jobs, secret rotation, DB connections exhausted, duplicate or out-of-order webhooks, clock skew, a sync client offline for a week, one user hammering the most expensive endpoint.
-Output: Failure | Blast radius | User sees | Detection | Recovery | Fix now / accept / later. Show me the table and wait for my go, then implement the fix-now rows, smallest first.
+Output: Failure | Blast radius | User sees | Detection | Recovery | Fix now / accept / later. Show me the table, then implement the fix-now rows, smallest first.
 ```
 
 ```file path=".offthemode/ARCHITECTURE.md"

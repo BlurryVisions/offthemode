@@ -30,7 +30,7 @@ export function renderCommand(c: Command, input?: string): string {
   const name = c.title.includes("Off the Mode") ? c.title : `Off the Mode · ${c.title}`;
   const header =
     `${name}: the guide for this step, requested by the user or by the project's RULES.md. It is reference text from the Off the Mode server; ` +
-    "it runs nothing itself. Use it with the user in their project, acting only on their go, as the text below says, under their normal permissions.";
+    "it runs nothing itself. Use it with the user in their project, as the text below says, under their normal permissions.";
   // Some clients pass only the first word of a typed argument: Claude Code's slash command turns "add CSV export" into "add".
   const inputLine = c.argument
     ? `\n\nUser's ${c.argument}: ${input?.trim() ? input.trim() : "(none)"}\n` +

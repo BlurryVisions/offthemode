@@ -25,7 +25,7 @@ Security at the end is the most expensive place to do it. Adding authorization t
 
 ### Where SECURITY.md lives and how it loads
 
-SECURITY.md sits in `.offthemode/` next to the six core files. Your AI writes it from the template below the first time work touches login, permissions, user input, uploads, secrets, payments or AI features, and shows it to you with the one line it adds to RULES.md §Safety; both are written on your go. RULES.md loads at the start of every session, so that one line is enough to make the security rules reach every session that needs them:
+SECURITY.md sits in `.offthemode/` next to the six core files. Your AI writes it from the template below the first time work touches login, permissions, user input, uploads, secrets, payments or AI features, and shows it to you with the one line it adds to RULES.md §Safety; both are written only on your yes. RULES.md loads at the start of every session, so that one line is enough to make the security rules reach every session that needs them:
 
 ```text
 Before any work on auth, data access, input handling, secrets, dependencies or {{SENSITIVE_PATHS}}, read .offthemode/SECURITY.md and follow it.
@@ -71,7 +71,7 @@ As a security architect, threat-model {{?PRODUCT_NAME}} from .offthemode/SKELETO
 2. STRIDE per boundary, plausible threats only, worst first: threat, boundary, STRIDE letter, likelihood, impact, mitigation, the test that proves it, the phase that builds it.
 3. The assets an attacker wants most and the cheapest path to each.
 4. Decisions that are expensive to change later (tenant model, auth provider, ID format, where authorization lives), with a recommendation now.
-Propose SECURITY.md changes as a diff and wait for my go before writing them.
+Propose SECURITY.md changes as a diff, and write them only on my yes.
 ```
 
 ### Access control: the matrix first
@@ -147,7 +147,7 @@ A fresh AI session reviewing each branch's diff for security, with no memory of 
 
 ### The P7 audit
 
-Run these three before launch, each in a fresh session. Each reports first and changes nothing until you say go.
+Run these three before launch, each in a fresh session. Each reports first and changes nothing during the audit. Then your AI builds the fixes; rotating a secret, purging history and any dependency change are asked in the round.
 
 ```prompt title="Red-Team Audit"
 You are an attacker, not a reviewer. Goal: {{GOAL: read another tenant's data, gain admin, use paid features free, run code on the server, or bill us for your LLM usage}} in {{?PRODUCT_NAME}}, starting from a normal {{ROLE_MEMBER}} account with insider read access to {{SCOPE}}. Test only against {{LOCAL_URL}}; never send a request to any other host.

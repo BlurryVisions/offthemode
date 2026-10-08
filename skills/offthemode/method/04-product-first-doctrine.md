@@ -55,12 +55,12 @@ The web measures, in plain words: LCP (Largest Contentful Paint) is when the mai
 Read .offthemode/PRODUCT.md, and .offthemode/COMPLEXITY.md if it exists. Inventory every user-facing capability in {{SCOPE: codebase, roadmap or spec at PATH}}.
 One row each: Capability | Job served (quote PRODUCT.md, or NONE) | Serves the one thing? | Actions it adds to default surfaces | Evidence of use | Verdict.
 Verdicts: CORE (produces the moment of value; keep and deepen), PARITY (expected; minimal version, moved to a secondary layer), DEFER (plausible, no evidence; remove it and log it in .offthemode/DECISIONS.md as a bet with a kill criterion), KILL (no job, contradicts a Refusal, or duplicates a path). When torn, pick the harsher verdict and say so.
-Then: the default-surface action count before and after, and a deletion plan (routes, components, flags, columns, tests) ordered so nothing breaks. Show me the plan and change nothing until I say go.
+Then: the default-surface action count before and after, and a deletion plan (routes, components, flags, columns, tests) ordered so nothing breaks. Show me the plan and change nothing until I answer.
 ```
 
 ```prompt title="Moment of Value Map"
 Map the path from first contact ({{ENTRY: landing page, store install, shared link or invite}}) to {{?MOMENT_OF_VALUE}} (.offthemode/PRODUCT.md), walking it as {{?PERSON}} on {{?DEVICE}} with {{CONTEXT: one hand, flaky 4G, ninety seconds of patience}}. If the app runs, drive it with your browser or simulator tool and time it with the project's audit-ux journey if there is one; otherwise walk the spec.
 Per step: what they see, decide, type, wait for, and what could make them leave. Totals: steps, decisions, inputs, wait, and time to first wow against the time to value in PRODUCT.md §Experience promises.
 Redesign to hit the budget, naming the mechanism behind every cut: defer (account after value), infer (locale, currency, intent from the entry point or pasted content), default (the 80% option, changeable in context), preload (sample or imported data), parallelize (start work during the previous step).
-Show the new path, the new totals and each cut's technical consequences. After my go, append each consequence to .offthemode/DECISIONS.md with the PRODUCT.md line it serves.
+Show the new path, the new totals and each cut's technical consequences. Once I answer, append each consequence to .offthemode/DECISIONS.md with the PRODUCT.md line it serves.
 ```

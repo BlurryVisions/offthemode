@@ -86,7 +86,7 @@ Build an expert profile for {{DOMAIN}} ({{CORE_TECH}}, used in {{STACK}} for {{P
 4. Refuse-to-ship patterns the core team would reject in review, each with its replacement, kept by the same test.
 5. Amateur tells, tie-breakers, review questions.
 Every line must be checkable against code. Ban "clean code" and "best practices". At most 120 lines. Use the header line of the other profiles in .offthemode/experts/, with pins and local exceptions for {{?STACK_VERSIONS: from the package manifest or lockfile}}.
-Show me the profile, the path .offthemode/experts/{{domain}}.md, and the one line you would add to RULES.md §Guides saying which work loads it. End with the 3 opinions you are least sure of. Write the files only after I say go.
+Show me the profile, the path .offthemode/experts/{{domain}}.md, and the one line you would add to RULES.md §Guides saying which work loads it. End with the 3 opinions you are least sure of. Write the profile in the same reply; add the RULES.md line on my yes.
 ```
 
 ### The inventor critic
@@ -114,7 +114,7 @@ Take the critic's table back to the session that built the change.
 ```prompt title="Inventor-Level Review"
 An independent review of {{PLAN_FILE | git diff BASE...HEAD}} returned this table:
 {{CRITIC_TABLE}}
-For each finding, propose a resolution: fix it, or rebut it in one line with evidence (file:line, a test, a measurement). Show the table with a resolution column and wait for my go before changing anything. Then make the fixes, run the checks in RULES.md §Commands, and show the table again with what you did.
+For each finding, propose a resolution: fix it, or rebut it in one line with evidence (file:line, a test, a measurement). Show the table with a resolution column, then make the fixes in the same reply, run the checks in RULES.md §Commands, and show the table again with what you did.
 ```
 
 If your tool supports subagents (Claude Code does), you can save the Inventor Critic brief as one, with read-only tools, so it runs in its own context from inside your session. The brief stays the same; only where it runs changes.

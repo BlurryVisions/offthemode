@@ -30,5 +30,5 @@ Copy pass on {{SURFACE_OR_PATH}}. Edit only user-facing strings and the string c
 1. Table every string: current | problem (banned word, vague verb, wrong term, too long, blames the user, a sentence a competitor could publish unchanged) | rewrite.
 2. Every button predicts its result, every error has a next step, every empty state offers one action.
 3. Cut 30% of the words without losing meaning. Flag concepts that have no glossary term and propose one; where notes from watching real people use the product record their own words, prefer those.
-Show me the table and wait for my go. Then apply it and run the fast check from .offthemode/RULES.md §Commands.
+Show me the table, then apply it and run the fast check from .offthemode/RULES.md §Commands.
 ```

@@ -16,6 +16,6 @@ Rules:
 - Say what people can do, never how it's built.
 - Under 300 words, so it fits on one screen. Count them with a command (such as wc -w) where you can run one, not by eye.
 
-Before showing it, reread every sentence as someone outside tech and rewrite any they would have to ask about. Show the new section and, if one exists, what changed and why (usually "Where we are"). Write it on the user's go.
+Before showing it, reread every sentence as someone outside tech and rewrite any they would have to ask about. Write it, then show the new section and, if one existed, what changed and why (usually "Where we are").
 
 End with this line: See it as a page: /view-project, or https://offthemode.vercel.app/view (open the .offthemode folder; nothing is uploaded).

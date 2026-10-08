@@ -34,7 +34,7 @@ export function track<E extends keyof Events>(event: E, props: Events[E]): void 
 
 ```prompt title="Instrument This Feature"
 Before writing code for {{FEATURE}}, propose the events that answer {{QUESTIONS}}, one per question worth answering: name (object_action, glossary terms), exact trigger, typed properties, and the question each answers. Reject events that answer no question and properties that could hold personal data.
-Show me the list and wait for my go. Then add the events to .offthemode/TRACKING.md and the Events type, implement them through track() only, and test that each fires exactly once with the right properties on the happy path.
+Show me the list, then add the events to .offthemode/TRACKING.md and the Events type, implement them through track() only, and test that each fires exactly once with the right properties on the happy path.
 ```
 
 > **Pro move:** Instrument hesitation: abandoned flows, repeated undo, settings opened right after onboarding. Every stall is complexity leaking onto the person, and a candidate for a smart default.

@@ -7,7 +7,7 @@
 - Every new feature traces to a job in PRODUCT.md. If it serves none, ask why before planning it.
 - If the request conflicts with a PRODUCT.md line (a refusal, a tie-breaker, the moment of value), quote the line before acting.
 - Name new things in the words the users use, and propose the GLOSSARY.md §Terms entry.
-- If the change adds an entity, a surface, a data flow or a trust boundary and SKELETON.md exists, show the SKELETON.md edit in the plan and make it in the same change, on the user's go.
+- If the change adds an entity, a surface, a data flow or a trust boundary and SKELETON.md exists, show the SKELETON.md edit in the plan and make it in the same change.
 - A guess about the person, the job or the moment is written as a hypothesis and confirmed before anything rests on it.
 - Open the whole guide to write or rework the vision, PRODUCT.md or SKELETON.md, to name the product, or when a feature changes the person, the job or the moment of value.
 <!-- /offthemode:rules -->
@@ -121,7 +121,7 @@ Help me name {{?PRODUCT: from the thesis and core concept in PRODUCT.md}}. Talk 
 2. Generate at least 30 candidates across six styles: evocative real words, metaphors from the product's world, invented words, compounds, borrowed words, and plain descriptive as a baseline. Avoid category-plus-buzzword compounds and the endings everyone uses (-ly, -ify, -hub, AI).
 3. Shortlist every candidate that passes all of these: short, easy to say and spell after hearing it once, distinctive in its category, evoking the feeling or the job rather than the feature, and working in {{LANGUAGES}}. For each, one line on why it survived and one risk.
 4. Check the shortlist live with web search: .com and {{OTHER_DOMAINS}}, handles on {{PLATFORMS}}, the app stores, {{PACKAGE_REGISTRY | skip}}, and a trademark search in {{COUNTRIES}}. Mark each check found, taken or unclear, with its source. Never report availability from memory.
-5. Recommend 3, each with the sentence test ("I'll send it on X"). I choose; then write PRODUCT.md §Name with the name, why it fits and the checks, on my go.
+5. Recommend 3, each with the sentence test ("I'll send it on X"). I choose; then write PRODUCT.md §Name with the name, why it fits and the checks.
 ```
 
 ### Making the vision sound
@@ -148,7 +148,7 @@ Round 1, in order:
 7. Evidence: for person, job and moment, what I have observed, what I have heard, and what is still a hypothesis to confirm.
 
 Then interview me with batched, numbered questions, each with your recommended answer, in as many rounds as it takes. Each round attacks the weakest of person, job, moment, the one thing, refusals; say which. Reject vague answers ("users", "easy", "powerful", "all-in-one", "seamless") and re-ask sharper. Never suggest features; if I do, ask which job it serves and what it displaces. Stop when you can state the product in one sentence and predict what I would cut.
-Finally show me a draft of .offthemode/PRODUCT.md that follows its template (get_template or the skill's templates/ folder), with an evidence tag on every Person, Job and Moment line. Write each unconfirmed item as a hypothesis, "I think X, because Y"; unsettled items go to open questions, never invented. End with the 3 hypotheses most likely to be wrong and the cheapest one-day test for each, each written as a RISKS.md row. Write the files only after I say go.
+Finally show me a draft of .offthemode/PRODUCT.md that follows its template (get_template or the skill's templates/ folder), with an evidence tag on every Person, Job and Moment line. Write each unconfirmed item as a hypothesis, "I think X, because Y"; unsettled items go to open questions, never invented. End with the 3 hypotheses most likely to be wrong and the cheapest one-day test for each, each written as a RISKS.md row. Write the files in the same reply.
 ```
 
 ```prompt title="Predict My Call"
@@ -161,7 +161,7 @@ Where PRODUCT.md does not settle the answer, say so instead of guessing.
 ```
 
 ```prompt title="Generate the Skeleton"
-Read .offthemode/PRODUCT.md and .offthemode/GLOSSARY.md, and for an existing project the code. Draft .offthemode/SKELETON.md following the SKELETON.md template in the Vision and Skeleton guide exactly. Show it to me first; write it only after I say go.
+Read .offthemode/PRODUCT.md and .offthemode/GLOSSARY.md, and for an existing project the code. Draft .offthemode/SKELETON.md following the SKELETON.md template in the Vision and Skeleton guide exactly. Show it to me and write it in the same reply.
 - Artifacts, not prose: tables, Mermaid, invariants. Every term in GLOSSARY.md gets its definition and invariant in §Domain model.
 - Existing project: describe what the code does today, tag an item [decided] only where the code confirms it, and list every place the code and PRODUCT.md disagree.
 - Derive surfaces from the domain model and journeys; cut any surface no journey step requires, or justify it. One primary action each.
@@ -176,5 +176,5 @@ Read .offthemode/PRODUCT.md and .offthemode/GLOSSARY.md, and for an existing pro
 It is {{N}} months after launch and {{PROJECT_NAME}} has failed. Read .offthemode/PRODUCT.md and .offthemode/SKELETON.md.
 Write every distinct cause you can make concrete, each as a short story, covering product (nobody reached the moment of value, or the Person was imagined), experience (complexity leaked, or it looked like everything else), core feasibility (quality, latency, cost), architecture (local-to-hosted, scale, data model, sync), security and abuse, cost and operations, and my own process.
 Per cause: early warning signal, likelihood 1-5, impact 1-5, the cheapest test now, what changes in PRODUCT or SKELETON if it is real. A risk that applies to every startup is not allowed.
-Show the RISKS.md rows you would add, mark the ones needing a P2 spike, and list proposed PRODUCT and SKELETON edits. Change nothing until I say go; then write the RISKS.md rows and leave the PRODUCT and SKELETON edits for me to accept one by one.
+Show the RISKS.md rows you would add, mark the ones needing a P2 spike, and list proposed PRODUCT and SKELETON edits. Write the RISKS.md rows in the same reply, and leave the PRODUCT and SKELETON edits for me to accept one by one.
 ```

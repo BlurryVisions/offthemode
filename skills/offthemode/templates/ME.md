@@ -1,5 +1,5 @@
 ME · your usual setup · lives at ~/.offthemode/ME.md on this computer, outside every project · never a password, token or key
-Off the Mode's setup reads this file in each new project and shows these as defaults to confirm, instead of asking again. It is written only on your go, and you can edit it any time. Off the Mode never sends it anywhere; your AI tool reads it like any file you open with it.
+Off the Mode's setup reads this file in each new project and shows these as defaults to confirm, instead of asking again. It is written only from your answers, and you can edit it any time. Off the Mode never sends it anywhere; your AI tool reads it like any file you open with it.
 
 ## Shipping
 - Code host and account: {{?CODE_HOST_ACCOUNT: for example GitHub as your handle}}

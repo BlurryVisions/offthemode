@@ -30,7 +30,7 @@ Derive the IA of {{?PRODUCT_NAME}} from its domain, not a generic app layout. In
 3. Routes: collection + detail per object; per multi-field verb choose inline edit, sheet or route; stateful modals get a URL.
 4. URL state per route with types and defaults; history rule (push / replace / none) per interaction.
 5. Palette commands and shortcuts. Mobile: which destinations become tabs (3-5), the stack under each, a deep link per route.
-Show me the object map and the ranking first and wait for my go. Then write .offthemode/ROUTES.md. Flag anywhere the IA forces the user to understand system complexity.
+Show me the object map and the ranking first, then write .offthemode/ROUTES.md. Flag anywhere the IA forces the user to understand system complexity.
 ```
 
 ```file path=".offthemode/ROUTES.md"
@@ -96,7 +96,7 @@ function view(s: Upload) {
 
 ```prompt title="State Inventory Audit"
 Audit every screen in .offthemode/ROUTES.md for missing states; a happy path alone is not a finished screen. Fill the state inventory (first-run, empty, loading, partial, ideal, error, offline, permission-denied, plus stale or over-limit where relevant): what the user sees, the one primary action, the implementing component or MISSING. Apply the state rules table; errors map from the error catalog's codes, with input preserved.
-Report the missing-cell count per screen and the order you would fix them in, highest-traffic screens first. Wait for my go. Then add the dev-only state switcher, implement the missing states, and report missing-cell counts before and after.
+Report the missing-cell count per screen and the order you would fix them in, highest-traffic screens first. Then add the dev-only state switcher, implement the missing states, and report missing-cell counts before and after.
 ```
 
 On mobile, tabs hold 3-5 peer nouns, each with its own stack, and tapping the active tab again returns to the top of its stack. A cold deep link builds its back stack: open `/projects/12/tasks/9` from a notification, press back, and you land on the project, not outside the app. Spend the signature transition on exactly one move, into your key object, and cross-fade under reduced motion.
@@ -111,7 +111,7 @@ Walk {{?APP_URL}} with {{BROWSER_TOOL}} as a first-time user and as a power user
 4. Change every filter, tab and sort, reload, and open the URL in a fresh context: the view must reproduce.
 5. Run the core journeys keyboard-only and touch-only, at each of {{?SCREENSHOT_SIZES: screenshot_sizes in RULES.md §Budgets}}, throttled and offline. Timing comes from {{?AUDIT_CMD}} (the audit-ux journey), not from watching: one tool round-trip is slower than the feedback budget.
 6. Force every state via the switcher; screenshot each.
-Report Route | Check | Expected | Actual | Screenshot | Severity (blocker, friction, polish). End with the three changes that remove the most friction on the path to {{?MOMENT_OF_VALUE}}. Wait for my go.
+Report Route | Check | Expected | Actual | Screenshot | Severity (blocker, friction, polish). End with the three changes that remove the most friction on the path to {{?MOMENT_OF_VALUE}}, then make them.
 ```
 
 ```prompt title="Five-Person Test"
@@ -119,7 +119,7 @@ Write a test script for journey {{JOURNEY_ID | J1}} in .offthemode/ROUTES.md, to
 1. Screener: who counts as {{?PERSON}} (situation, tools used today, how often they do the job), and who is out.
 2. One scenario in their words, with none of our UI terms or GLOSSARY nouns, and 3 tasks, the first ending at {{?MOMENT_OF_VALUE}}.
 3. What I measure: time to the moment of value, first-click correctness per task, pauses of three seconds or more (where, and what they said), and the words they use for our nouns. They think aloud; I never help beyond "what would you do?".
-After I paste the notes, output: Task | Success | Time | Pause points | Their word vs the GLOSSARY term. Then the 3 changes that remove the most hesitation, each tried first as a subtraction, default or inference before any new UI, plus GLOSSARY and copy edits wherever their words differ from ours. Wait for my go before changing anything.
+After I paste the notes, output: Task | Success | Time | Pause points | Their word vs the GLOSSARY term. Then the 3 changes that remove the most hesitation, each tried first as a subtraction, default or inference before any new UI, plus GLOSSARY and copy edits wherever their words differ from ours. Build the 3 changes in that reply; make the GLOSSARY and copy edits once I answer, because names are mine to choose.
 ```
 
 > **Rule:** The gate passes when at least 4 of 5 reach the moment of value unaided, inside the time to value in PRODUCT.md §Experience promises. Below that, make the three changes and test five new people, never the same five. Then update the evidence in PRODUCT.md: Person, Job and Moment are now observed, not hypotheses, and their rows in RISKS.md can be retired.

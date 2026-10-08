@@ -2,7 +2,7 @@
 
 Left alone, every AI coding tool returns the mode of its training data, meaning the most common answer: the most common stack, the most common landing page, the most common happy-path code. Off the Mode pulls your AI off that average. It is a prompt-engineering setup that makes your AI plan first, build in order and hold an elite bar on your project, new or existing: web, mobile, backend or data, a weekend build or a complex product. It works with any AI coding tool, including Claude, Cursor, VS Code, Windsurf and Codex. Add it by pasting https://offthemode.vercel.app/mcp into your tool, or by putting the skills pack in your tool's skills folder.
 
-In your project it adds the `.offthemode/` folder, plus one line you approve so your tool loads it. Setup writes six core files there: PRODUCT.md (what you are building and for whom), RULES.md (the standards every change is held to), CHECKLIST.md (the core, split into fragments), GLOSSARY.md (the product in plain words), STATE.md (where things stand) and DECISIONS.md (what was decided and why). Some guides add an optional document to the same folder when their work needs one; How to add it lists them all. Your AI loads RULES.md and STATE.md at the start of every session, and you keep working free-form. Seven commands do the upkeep: `offthemode`, `revisit-checklist`, `reassess`, `revisit-comments`, `revisit-glossary`, `view-project` and `revisit-state`. Every command except `view-project` and `revisit-state` talks first: it tells you what it found and exactly what it will change, waits for your go, then does it and says what it did. `view-project` changes nothing in your project, so it opens its page at once, and `revisit-state` only saves where things stand, so it saves at once.
+In your project it adds the `.offthemode/` folder, plus one line you approve so your tool loads it. Setup writes six core files there: PRODUCT.md (what you are building and for whom), RULES.md (the standards every change is held to), CHECKLIST.md (the core, split into fragments), GLOSSARY.md (the product in plain words), STATE.md (where things stand) and DECISIONS.md (what was decided and why). Some guides add an optional document to the same folder when their work needs one; How to add it lists them all. Your AI loads RULES.md and STATE.md at the start of every session, and you keep working free-form. Seven commands do the upkeep: `offthemode`, `revisit-checklist`, `reassess`, `revisit-comments`, `revisit-glossary`, `view-project` and `revisit-state`. Every command except `view-project` and `revisit-state` talks first: it tells you what it found and exactly what it will change, asks only what you alone can settle, does the rest in that reply and says what it did. `view-project` changes nothing in your project, so it opens its page at once, and `revisit-state` only saves where things stand, so it saves at once.
 
 You do not read this method front to back. Each guide covers one kind of work. RULES.md §Guides maps each kind of work to its guide, and your AI opens the matching guide before it plans or does that work. Each phase guide starts with short working rules: for a change inside an existing product, your AI opens just those; it opens the whole guide when it starts that phase or changes what the phase built. How to add it says where the guides come from. You can read any guide yourself: The Pipeline shows the order, and Product-First Doctrine shows the lens used at every step.
 
@@ -79,7 +79,7 @@ The laws below sit under every guide and template in this method. Each one state
 | 2 | The mode is the default | For an underspecified request, the model's best guess is the most typical answer | "No hero. The first screen is the product on sample data. One display face. Colour strategy per DESIGN.md." | Hero, three cards, Inter, gradient | Constraint Stack; PRODUCT.md §Refusals |
 | 3 | Reasons generalize, bare rules don't | A reason carries the principle to cases you didn't name | "Don't derive state in effects: it adds a render with stale values and a second source of truth." | Rules obeyed to the letter, missed in spirit | Every line in RULES.md carries its reason |
 | 4 | Show, don't adjective | "Modern, clean, premium" sat next to millions of templates, so they decode to those templates | "Headline --text-display, body --text-base, two weights; motion --dur-quick with --ease-out, transform and opacity only; take refs/04.png's whitespace, not its colours." | Adjective soup | Anchor to References; design tokens (named values for type, colour, spacing and motion) |
-| 5 | Talk first, plan before code | Once code exists, the model reads it as evidence and defends it | "Tell me what you found and exactly what you will change. No code until I say go." For a large change: "Two architectures with tradeoffs, no code." | Sunk-cost patching; changes you never agreed to | Every Off the Mode command talks first and waits for your go, except `view-project` and `revisit-state`, which only show or save where things stand |
+| 5 | Talk first, plan before code | Once code exists, the model reads it as evidence and defends it | "Tell me what you found, read back in up to three lines what you'll build, then start." For a large change: "Two architectures with tradeoffs, no code." | Sunk-cost patching; changes you never agreed to | Every Off the Mode command talks first, asks only what you alone can settle and does the rest in that reply, except `view-project` and `revisit-state`, which only show or save where things stand |
 | 6 | Verification is the prompt | An AI can only fix what it can observe | "Screenshot / at phone, tablet and wide widths, before and after. Done means the checks pass and it actually ran." | "Should work" | RULES.md §Done means verified; Prove It Works |
 | 7 | One concern per turn, fenced | With several goals the easiest one wins; anything not fenced off reads as fair game | "Only the refresh race in src/auth/refresh.ts. If the fix needs other files, stop and say why." | 14-file changes you can neither review nor revert | Change Request |
 | 8 | Context is a budget, and it rots | Dead attempts left in the history get repeated; when a tool shortens a long session on its own, it decides what is forgotten | "Save STATE.md with revisit-state, then start a fresh session." For wide reading, one scout reads once and writes a short brief that every other agent shares word for word. | The marathon session | STATE.md, kept current as the work happens |
@@ -149,14 +149,14 @@ The web measures, in plain words: LCP (Largest Contentful Paint) is when the mai
 Read .offthemode/PRODUCT.md, and .offthemode/COMPLEXITY.md if it exists. Inventory every user-facing capability in {{SCOPE: codebase, roadmap or spec at PATH}}.
 One row each: Capability | Job served (quote PRODUCT.md, or NONE) | Serves the one thing? | Actions it adds to default surfaces | Evidence of use | Verdict.
 Verdicts: CORE (produces the moment of value; keep and deepen), PARITY (expected; minimal version, moved to a secondary layer), DEFER (plausible, no evidence; remove it and log it in .offthemode/DECISIONS.md as a bet with a kill criterion), KILL (no job, contradicts a Refusal, or duplicates a path). When torn, pick the harsher verdict and say so.
-Then: the default-surface action count before and after, and a deletion plan (routes, components, flags, columns, tests) ordered so nothing breaks. Show me the plan and change nothing until I say go.
+Then: the default-surface action count before and after, and a deletion plan (routes, components, flags, columns, tests) ordered so nothing breaks. Show me the plan and change nothing until I answer.
 ```
 
 ```prompt title="Moment of Value Map"
 Map the path from first contact ({{ENTRY: landing page, store install, shared link or invite}}) to {{?MOMENT_OF_VALUE}} (.offthemode/PRODUCT.md), walking it as {{?PERSON}} on {{?DEVICE}} with {{CONTEXT: one hand, flaky 4G, ninety seconds of patience}}. If the app runs, drive it with your browser or simulator tool and time it with the project's audit-ux journey if there is one; otherwise walk the spec.
 Per step: what they see, decide, type, wait for, and what could make them leave. Totals: steps, decisions, inputs, wait, and time to first wow against the time to value in PRODUCT.md §Experience promises.
 Redesign to hit the budget, naming the mechanism behind every cut: defer (account after value), infer (locale, currency, intent from the entry point or pasted content), default (the 80% option, changeable in context), preload (sample or imported data), parallelize (start work during the previous step).
-Show the new path, the new totals and each cut's technical consequences. After my go, append each consequence to .offthemode/DECISIONS.md with the PRODUCT.md line it serves.
+Show the new path, the new totals and each cut's technical consequences. Once I answer, append each consequence to .offthemode/DECISIONS.md with the PRODUCT.md line it serves.
 ```
 
 ## P0 · Constitution
@@ -166,9 +166,9 @@ Show the new path, the new totals and each cut's technical consequences. After m
 <!-- offthemode:rules -->
 ### Working rules (for a change inside an existing product)
 - Hold every change to RULES.md as it stands. Don't rewrite it as a side effect of another task.
-- The project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) stay where they are and win on project specifics: never move or merge them. A line that contradicts the code, another rule or an Off the Mode standard, or is out of date, is shown with its fix and changed only on the user's go, recorded in DECISIONS.md. Besides those fixes, the one auto-load line is the only addition, also on the user's go.
+- The project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) stay where they are and win on project specifics: never move or merge them. A line that contradicts the code, another rule or an Off the Mode standard, or is out of date, is shown with its fix and changed only on the user's yes, recorded in DECISIONS.md. Besides those fixes, the one auto-load line is the only addition, also on the user's yes.
 - Before deciding anything, search DECISIONS.md, so a settled choice is not argued again.
-- A correction given once goes in STATE.md §Corrections seen once, with the date. Given a second time, propose one line for RULES.md §Project specifics with its reason, and add it on the user's go.
+- A correction given once goes in STATE.md §Corrections seen once, with the date. Given a second time, propose one line for RULES.md §Project specifics with its reason, and add it on the user's yes.
 - Keep STATE.md current without asking: once at the end of any reply that modifies project files or concludes a decision, after its last edit, follow revisit-state's steps (present tense, no history, never the same line twice) and append any new decision to DECISIONS.md. While an Off the Mode command runs, it touches only what the command names, and STATE.md catches up after it. An agent another session started leaves .offthemode/ alone. The user can also type revisit-state.
 - Open the whole guide to set up or redo the rules, wire the auto-load, or prune RULES.md.
 <!-- /offthemode:rules -->
@@ -200,8 +200,8 @@ Start from the RULES.md template (from get_template or the skill's templates/ fo
 |---|---|---|
 | This project | One line on what it is and for whom; platforms; the stack pinned with versions, each with its reason in DECISIONS.md; the project's own rule files, listed as still in force | "Other rule files that stay in force: AGENTS.md." |
 | Project specifics | Rules only this project needs: the stack's known traps, data rules, security boundaries, the boundaries between parts. Kept apart from the Off the Mode standards and never repeating the project's own rule files. A line stays only if it is certain to apply, is not something an AI does anyway, and is costly if missed | "The core loop works offline and syncs later, because the person edits on the train." |
-| Shipping | How the project goes live: where the code lives, the branch that goes live, the host, whether a push deploys, the deploy command, the name commits use. Setup fills it from git and the host's config, asks only what is missing, and offers to keep your answers as your usual in `~/.offthemode/ME.md` (outside every project, never a password, token or key) so the next project only asks you to confirm | "Never push, deploy or publish without my go" |
-| How to work | How doubt is handled, when to wait for your go, how questions are asked | "Anything beyond a small fix: show the plan and wait for my go." |
+| Shipping | How the project goes live: where the code lives, the branch that goes live, the host, whether a push deploys, the deploy command, the name commits use, and who it reaches (only you, or other people). Setup fills it from git and the host's config, asks only what is missing, and offers to keep your answers as your usual in `~/.offthemode/ME.md` (outside every project, never a password, token or key) so the next project only asks you to confirm | "Nothing waits for me. A reply that changed files ends with its work committed by file name, never a secret." |
+| How to work | How doubt is handled, what is asked and how, and the one-way doors that stay yours | "Ask to decide, never to start, because every needless stop teaches me to answer without reading." |
 | Guides | Each kind of work this project will see, mapped to the guide to open first | "Any screen or visual change: open the Visual Language guide." |
 | Product first | How every proposal ties back to the person and job in PRODUCT.md | "If a request contradicts a PRODUCT.md refusal, quote the line before acting." |
 | Depth | Where facts come from: specs, platform docs, the installed source, not tutorials or memory | "Before using a library API, open the installed version's types and cite file:line." |
@@ -221,7 +221,7 @@ These are also the parts most often missing.
 
 1. **Opinions with reasons.** "No raw hex colors, because the design system must stay editable in one place" also stops raw spacing values, because your AI can apply the reason to cases the rule never named. A rule without a reason is followed only where it literally applies.
 2. **Bans paired with what to do instead.** A bare ban leaves your AI with the next most likely option, which is often the same mistake in a new form. Write the replacement next to the ban.
-3. **A doubt policy that never builds on a guess, and one rule for when to wait.** Your AI writes every doubt as a hypothesis ("I think X, because Y") and confirms it in the code, the docs or by asking before anything rests on it, however small or reversible the choice. When to wait is one rule: a small fix (a typo, a one-line change) gets one line on what will change and goes ahead; anything bigger is shown as a plan and waits for your go. A go covers what the plan showed. If the work turns out to need more, and always before a schema, auth, payment, public-contract or dependency change the plan didn't show, it stops and asks again. Questions arrive batched and numbered, each with a recommended answer, so you can reply "1 ok, 2 b, 3 yours"; more rounds follow if needed.
+3. **A doubt policy that never builds on a guess, and asks to decide, never to start.** Your AI writes every doubt as a hypothesis ("I think X, because Y") and settles it in the code, the docs or by asking before anything rests on it. It asks only what you alone can settle or do (your words, your taste, a product call) and the one-way doors no undo takes back (lost data, money, messages to other people, a first publish): one numbered round, each with why and its pick, so you can reply "1 ok, 2 b, 3 yours". Meanwhile it builds what no answer changes. Your reply, in any words, is the consent: it reads back in up to three lines what it will build, writes "Any doubt, say it; I'm starting." and starts in that reply. It never asks whether to start, commit or push; a reply that changed files ends with its work committed, and pushed as §Shipping says. The reason: every needless stop teaches you to answer without reading.
 4. **A definition of done that includes seeing the result.** Checks pass, the thing actually ran, screens were looked at on phone, tablet and wide widths, and there are no new console errors. "Should work" is not done.
 
 #### Code standards, each with its reason
@@ -258,7 +258,7 @@ Add the common traps of your own stack the same way, each with its replacement a
 
 ### Load it every session
 
-Setup (the offthemode command) wires RULES.md and STATE.md into your tool's auto-load, the files it reads into every session on its own, so both are in context before your first message. It adds one line, and only that: it shows you the exact line first and adds it after you say go. To check the wiring, or to do it by hand:
+Setup (the offthemode command) wires RULES.md and STATE.md into your tool's auto-load, the files it reads into every session on its own, so both are in context before your first message. It adds one line, and only that: it shows you the exact line first and adds it on your yes. To check the wiring, or to do it by hand:
 
 | Tool | Where | What to add |
 |---|---|---|
@@ -323,13 +323,13 @@ The offthemode command drafts these files for you. Use this prompt to redo the r
 ```prompt title="Draft the Rules"
 Set up the standing rules for {{PROJECT_NAME}}: .offthemode/RULES.md, .offthemode/STATE.md and .offthemode/DECISIONS.md. Start from the templates (get_template, or the skill's templates/ folder), and read .offthemode/PRODUCT.md if it exists.
 First read the project and fill in what you can: {{?STACK}}, {{?COMMANDS}}, {{?CONVENTIONS}}. Show each thing you found with the file it came from.
-Then interview me with batched, numbered questions, each with your recommended answer and a one-line reason, in more rounds if needed. Ask only what the project can't tell you. Cover, in order: what it is and the moment of value; non-negotiables; platforms, stack and versions; the boundaries between parts and where the core sits; any area where a change always needs its own go, even inside an approved plan; the traps of this stack, each with its replacement; the file and function size limits and the screenshot sizes (the template's defaults, for me to confirm); the exact check, lint-one-file, dev, screenshot, audit and end-to-end commands. Suggest no speed, contrast or touch-size numbers; add one to §Budgets only if I ask. Stop an area when you could predict my answer to a new question in it.
+Then interview me with batched, numbered questions, each with your recommended answer and a one-line reason, in more rounds if needed. Ask only what the project can't tell you. Cover, in order: what it is and the moment of value; non-negotiables; platforms, stack and versions; the boundaries between parts and where the core sits; any area where a change is always a one-way door in this project, asked each time by its action and target; the traps of this stack, each with its replacement; the file and function size limits and the screenshot sizes (the template's defaults, for me to confirm); the exact check, lint-one-file, dev, screenshot, audit and end-to-end commands. Suggest no speed, contrast or touch-size numbers; add one to §Budgets only if I ask. Stop an area when you could predict my answer to a new question in it.
 Then draft:
-- RULES.md: every section of the template filled for this project, every standard with its reason, every ban with what to do instead, §Guides mapped to the kinds of work this project will see. §This project lists the project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) as still in force; they are never moved or merged; a line in them that is out of date or conflicts with the code, another rule or an Off the Mode standard is shown with its fix and changed only on my go, recorded in DECISIONS.md. Besides those fixes, the auto-load line is the only addition. §Project specifics holds only what those files don't already cover, and a line stays only if it is certain to apply, is not something an AI does anyway, and is costly if missed. Delete any line you would follow correctly without being told. About 150 lines at most.
+- RULES.md: every section of the template filled for this project, every standard with its reason, every ban with what to do instead, §Guides mapped to the kinds of work this project will see. §This project lists the project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) as still in force; they are never moved or merged; a line in them that is out of date or conflicts with the code, another rule or an Off the Mode standard is shown with its fix and changed only on my yes, recorded in DECISIONS.md. Besides those fixes, the auto-load line is the only addition. §Project specifics holds only what those files don't already cover, and a line stays only if it is certain to apply, is not something an AI does anyway, and is costly if missed. Delete any line you would follow correctly without being told. About 150 lines at most.
 - STATE.md: the present, and item 1 of Next with its done-check.
 - DECISIONS.md: one entry per stack choice, with rejected alternatives and why not.
 - The auto-load line for {{TOOL}}, so RULES.md and STATE.md load every session: the only addition outside .offthemode/.
-Tag anything I did not confirm [hypothesis], and confirm it with me before relying on it. Show me each file and exactly what you will create or change. Write nothing until I say go, then tell me what you wrote.
+Tag anything I did not confirm [hypothesis], and confirm it with me before relying on it. Show me each file and exactly what you will create or change. Write them on my yes, then tell me what you wrote.
 ```
 
 Normal sessions stay free-form: you just describe the work. When you want a crisp start, for example after a break or on a hard task, paste this.
@@ -342,7 +342,7 @@ Reply with:
 3. The plan in at most 7 bullets: the files you will touch, the guide you will open (RULES.md §Guides; its working rules are enough for a change inside what exists), and the DECISIONS.md entries and RULES.md lines that constrain it.
 4. How you will verify: the commands, and the screens at phone, tablet and wide widths.
 5. Your hypotheses ("I think X, because Y") and numbered questions, each with your recommended answer, or "no questions".
-Then follow RULES.md §How to work: a small fix (a typo, a one-line change) goes ahead after one line saying what will change; anything else waits for my "go". Nothing is built on a hypothesis until it is confirmed.
+Then follow RULES.md §How to work: with no questions, read back and start in this reply; otherwise build what no answer changes now, and my reply starts the rest. Nothing is built on a hypothesis until it is confirmed.
 ```
 
 Your AI runs `revisit-state` by itself after a reply that changes files or settles a decision; run it yourself before you start a fresh session to be sure. It saves where things stand, so the next session starts where this one stopped. In a tool where the commands aren't set up, paste it:
@@ -354,7 +354,7 @@ Your AI runs `revisit-state` by itself after a reply that changes files or settl
 A correction you give once is a moment. A correction you give twice is a missing rule.
 
 - **First time:** it goes in STATE.md's corrections-seen-once list, with the date.
-- **Second time:** it becomes one line in RULES.md §Project specifics, imperative and specific, with its reason, added on your go. For example: "Before using a date API, open the installed version's types. Because: an API removed in the current major version cost three rounds to compile."
+- **Second time:** it becomes one line in RULES.md §Project specifics, imperative and specific, with its reason, added on your yes. For example: "Before using a date API, open the installed version's types. Because: an API removed in the current major version cost three rounds to compile."
 - **Checkable:** once a machine can check the rule (with a lint rule, which is an automatic code check, a test or a script), add the check to §Commands and delete the prose line. The check is now the rule, and a check does not forget.
 
 | The correction was about | It goes in |
@@ -479,7 +479,7 @@ Build an expert profile for {{DOMAIN}} ({{CORE_TECH}}, used in {{STACK}} for {{P
 4. Refuse-to-ship patterns the core team would reject in review, each with its replacement, kept by the same test.
 5. Amateur tells, tie-breakers, review questions.
 Every line must be checkable against code. Ban "clean code" and "best practices". At most 120 lines. Use the header line of the other profiles in .offthemode/experts/, with pins and local exceptions for {{?STACK_VERSIONS: from the package manifest or lockfile}}.
-Show me the profile, the path .offthemode/experts/{{domain}}.md, and the one line you would add to RULES.md §Guides saying which work loads it. End with the 3 opinions you are least sure of. Write the files only after I say go.
+Show me the profile, the path .offthemode/experts/{{domain}}.md, and the one line you would add to RULES.md §Guides saying which work loads it. End with the 3 opinions you are least sure of. Write the profile in the same reply; add the RULES.md line on my yes.
 ```
 
 ### The inventor critic
@@ -507,7 +507,7 @@ Take the critic's table back to the session that built the change.
 ```prompt title="Inventor-Level Review"
 An independent review of {{PLAN_FILE | git diff BASE...HEAD}} returned this table:
 {{CRITIC_TABLE}}
-For each finding, propose a resolution: fix it, or rebut it in one line with evidence (file:line, a test, a measurement). Show the table with a resolution column and wait for my go before changing anything. Then make the fixes, run the checks in RULES.md §Commands, and show the table again with what you did.
+For each finding, propose a resolution: fix it, or rebut it in one line with evidence (file:line, a test, a measurement). Show the table with a resolution column, then make the fixes in the same reply, run the checks in RULES.md §Commands, and show the table again with what you did.
 ```
 
 If your tool supports subagents (Claude Code does), you can save the Inventor Critic brief as one, with read-only tools, so it runs in its own context from inside your session. The brief stays the same; only where it runs changes.
@@ -523,7 +523,7 @@ If your tool supports subagents (Claude Code does), you can save the Inventor Cr
 - Every new feature traces to a job in PRODUCT.md. If it serves none, ask why before planning it.
 - If the request conflicts with a PRODUCT.md line (a refusal, a tie-breaker, the moment of value), quote the line before acting.
 - Name new things in the words the users use, and propose the GLOSSARY.md §Terms entry.
-- If the change adds an entity, a surface, a data flow or a trust boundary and SKELETON.md exists, show the SKELETON.md edit in the plan and make it in the same change, on the user's go.
+- If the change adds an entity, a surface, a data flow or a trust boundary and SKELETON.md exists, show the SKELETON.md edit in the plan and make it in the same change.
 - A guess about the person, the job or the moment is written as a hypothesis and confirmed before anything rests on it.
 - Open the whole guide to write or rework the vision, PRODUCT.md or SKELETON.md, to name the product, or when a feature changes the person, the job or the moment of value.
 <!-- /offthemode:rules -->
@@ -637,7 +637,7 @@ Help me name {{?PRODUCT: from the thesis and core concept in PRODUCT.md}}. Talk 
 2. Generate at least 30 candidates across six styles: evocative real words, metaphors from the product's world, invented words, compounds, borrowed words, and plain descriptive as a baseline. Avoid category-plus-buzzword compounds and the endings everyone uses (-ly, -ify, -hub, AI).
 3. Shortlist every candidate that passes all of these: short, easy to say and spell after hearing it once, distinctive in its category, evoking the feeling or the job rather than the feature, and working in {{LANGUAGES}}. For each, one line on why it survived and one risk.
 4. Check the shortlist live with web search: .com and {{OTHER_DOMAINS}}, handles on {{PLATFORMS}}, the app stores, {{PACKAGE_REGISTRY | skip}}, and a trademark search in {{COUNTRIES}}. Mark each check found, taken or unclear, with its source. Never report availability from memory.
-5. Recommend 3, each with the sentence test ("I'll send it on X"). I choose; then write PRODUCT.md §Name with the name, why it fits and the checks, on my go.
+5. Recommend 3, each with the sentence test ("I'll send it on X"). I choose; then write PRODUCT.md §Name with the name, why it fits and the checks.
 ```
 
 ### Making the vision sound
@@ -664,7 +664,7 @@ Round 1, in order:
 7. Evidence: for person, job and moment, what I have observed, what I have heard, and what is still a hypothesis to confirm.
 
 Then interview me with batched, numbered questions, each with your recommended answer, in as many rounds as it takes. Each round attacks the weakest of person, job, moment, the one thing, refusals; say which. Reject vague answers ("users", "easy", "powerful", "all-in-one", "seamless") and re-ask sharper. Never suggest features; if I do, ask which job it serves and what it displaces. Stop when you can state the product in one sentence and predict what I would cut.
-Finally show me a draft of .offthemode/PRODUCT.md that follows its template (get_template or the skill's templates/ folder), with an evidence tag on every Person, Job and Moment line. Write each unconfirmed item as a hypothesis, "I think X, because Y"; unsettled items go to open questions, never invented. End with the 3 hypotheses most likely to be wrong and the cheapest one-day test for each, each written as a RISKS.md row. Write the files only after I say go.
+Finally show me a draft of .offthemode/PRODUCT.md that follows its template (get_template or the skill's templates/ folder), with an evidence tag on every Person, Job and Moment line. Write each unconfirmed item as a hypothesis, "I think X, because Y"; unsettled items go to open questions, never invented. End with the 3 hypotheses most likely to be wrong and the cheapest one-day test for each, each written as a RISKS.md row. Write the files in the same reply.
 ```
 
 ```prompt title="Predict My Call"
@@ -677,7 +677,7 @@ Where PRODUCT.md does not settle the answer, say so instead of guessing.
 ```
 
 ```prompt title="Generate the Skeleton"
-Read .offthemode/PRODUCT.md and .offthemode/GLOSSARY.md, and for an existing project the code. Draft .offthemode/SKELETON.md following the SKELETON.md template in the Vision and Skeleton guide exactly. Show it to me first; write it only after I say go.
+Read .offthemode/PRODUCT.md and .offthemode/GLOSSARY.md, and for an existing project the code. Draft .offthemode/SKELETON.md following the SKELETON.md template in the Vision and Skeleton guide exactly. Show it to me and write it in the same reply.
 - Artifacts, not prose: tables, Mermaid, invariants. Every term in GLOSSARY.md gets its definition and invariant in §Domain model.
 - Existing project: describe what the code does today, tag an item [decided] only where the code confirms it, and list every place the code and PRODUCT.md disagree.
 - Derive surfaces from the domain model and journeys; cut any surface no journey step requires, or justify it. One primary action each.
@@ -692,7 +692,7 @@ Read .offthemode/PRODUCT.md and .offthemode/GLOSSARY.md, and for an existing pro
 It is {{N}} months after launch and {{PROJECT_NAME}} has failed. Read .offthemode/PRODUCT.md and .offthemode/SKELETON.md.
 Write every distinct cause you can make concrete, each as a short story, covering product (nobody reached the moment of value, or the Person was imagined), experience (complexity leaked, or it looked like everything else), core feasibility (quality, latency, cost), architecture (local-to-hosted, scale, data model, sync), security and abuse, cost and operations, and my own process.
 Per cause: early warning signal, likelihood 1-5, impact 1-5, the cheapest test now, what changes in PRODUCT or SKELETON if it is real. A risk that applies to every startup is not allowed.
-Show the RISKS.md rows you would add, mark the ones needing a P2 spike, and list proposed PRODUCT and SKELETON edits. Change nothing until I say go; then write the RISKS.md rows and leave the PRODUCT and SKELETON edits for me to accept one by one.
+Show the RISKS.md rows you would add, mark the ones needing a P2 spike, and list proposed PRODUCT and SKELETON edits. Write the RISKS.md rows in the same reply, and leave the PRODUCT and SKELETON edits for me to accept one by one.
 ```
 
 ## Living Checklist
@@ -703,9 +703,9 @@ Your core concept lives in PRODUCT.md §Core concept, written during P1. The che
 
 **One command, checklist only.** `revisit-checklist` builds the checklist the first time, when the file is missing or still the blank template. After that, run it on its own to see where you stand, or with a note (`revisit-checklist add CSV export to reports`) to change the list. Type `/revisit-checklist` with the skills pack, `/mcp__offthemode__revisit-checklist` through the link in Claude Code, or just say "revisit the checklist". It edits only .offthemode/CHECKLIST.md, never code or other docs. If a change also affects the vision or the architecture, it names the doc to update and leaves that to you.
 
-**It talks first.** Every run starts with a report: what it found and exactly what it would change in the file. Nothing is written until you say go. Then it applies the change and tells you what it did.
+**It talks first.** Every run starts with a report: what it found and exactly what it will change in the file. It asks only what you alone can settle, applies the rest in the same reply and tells you what it did.
 
-| You run | It reports | After your go |
+| You run | It reports | Then |
 |---|---|---|
 | `revisit-checklist` with no checklist yet | The core concept split into fragments, in build order, one line each | Writes the file; anything already built is marked `[x]`, never `[v]` |
 | `revisit-checklist` | Commits since the last revisit mapped to items, the results of the cheap checks, each mark it would move with its evidence, and work that matches no item | Updates the marks, the header and the verified count |
@@ -784,7 +784,7 @@ SPIKE {{RISK_ID}}: {{HYPOTHESIS}}
 Read .offthemode/SKELETON.md (Core contract, NFRs, Data flow), .offthemode/RISKS.md and RULES.md §Budgets. You are on the throwaway branch spike/{{NAME}}. This code is never merged; optimize for learning speed.
 Pass if {{THRESHOLD}} · fail if {{THRESHOLD}} · timebox {{N}} hours (at the limit, stop and report what you know).
 Allowed: hardcoded inputs, one plain page, no auth, any library. Forbidden: brand styling, abstractions, touching the main app, mocking or shrinking the hard part.
-1. State the smallest experiment that could falsify the hypothesis. Wait for my go.
+1. State the smallest experiment that could falsify the hypothesis, then start it in the same reply. Any step that writes to my real accounts or data waits for my answer.
 2. Build and measure with realistic data ({{DATA_SCALE}}) on {{TARGET_DEVICE_OR_ENV}}: p50, p95, throughput for streamed output, error rate, memory, cost per run. Numbers, not impressions.
 3. If it fails, try the alternatives most likely to pass, named before you start and inside the timebox.
 4. Model-driven core: save 20-30 real inputs with expected properties to evals/ and report the pass rate.
@@ -794,10 +794,10 @@ Deliver: the verdict; a measurement table, the method and an exact repro; the co
 The feel prototype is a greybox: system font, greys, no brand. What it must get right is time. It runs at the speed the spike measured, so the people trying it feel the real wait.
 
 ```prompt title="Feel Prototype"
-FEEL PROTOTYPE for {{?MOMENT_OF_VALUE}} (.offthemode/PRODUCT.md), built on the measurements from spike {{SPIKE_ID}}, on its own throwaway branch. First show me the plan (the branch, the sequence and the three bridges) and wait for my go.
+FEEL PROTOTYPE for {{?MOMENT_OF_VALUE}} (.offthemode/PRODUCT.md), built on the measurements from spike {{SPIKE_ID}}, on its own throwaway branch. First show me the plan (the branch, the sequence and the three bridges), then build it. Putting it at a public URL waits for my answer.
 Greybox: system font, greys, no brand, no design tokens. Forbidden: brand styling, and fake speed of any kind. Required: real timings (stream at the measured throughput, delay by the measured p95, fail at the measured error rate); the whole moment-of-value sequence from trigger to result; a rough cut of the signature-moment choreography with plain transforms; and three switchable ways to bridge the wait (?bridge=stream | work | optimistic): stream partial results; show the absorbed work (the inputs visibly becoming the result); an optimistic placeholder that resolves in place.
 Deliver: a URL or build I can put in front of 3 people who match {{?PERSON}}; a 5-line session script (what I say, what I must not explain); and a notes table for me to fill: Person | Described what happened in their own words? | Would wait? | Preferred bridge | Words they used for our nouns.
-After I paste the notes: the winning bridge as one DESIGN.md constraint line, GLOSSARY.md edits where their words differ from ours, and any PRODUCT.md or RISKS.md edits. Show them to me before writing.
+After I paste the notes: the winning bridge as one DESIGN.md constraint line, GLOSSARY.md edits where their words differ from ours, and any PRODUCT.md or RISKS.md edits. Show them to me with your picks; write them once I answer.
 ```
 
 > **Rule:** The feel gate passes when at least 2 of the 3 people describe what happened in their own words and say they'd wait. If it fails, redesign the moment (what streams, what's inferred, what happens first), never the pixels.
@@ -851,7 +851,7 @@ Taste is yours, not the product's, so carry §Taste and the folder to your next 
 4. Which traits of my hates the generic AI look shares, and which traits of my loves the anti-slop look shares. Both are modes I can fall into.
 5. The tensions between things I love. This is where a product gets its edge: a direction that resolves one of them is already off the mode.
 Then interview me with batched, numbered questions on the tensions and on anything I contradicted, each with your read as the recommended answer, in more rounds if needed.
-Show me the draft of .offthemode/DESIGN.md §Taste (under 60 lines) and write it after my go. If an earlier §Taste exists, end with the diff: what I stopped loving, what is new, which principle got sharper.
+Show me the draft of .offthemode/DESIGN.md §Taste (under 60 lines) and write it once I answer. If an earlier §Taste exists, end with the diff: what I stopped loving, what is new, which principle got sharper.
 ```
 
 ### Where references come from
@@ -885,7 +885,7 @@ Saturated traits live in DESIGN.md §Saturated and need a written product reason
 ```prompt title="Saturation Check"
 For each trait in .offthemode/design/directions/*.md and .offthemode/DESIGN.md (faces, colour strategy, grid model, surface treatment, motion signature, layout device), estimate how saturated it is. Search if you can (Fonts In Use, Framer and Webflow template marketplaces, recent design-award galleries, all from the last 12 months); otherwise say you are estimating. Roughly 20+ hits, or a match in DESIGN.md §Saturated, means mainstream: keep it only with a written product reason, or replace it with a move derived from a §Taste tension.
 Output: Trait | Evidence | Verdict (keep with reason | replace) | Replacement.
-Change nothing. After my go, log each kept trait's reason in .offthemode/DECISIONS.md and apply the replacements.
+Change nothing until I answer. Then log each kept trait's reason in .offthemode/DECISIONS.md and apply the replacements.
 ```
 
 ### Three directions, built apart
@@ -907,14 +907,14 @@ Act as a design director with a type designer's eye. .offthemode/design/refs/ ho
 Do not describe the images. Per reference: the ONE decision that makes it work, what it costs, and why it works perceptually.
 Then synthesize the principles for this product, keeping only those the references really support and the product's job needs. Each is a falsifiable sentence, not an adjective; traced to references by filename and to a §Taste principle or tension; expressed in type, colour, layout, motion and copy; paired with its failure mode (how an AI would misapply it into cliche).
 Also list: shared traits that are only current fashion or appear in §Saturated (dropped); 3 tensions between references to resolve; what NONE of the references do that this product's job demands. Never copy a layout, logo or signature element.
-Show me the result, then write it to .offthemode/DESIGN.md §Principles after my go.
+Show me the result, with your pick for each tension, and write it to .offthemode/DESIGN.md §Principles once I answer.
 ```
 
 ```prompt title="Three Divergent Directions"
 Direction {{A, B or C}} of three for {{?PRODUCT_NAME}}. This is a fresh session. The other directions exist elsewhere; do not look for them.
 Anchor, assigned by me: {{REF_FILE in .offthemode/design/refs/}}; take {{WHAT_TO_TAKE}}. Forbidden trait: {{TRAIT}}.
 Read .offthemode/DESIGN.md §Taste, §Principles, §Bans and §Saturated. The §Already used table is a ban list: share at most one attribute (column) with any row.
-First reply with a two-word name, a one-sentence thesis naming the metaphor, the density and the colour strategy, and the knob values you plan. Build after my go.
+Start your reply with a two-word name, a one-sentence thesis naming the metaphor, the density and the colour strategy, and the knob values you plan, then build it.
 Deliver: src/styles/directions/{{a, b or c}}.css using the tokens.css variable names; /lab/{{a, b or c}}/core ({{?HARDEST_SCREEN}} on edge-case data: long names, empty, max rows, error) and /lab/{{a, b or c}}/entry ({{?SECOND_SCREEN}}); a working signature moment; light and dark.
 Constraints: no HARD ban and no DEFAULT-OFF ban; one primary action per surface; real copy in the product's voice; no new dependency without a reason. Touch only the direction file and /lab/{{a, b or c}}.
 Finish: run {{?SHOTS_CMD}} on both routes and write .offthemode/design/directions/{{a, b or c}}.md: thesis, bet, weakest point, the §Taste tension it resolves. Do not compare yourself to anything and do not recommend.
@@ -1101,7 +1101,7 @@ tokens.css is locked at v1. Build /specimen, one page rendering the whole visual
 5. Data: a line, bar, area and table on large realistic data with the --data-* tokens and the highlight rule, direct labels, and designed empty, partial and loading chart states; shoot it with the colour-blind passes too.
 6. A real {{?HARDEST_SCREEN}} fragment built only from the parts above, and the signature moment on its own.
 Behaviour from {{PRIMITIVES_LIB}}; styling is ours. Zero raw colour, size or duration values in component files (1px hairlines excepted). Theme and reduced-motion toggles at the top.
-Before building, list any component or state the tokens cannot express yet, as token proposals, and wait for my go. When it is built, run the Screenshot Critique Loop on /specimen.
+Before building, list any component or state the tokens cannot express yet, as token proposals, each with your pick; build what they don't touch, and the rest once I answer. When it is built, run the Screenshot Critique Loop on /specimen.
 ```
 
 ### The craft layers
@@ -1120,7 +1120,7 @@ Before building, list any component or state the tokens cannot express yet, as t
 An AI writing CSS is guessing at pixels, and its confidence reflects how plausible the code looks, not how it renders. Give it eyes, and split the judging. A **deterministic audit** (a script that gives the same answer every run) owns the pixel facts a model cannot read from a screenshot: 1-3 px baseline drift, off-token values leaking in from library CSS or inline styles, undersized targets, contrast, accent share. The **critic** judges only what needs judgment: hierarchy, distinctiveness, feel. Your AI can explore with a browser tool (Playwright MCP, Chrome DevTools MCP); evidence comes from scripts. On native, capture with `xcrun simctl io booted screenshot`, `adb exec-out screencap -p` or Maestro. The app sets a `data-ready` attribute once data and fonts have settled, because waiting for "network idle" never finishes in apps with live connections (SSE, WebSockets, polling).
 
 ```prompt title="Screenshot and Audit Scripts"
-Write two scripts in this project's stack (Playwright for web; simulator or emulator tools for native) and add both to .offthemode/RULES.md §Commands. Show me the plan first; write them after my go.
+Write two scripts in this project's stack (Playwright for web; simulator or emulator tools for native) and add both to .offthemode/RULES.md §Commands. Show me the plan, then write them in the same reply.
 shots ROUTES: per route, at each size in screenshot_sizes (RULES.md §Budgets), a full-page shot in light and in dark at 2x density, touch emulated under 768 px. Force the theme two ways, the system colour scheme plus data-theme on the root element set before page scripts run, so the dark shot really is dark. Wait for [data-ready] and document.fonts.ready, never network idle; disable animations. Save shots/ROUTE-WIDTH-THEME.png, and add shots/ to .gitignore: shots are rebuilt on every run, and the ones worth keeping go to tests/baselines/. With VISION=deuteranopia,protanopia, add light shots through Chrome's Emulation.setEmulatedVisionDeficiency. Exit 1 if a light and dark pair is byte-identical: the theme is not switching.
 audit ROUTES: same sizes and themes. Collect every custom property declared on :root (media queries included) and resolve each through a hidden probe element for color, padding, font-size, font-family, transition-duration and box-shadow; those computed values are the only allowed ones. On every visible element outside [data-audit-skip], check text colour, size and face, background, padding, gaps, corner radius, shadow and transition duration against that set, ignoring 0, none, auto and transparent. Also flag, when RULES.md §Budgets holds those keys, text contrast against the nearest opaque background below contrast_text (contrast_large from large_text_px, or large_bold_text_px when bold); and always flag interactive elements under --touch-min when the tokens define it, and same-size sibling baselines in a row that differ by 1-3 px. Report the share of the first viewport filled with --accent. Print up to 40 findings per route, size and theme (element, property, value). Exit 1 on any finding.
 ```
@@ -1139,7 +1139,7 @@ Loop on {{ROUTE}}, one round at a time:
 2. Get a Design Critic review of the new shots from a session that did not build them, twice with the order swapped. If you cannot start one, stop and ask me to run it and paste the findings back.
 3. Fix the critic's findings, highest impact first, with tokens and component styles only.
 4. Re-shoot, re-audit and diff: improved, regressed.
-Before round 1, show me the audit findings, what you plan to fix and roughly what a round costs; after my go, run the rounds without asking again. Stop when the audit is clean and the .offthemode/DESIGN.md §Rubric ship bar is met, or when a round flips no loss (more rounds would go in circles). Then list what remains for my taste call. Never say it "looks great"; report wins, losses and ties.
+Before round 1, show me the audit findings, what you plan to fix and roughly what a round costs, then run the rounds without asking. Stop when the audit is clean and the .offthemode/DESIGN.md §Rubric ship bar is met, or when a round flips no loss (more rounds would go in circles). Then list what remains for my taste call. Never say it "looks great"; report wins, losses and ties.
 ```
 
 Vague feedback gets ignored or overcorrected; pixel-level feedback gets fixed. "Too cluttered" becomes "7 equal-weight toolbar buttons: keep Run as primary, move 5 to overflow, delete Refresh (auto-refresh exists)". "Looks generic" becomes "the 3-card row is the tell: make it one sequence where each item shows the real output it describes".
@@ -1151,7 +1151,7 @@ Audit {{SCOPE}} for statistical-average UI; every hit is a bug.
 3. Values: run {{?AUDIT_CMD}}; framework defaults and raw values become tokens. Icons that repeat their label: deleted.
 4. Delete test: remove each element in turn; if nothing is lost, it stays deleted.
 5. The signature moment exists and is the only loud thing.
-Report the findings and the planned changes first, and change nothing until I say go. Then make them and give a change summary with before and after screenshots.
+Report the findings and the planned changes, then make them and give a change summary with before and after screenshots.
 ```
 
 ### Enforce the bans
@@ -1323,7 +1323,7 @@ Ship bar: beats the 2-anchor on every criterion, and the 3-anchor on 2 (Distinct
 - Validate input at every boundary (HTTP, webhooks, queue messages, env, vendor responses), then trust the types. Errors use the project's error catalog.
 - A mutation that charges, sends or calls a vendor must be safe to retry, with an idempotency key (one id per request, so a repeat is done only once).
 - Contract changes are additive only, unless the user approves a versioning plan.
-- A new dependency, service or environment variable gets a DECISIONS.md entry and an updated env check, on the user's go.
+- A new dependency, service or environment variable gets a DECISIONS.md entry and an updated env check; a new dependency, or a service that costs money or receives the product's data, is asked in the round.
 - A page meant to be found (PRODUCT.md, Found by) stays rendered on the server or prebuilt, and robots.txt changes only with its DECISIONS.md entry (Always-On · Being Found).
 - Open the whole guide to choose hosting or the data architecture, to add an entity or a service, or to change the API style.
 <!-- /offthemode:rules -->
@@ -1375,7 +1375,7 @@ The schema comes first in P4, and its nouns become P5's navigation. An invariant
 > **Trap:** Tables generated from UI mocks are screen-shaped and break the moment a second screen needs the same data. Model the domain, then shape view models per screen.
 
 ```prompt title="Data Model With Invariants"
-Read .offthemode/PRODUCT.md, .offthemode/SKELETON.md, .offthemode/GLOSSARY.md and .offthemode/ROUTES.md. No application code yet: show me the design and wait for my go.
+Read .offthemode/PRODUCT.md, .offthemode/SKELETON.md, .offthemode/GLOSSARY.md and .offthemode/ROUTES.md. No application code yet: show me the design, then write the schema.
 Design the data model for {{?PRODUCT_NAME}} as someone who has run {{DATABASE}} at maintainer level. Reason from the engine's real behavior (constraints, locking, index structures, isolation), not ORM tutorials.
 1. Entities named as the user names them (the Terms in GLOSSARY.md, definitions from SKELETON.md §Domain model): who can see or change each, and its lifecycle states.
 2. Relationships: cardinality and deletion semantics (cascade, restrict, soft-delete, archive), each justified.
@@ -1406,7 +1406,7 @@ Paginate with cursors. Old mobile builds stay live for months, so contract chang
 ```prompt title="Contract-First API"
 From {{SCHEMA_PATH}} and .offthemode/ROUTES.md, define the API contract before any handler exists. Style {{CONTRACT_STYLE}}; clients {{CLIENTS}}.
 Per operation: authentication; the authorization rule (matrix in .offthemode/SECURITY.md); input and output schemas in {{SCHEMA_LIB}}; catalog error codes (problem+json, never ad-hoc strings); idempotency (natural, or Idempotency-Key with storage and replay); cursor pagination and filter/sort params matching the URL state in ROUTES.md; rate-limit bucket; cache semantics; compatibility (additive only, or a versioning plan).
-Show me the contract and wait for my go. Then generate a typed client and a mock server the frontend can use now, and write contract tests (malformed -> 400 problem, no auth -> 401, wrong actor -> 403, success -> the documented shape). Flag screens that need more than one round-trip and propose screen-shaped endpoints. Responses are view models, never raw rows.
+Show me the contract, then generate a typed client and a mock server the frontend can use now, and write contract tests (malformed -> 400 problem, no auth -> 401, wrong actor -> 403, success -> the documented shape). Flag screens that need more than one round-trip and propose screen-shaped endpoints. Responses are view models, never raw rows.
 ```
 
 ### The backbone
@@ -1489,7 +1489,7 @@ export const env = parsed.data;
 ```
 
 ```prompt title="Prod-Parity Setup"
-Goal: moving {{?PRODUCT_NAME}} from local to {{?DEPLOY_TARGET}} is a non-event; environments differ in config values only. Show me the plan and wait for my go before changing anything.
+Goal: moving {{?PRODUCT_NAME}} from local to {{?DEPLOY_TARGET}} is a non-event; environments differ in config values only. Show me the plan, then build it; anything that writes to my accounts or puts secrets somewhere new waits for my answer.
 1. A one-command local stack ({{COMPOSE_OR_DEVCONTAINER}}) with prod's major versions of {{DATABASE}}, {{QUEUE_OR_CACHE}}, the sync server if any, and S3-compatible storage. No SQLite for dev, no in-memory stand-ins for anything durable in prod.
 2. Boot-time env validation ({{?ENV_CHECK_CMD}}) that fails with key names only; server and client vars split by the framework prefix; .env.example kept in sync; secrets from {{SECRETS_MANAGER}}; secret scanning in pre-commit and CI.
 3. CI: typecheck, lint, unit and contract tests, migrations on an empty DB, seed; block the merge on failure. Migrations run as a release step before new code serves traffic.
@@ -1503,7 +1503,7 @@ Choose hosting for {{?PRODUCT_NAME}} from workload facts, not popularity. Every 
 Facts: clients {{CLIENTS}}; users at launch / at 12 months {{N_LAUNCH}} / {{N_12MO}}; peak RPS = DAU x sessions x requests per core journey (ROUTES.md) x peak ratio; longest job {{LONGEST_JOB}}; realtime or sync {{REALTIME_OR_SYNC}}; regions {{REGIONS}}; budget {{BUDGET}}; ops appetite {{OPS_APPETITE}}; core envelope from P2 {{?CORE_CONTRACT}}.
 1. Score serverless, edge, managed containers and VPS on: monthly cost at launch, 10x and 100x (egress, storage, seats, per-call APIs {{PAID_APIS}}); cold starts on the core journey; long-running work; WebSockets and sync servers; compute-to-DB latency; lock-in; ops burden.
 2. What breaks first at 10x (connections, a lock, a sequential scan, a vendor rate limit); DB size at 12 months; cost per active user and per core action.
-Output: the matrix with numbers; one recommendation with its strongest reason and a "revisit when"; the escape hatch (jobs behind an interface, storage behind the S3 API) that keeps a future move under a week. Show me all of it and wait for my go; then record it as a D-### entry in .offthemode/DECISIONS.md and summarize it in .offthemode/ARCHITECTURE.md.
+Output: the matrix with numbers; one recommendation with its strongest reason and a "revisit when"; the escape hatch (jobs behind an interface, storage behind the S3 API) that keeps a future move under a week. Show me all of it; once I answer, record it as a D-### entry in .offthemode/DECISIONS.md and summarize it in .offthemode/ARCHITECTURE.md.
 ```
 
 > **Pro move:** Logs give your AI context at runtime too. Give it one command that tails structured logs and recent errors, list it in RULES.md §Commands, and add a line to RULES.md: read runtime evidence before theorizing about a bug. An AI that can observe stops guessing.
@@ -1511,7 +1511,7 @@ Output: the matrix with numbers; one recommendation with its strongest reason an
 ```prompt title="Failure-Mode Review"
 Review {{SCOPE}} as the engineer on call at 3am. For every dependency and core-journey step in .offthemode/ROUTES.md: what happens when it is slow (its slowest 1 in 100 calls, p99, ten times slower), down, returns garbage, or succeeds twice? What does the user see (no matching state in the ROUTES.md state inventory is a finding)? Which invariant is at risk? How do we find out ("a user tells us" is a finding)? How do we recover, with the exact command?
 Also cover: a deploy mid-request, a migration failing halfway, 1M queued jobs, secret rotation, DB connections exhausted, duplicate or out-of-order webhooks, clock skew, a sync client offline for a week, one user hammering the most expensive endpoint.
-Output: Failure | Blast radius | User sees | Detection | Recovery | Fix now / accept / later. Show me the table and wait for my go, then implement the fix-now rows, smallest first.
+Output: Failure | Blast radius | User sees | Detection | Recovery | Fix now / accept / later. Show me the table, then implement the fix-now rows, smallest first.
 ```
 
 ```file path=".offthemode/ARCHITECTURE.md"
@@ -1574,7 +1574,7 @@ Derive the IA of {{?PRODUCT_NAME}} from its domain, not a generic app layout. In
 3. Routes: collection + detail per object; per multi-field verb choose inline edit, sheet or route; stateful modals get a URL.
 4. URL state per route with types and defaults; history rule (push / replace / none) per interaction.
 5. Palette commands and shortcuts. Mobile: which destinations become tabs (3-5), the stack under each, a deep link per route.
-Show me the object map and the ranking first and wait for my go. Then write .offthemode/ROUTES.md. Flag anywhere the IA forces the user to understand system complexity.
+Show me the object map and the ranking first, then write .offthemode/ROUTES.md. Flag anywhere the IA forces the user to understand system complexity.
 ```
 
 ```file path=".offthemode/ROUTES.md"
@@ -1640,7 +1640,7 @@ function view(s: Upload) {
 
 ```prompt title="State Inventory Audit"
 Audit every screen in .offthemode/ROUTES.md for missing states; a happy path alone is not a finished screen. Fill the state inventory (first-run, empty, loading, partial, ideal, error, offline, permission-denied, plus stale or over-limit where relevant): what the user sees, the one primary action, the implementing component or MISSING. Apply the state rules table; errors map from the error catalog's codes, with input preserved.
-Report the missing-cell count per screen and the order you would fix them in, highest-traffic screens first. Wait for my go. Then add the dev-only state switcher, implement the missing states, and report missing-cell counts before and after.
+Report the missing-cell count per screen and the order you would fix them in, highest-traffic screens first. Then add the dev-only state switcher, implement the missing states, and report missing-cell counts before and after.
 ```
 
 On mobile, tabs hold 3-5 peer nouns, each with its own stack, and tapping the active tab again returns to the top of its stack. A cold deep link builds its back stack: open `/projects/12/tasks/9` from a notification, press back, and you land on the project, not outside the app. Spend the signature transition on exactly one move, into your key object, and cross-fade under reduced motion.
@@ -1655,7 +1655,7 @@ Walk {{?APP_URL}} with {{BROWSER_TOOL}} as a first-time user and as a power user
 4. Change every filter, tab and sort, reload, and open the URL in a fresh context: the view must reproduce.
 5. Run the core journeys keyboard-only and touch-only, at each of {{?SCREENSHOT_SIZES: screenshot_sizes in RULES.md §Budgets}}, throttled and offline. Timing comes from {{?AUDIT_CMD}} (the audit-ux journey), not from watching: one tool round-trip is slower than the feedback budget.
 6. Force every state via the switcher; screenshot each.
-Report Route | Check | Expected | Actual | Screenshot | Severity (blocker, friction, polish). End with the three changes that remove the most friction on the path to {{?MOMENT_OF_VALUE}}. Wait for my go.
+Report Route | Check | Expected | Actual | Screenshot | Severity (blocker, friction, polish). End with the three changes that remove the most friction on the path to {{?MOMENT_OF_VALUE}}, then make them.
 ```
 
 ```prompt title="Five-Person Test"
@@ -1663,7 +1663,7 @@ Write a test script for journey {{JOURNEY_ID | J1}} in .offthemode/ROUTES.md, to
 1. Screener: who counts as {{?PERSON}} (situation, tools used today, how often they do the job), and who is out.
 2. One scenario in their words, with none of our UI terms or GLOSSARY nouns, and 3 tasks, the first ending at {{?MOMENT_OF_VALUE}}.
 3. What I measure: time to the moment of value, first-click correctness per task, pauses of three seconds or more (where, and what they said), and the words they use for our nouns. They think aloud; I never help beyond "what would you do?".
-After I paste the notes, output: Task | Success | Time | Pause points | Their word vs the GLOSSARY term. Then the 3 changes that remove the most hesitation, each tried first as a subtraction, default or inference before any new UI, plus GLOSSARY and copy edits wherever their words differ from ours. Wait for my go before changing anything.
+After I paste the notes, output: Task | Success | Time | Pause points | Their word vs the GLOSSARY term. Then the 3 changes that remove the most hesitation, each tried first as a subtraction, default or inference before any new UI, plus GLOSSARY and copy edits wherever their words differ from ours. Build the 3 changes in that reply; make the GLOSSARY and copy edits once I answer, because names are mine to choose.
 ```
 
 > **Rule:** The gate passes when at least 4 of 5 reach the moment of value unaided, inside the time to value in PRODUCT.md §Experience promises. Below that, make the three changes and test five new people, never the same five. Then update the evidence in PRODUCT.md: Person, Job and Moment are now observed, not hypotheses, and their rows in RISKS.md can be retired.
@@ -1765,7 +1765,7 @@ Paste the audit into a new session, not the one that built the screens.
 ```prompt title="Complexity Audit"
 You are reviewing screens you did not build and have no memory of building. Audit rendered screens, not code; read .offthemode/PRODUCT.md and .offthemode/COMPLEXITY.md first. Screens {{ROUTES | "the core flow"}} at each of {{?SCREENSHOT_SIZES: screenshot_sizes in RULES.md §Budgets}}, each in empty, loading, error and populated states (via the state switcher), measured on the L1 state.
 Per surface: (1) count, do not estimate: distinct actions (the counting rule in COMPLEXITY.md), required decisions, mandatory inputs, competing emphasis, nav destinations; show the score against budget; (2) blur test on a blurredVision render: what stands out? If it is not the primary action, or two things compete, name them; (3) elements that belong in another layer (L0/L2/L3); (4) dead ends, confirms that should be undo, settings that should be defaults, hover-only actions, decoration carrying no information.
-Output one table, worst overage first: surface, score/budget, top 3 offenders with evidence. Fix nothing and recommend no moves; the Subtraction Pass chooses them. Then wait for my go before appending the scores to the Audit log in COMPLEXITY.md.
+Output one table, worst overage first: surface, score/budget, top 3 offenders with evidence. Fix nothing and recommend no moves; the Subtraction Pass chooses them. Then append the scores to the Audit log in COMPLEXITY.md.
 ```
 
 ```prompt title="Subtraction Pass"
@@ -1776,7 +1776,7 @@ Bring {{SURFACE}} within budget, using the latest Complexity Audit. Every job in
 4. Disclose (L2) on selection, focus, expansion or long-press; name the trigger. Hover never as the only path.
 5. Relocate (L3) to palette, shortcut or advanced panel, still findable by search.
 6. Merge controls never used independently.
-Exactly one primary action survives; nothing moves to L2/L3 without a findable trigger; the signature moment is untouched; no new UI may solve a subtraction. Show element -> fate -> mechanism and wait for my go. Then implement, re-render, re-score, and re-run the core job keyboard-only and touch-only.
+Exactly one primary action survives; nothing moves to L2/L3 without a findable trigger; the signature moment is untouched; no new UI may solve a subtraction. Show element -> fate -> mechanism, then implement, re-render, re-score, and re-run the core job keyboard-only and touch-only.
 ```
 
 Before a screen exists, fill its Disclosure map row. Assign each capability to exactly one layer, give every L2 item its intent signal and every L3 item its palette name and shortcut, and list anything that won't fit the L1 limit as a product question to decide, not a layout problem to solve.
@@ -1787,12 +1787,12 @@ Build the power layer for {{?PRODUCT_NAME}} without touching default surfaces. R
 2. Shortcuts: single keys for the verbs people use most, outside text fields, modifiers otherwise, a "?" overlay; no conflicts with OS, browser or assistive-tech bindings.
 3. Bulk ops: shift-click ranges, Cmd/Ctrl-click, select all in view; one undo reverts the batch.
 4. After a user repeats a slow path {{3}} times, show its shortcut once, inline and dismissible.
-Zero additions to L1 beyond a palette hint; every command reachable without a keyboard. Show me the command list and the shortcut map first and wait for my go. When it is built, test the core job keyboard-only and report the time against the mouse path.
+Zero additions to L1 beyond a palette hint; every command reachable without a keyboard. Show me the command list and the shortcut map first, then build it. When it is built, test the core job keyboard-only and report the time against the mouse path.
 ```
 
 ## P6 · Core Build & Iteration
 
-> **Output:** vertical slices merged but switched off in production behind expiring flags, each closing a `.offthemode/CHECKLIST.md` item with its evidence; change requests numbered CR-### in branch names and commit messages; screenshot baselines committed with the tests in `tests/baselines/`; evals gating every change to a model-driven core; refactor checkpoints and drift checks on a cadence; `.offthemode/STATE.md` kept current as the work happens, and decisions appended to `.offthemode/DECISIONS.md`.
+> **Output:** vertical slices merged but switched off in production behind expiring flags, each closing a `.offthemode/CHECKLIST.md` item with its evidence; change requests numbered CR-### in commit messages and in any branch RULES.md §Shipping makes for them; screenshot baselines committed with the tests in `tests/baselines/`; evals gating every change to a model-driven core; refactor checkpoints and drift checks on a cadence; `.offthemode/STATE.md` kept current as the work happens, and decisions appended to `.offthemode/DECISIONS.md`.
 
 <!-- offthemode:rules -->
 ### Working rules (for a change inside an existing product)
@@ -1816,9 +1816,9 @@ Build vertical slices, not horizontal layers. Layers (all tables, then all endpo
 
 ```prompt title="Vertical Slice"
 Vertical slice: {{SLICE_NAME}} (usually the next open item in .offthemode/CHECKLIST.md). Fence, the only files you may edit: {{FENCE}}. If I left the fence blank, propose one: the feature folder plus the files your plan names.
-Plan first. Change nothing until I say go.
-Resolve these from the docs and show each with its source ("PERSON <- PRODUCT.md L7"): {{?PERSON}}, {{?JOB}} and {{?MOMENT_OF_VALUE}} (PRODUCT.md); {{?PRINCIPLE}} it serves (DESIGN.md or PRODUCT.md); {{?JOURNEY_STEP}} (ROUTES.md); {{?EDGE_CASES}} (the edge seed profile); {{?FLAG_NAME}} (the flags module's naming). Ask only about what the docs don't answer. Write any doubt as "I think X, because Y" and confirm it before building on it.
-Restate the slice in 5 lines: person, job, moment of value, the single primary action, the principle. Then work in this order, stopping for my review after step 2:
+Plan first. Show me the plan, then build it.
+Resolve these from the docs and show each with its source ("PERSON <- PRODUCT.md L7"): {{?PERSON}}, {{?JOB}} and {{?MOMENT_OF_VALUE}} (PRODUCT.md); {{?PRINCIPLE}} it serves (DESIGN.md or PRODUCT.md); {{?JOURNEY_STEP}} (ROUTES.md); {{?EDGE_CASES}} (the edge seed profile); {{?FLAG_NAME}} (the flags module's naming). Ask only about what the docs don't answer. Write any doubt as "I think X, because Y" and settle it in the code or docs, or put it in the round, before building on it.
+Restate the slice in 5 lines: person, job, moment of value, the single primary action, the principle. Then work in this order:
 1. Data: migration plus seed rows covering empty, max length, unicode, a soft-deleted owner and the edge cases.
 2. Contract: request/response types and error codes. Show them before implementing.
 3. API: validation at the boundary; the authorization matrix enforced on the server.
@@ -1842,7 +1842,7 @@ ACCEPTANCE:
 - [ ] {{OBSERVABLE_CRITERION}}
 - [ ] Net visible actions on {{SURFACE}}: +0, or a reason for each one added
 VERIFY: {{VERIFY_METHOD}}, for example "test X red before, green after", "screenshots at each of screenshot_sizes (RULES.md §Budgets), light and dark, diffed against tests/baselines/, {{?AUDIT_CMD}} clean", or "p95 of Y (the time 95 of 100 runs beat) inside its RULES.md §Budgets limit".
-PROCESS: restate the change in 3 lines with the files you will touch; if any is outside the fence, stop. Wait for my go. Make a checkpoint commit "wip: before CR-{{NNN}}", then the smallest change that meets the criteria. Evidence, not claims. Anything you notice outside the fence becomes a proposed follow-up CR. Finish by running the checks in RULES.md §Commands, commit with "CR-{{NNN}}" in the message, and report the id, a one-line summary, the files and the commit hash. Then save where things stand with revisit-state's steps.
+PROCESS: restate the change in 3 lines with the files you will touch; if any is outside the fence, stop. Otherwise make a checkpoint commit "wip: before CR-{{NNN}}", then the smallest change that meets the criteria. Evidence, not claims. Anything you notice outside the fence becomes a proposed follow-up CR. Finish by running the checks in RULES.md §Commands, commit with "CR-{{NNN}}" in the message, and report the id, a one-line summary, the files and the commit hash. Then save where things stand with revisit-state's steps.
 ```
 
 ### Iteration loops
@@ -1851,8 +1851,8 @@ PROCESS: restate the change in 3 lines with the files you will touch; if any is 
 
 ```prompt title="Test-First"
 Behavior: {{BEHAVIOR}}. Rules and edge cases: {{RULES}}, including empty, huge, concurrent, offline, unauthorized.
-Phase 1, tests only. First list the tests you will write in {{TEST_PATH}}, one line each (the happy path, every rule, edge case and failure mode), and wait for my go. Then write them, confirm each fails for the intended reason (an assertion, not an import error), commit "test: {{BEHAVIOR}} (red)" and stop.
-Phase 2, after my go: the minimum implementation to pass. Never edit, skip, weaken or delete a phase-1 test; if one looks wrong, stop and argue. Commit "feat: {{BEHAVIOR}} (green)".
+Phase 1, tests only. First list the tests you will write in {{TEST_PATH}}, one line each (the happy path, every rule, edge case and failure mode), then write them, confirm each fails for the intended reason (an assertion, not an import error), commit "test: {{BEHAVIOR}} (red)".
+Phase 2, after the red commit: the minimum implementation to pass. Never edit, skip, weaken or delete a phase-1 test; if one looks wrong, stop and argue. Commit "feat: {{BEHAVIOR}} (green)".
 Phase 3: refactor, with the suite green after every step.
 ```
 
@@ -1865,11 +1865,11 @@ Phase 3: refactor, with the suite green after every step.
 **Rot control.** Inside files a CR already touches, your AI may fix one small smell, in its own commit. Everything else becomes a follow-up CR. Refactor checkpoints are triggered by events, not the calendar: every 5 CRs, a file past max_file_lines in RULES.md §Budgets, the same fix in three places, or a slice at twice its estimate.
 
 ```prompt title="Refactor Checkpoint"
-Refactor checkpoint after {{LAST_CR_ID}}; behavior must not change. Survey {{SCOPE}} and rank issues by future cost: duplicated logic, oversized files, imports crossing the boundaries in RULES.md §Code or .offthemode/ARCHITECTURE.md, dead exports, two patterns for one job, expired flags. Propose the refactors whose payoff beats their risk now, each with payoff, risk and files, and stop for my go.
-One commit per approved refactor, the full suite after each, revert on red. No new dependencies, contract changes or visual changes; tests/baselines/ must still match and evals must not regress. Then update .offthemode/ARCHITECTURE.md if the structure moved, and save where things stand with revisit-state's steps.
+Refactor checkpoint after {{LAST_CR_ID}}; behavior must not change. Survey {{SCOPE}} and rank issues by future cost: duplicated logic, oversized files, imports crossing the boundaries in RULES.md §Code or .offthemode/ARCHITECTURE.md, dead exports, two patterns for one job, expired flags. Propose the refactors whose payoff beats their risk now, each with payoff, risk and files, then make them.
+One commit per refactor, the full suite after each, revert on red. No new dependencies, contract changes or visual changes; tests/baselines/ must still match and evals must not regress. Then update .offthemode/ARCHITECTURE.md if the structure moved, and save where things stand with revisit-state's steps.
 ```
 
-**Git is the undo button.** Your tool's undo tracks file edits, not what shell commands did to your database or dependencies. So: a checkpoint commit before every editing run, a branch per CR, and a main branch that is always green.
+**Git is the undo button.** Your tool's undo tracks file edits, not what shell commands did to your database or dependencies. So: a checkpoint commit before every editing run, one branch per request when the work reaches other people (RULES.md §Shipping), and a live branch that is always green.
 
 > **Pro move:** When a change has real alternatives, run up to three attempts side by side. A git worktree is a second working folder on the same repo, on its own branch; give each one its own port, database and env file. Give each attempt a different constraint (A led by typography, B by motion, C by removing something). The same prompt three times gives you three samples of one mode.
 
@@ -1895,18 +1895,18 @@ git worktree remove ../myapp-b && git branch -D exp/cr-012-b
 | 8 | Write the 20-line kernel yourself, or change the requirement | Some things are cheaper to solve than to specify |
 
 ```prompt title="Hypotheses Before Fixes"
-Stop fixing. List 3 distinct hypotheses for {{BUG}}, each with evidence for and against and one cheap experiment (a log line, a test, a curl) that would falsify it. Run the experiments, which change no code beyond a temporary log line, and report the results with the fix you propose. Wait for my go, then fix only the confirmed cause and add a regression test.
+Stop fixing. List 3 distinct hypotheses for {{BUG}}, each with evidence for and against and one cheap experiment (a log line, a test, a curl) that would falsify it. Run the experiments, which change no code beyond a temporary log line, and report the results with the fix you propose, then fix only the confirmed cause and add a regression test.
 ```
 
 **Drift.** Thirty sensible CRs later, you have a second accent colour, four button styles and a settings page nobody designed. As a long session's context gets compacted (summarized to fit), early anchors lose weight. Three habits hold the line: every session starts from RULES.md and STATE.md, every CR names the principle it serves, and a drift check runs every 5 CRs and before each release. Intentional drift gets written into PRODUCT.md or DESIGN.md with a DECISIONS.md entry. Undocumented drift is a bug.
 
 ```prompt title="Drift Check"
-Drift check after {{LAST_CR_ID}}. Read-only: change nothing. Read .offthemode/PRODUCT.md and .offthemode/DESIGN.md in full; screenshot {{KEY_SURFACES}} at each of screenshot_sizes (RULES.md §Budgets), light and dark; read the code behind each. Leave DECISIONS.md and STATE.md until the end, so you judge what is there, not what was intended.
+Drift check after {{LAST_CR_ID}}. Read-only until the report: change nothing. Read .offthemode/PRODUCT.md and .offthemode/DESIGN.md in full; screenshot {{KEY_SURFACES}} at each of screenshot_sizes (RULES.md §Budgets), light and dark; read the code behind each. Leave DECISIONS.md and STATE.md until the end, so you judge what is there, not what was intended.
 1. Product: controls that serve no principle, surfaces over budget or with 2 or more primary actions, complexity pushed onto users that the system could infer.
 2. Visual: the De-Genericize checks and {{?AUDIT_CMD}} (report, don't fix); duplicate components; drift toward anything DESIGN.md bans or names as overused.
 3. Signature moment: intact, fast, still the one loud thing, compared against tests/baselines/.
 4. Architecture: the architecture you infer from the code, in 10 lines; where it disagrees with the boundaries in RULES.md §Code and .offthemode/ARCHITECTURE.md; whether {{CORE_MODULE}} still iterates without touching routing, auth or data access; code that looks copied from a tutorial.
-Give evidence per deviation (file:line or screenshot), marked ACCIDENTAL (propose a fix CR) or POSSIBLY INTENTIONAL (propose a doc update and a DECISIONS.md entry). End with the three highest-leverage fixes and wait for my go.
+Give evidence per deviation (file:line or screenshot), marked ACCIDENTAL (propose a fix CR) or POSSIBLY INTENTIONAL (propose a doc update and a DECISIONS.md entry). End with the three highest-leverage fixes; of those, make the ones marked ACCIDENTAL and ask me in the round whether each POSSIBLY INTENTIONAL one was meant.
 ```
 
 ## P7 · Security Hardening
@@ -1936,7 +1936,7 @@ Security at the end is the most expensive place to do it. Adding authorization t
 
 ### Where SECURITY.md lives and how it loads
 
-SECURITY.md sits in `.offthemode/` next to the six core files. Your AI writes it from the template below the first time work touches login, permissions, user input, uploads, secrets, payments or AI features, and shows it to you with the one line it adds to RULES.md §Safety; both are written on your go. RULES.md loads at the start of every session, so that one line is enough to make the security rules reach every session that needs them:
+SECURITY.md sits in `.offthemode/` next to the six core files. Your AI writes it from the template below the first time work touches login, permissions, user input, uploads, secrets, payments or AI features, and shows it to you with the one line it adds to RULES.md §Safety; both are written only on your yes. RULES.md loads at the start of every session, so that one line is enough to make the security rules reach every session that needs them:
 
 ```text
 Before any work on auth, data access, input handling, secrets, dependencies or {{SENSITIVE_PATHS}}, read .offthemode/SECURITY.md and follow it.
@@ -1982,7 +1982,7 @@ As a security architect, threat-model {{?PRODUCT_NAME}} from .offthemode/SKELETO
 2. STRIDE per boundary, plausible threats only, worst first: threat, boundary, STRIDE letter, likelihood, impact, mitigation, the test that proves it, the phase that builds it.
 3. The assets an attacker wants most and the cheapest path to each.
 4. Decisions that are expensive to change later (tenant model, auth provider, ID format, where authorization lives), with a recommendation now.
-Propose SECURITY.md changes as a diff and wait for my go before writing them.
+Propose SECURITY.md changes as a diff, and write them only on my yes.
 ```
 
 ### Access control: the matrix first
@@ -2058,7 +2058,7 @@ A fresh AI session reviewing each branch's diff for security, with no memory of 
 
 ### The P7 audit
 
-Run these three before launch, each in a fresh session. Each reports first and changes nothing until you say go.
+Run these three before launch, each in a fresh session. Each reports first and changes nothing during the audit. Then your AI builds the fixes; rotating a secret, purging history and any dependency change are asked in the round.
 
 ```prompt title="Red-Team Audit"
 You are an attacker, not a reviewer. Goal: {{GOAL: read another tenant's data, gain admin, use paid features free, run code on the server, or bill us for your LLM usage}} in {{?PRODUCT_NAME}}, starting from a normal {{ROLE_MEMBER}} account with insider read access to {{SCOPE}}. Test only against {{LOCAL_URL}}; never send a request to any other host.
@@ -2107,7 +2107,7 @@ Build the first-contact page for {{?PRODUCT_NAME}} as a guided run of {{?MOMENT_
 Structure: a one-sentence thesis in {{?PERSON}}'s own nouns (.offthemode/PRODUCT.md, .offthemode/GLOSSARY.md); the product doing the job (interactive, or recorded from the real app, never a mock or an illustration of UI); one proof (a number, a customer, or something the product made); one action.
 Rules: every section is either an interaction or a real output; no section describes a feature it does not show; no pricing grid or FAQ unless a PRODUCT.md job needs one on this page; the same RULES.md §Look and feel and §Budgets numbers, the same audits and the same fresh-session review as product screens.
 Also: store screenshots captured from the real app on the demo seed, in moment-of-value order; per-route Open Graph images generated from the design tokens and real data.
-Before building, list the sections and what each one shows, and wait for my go.
+List the sections and what each one shows first, then build it.
 ```
 
 ### The launch checklist
@@ -2121,7 +2121,7 @@ Before building, list the sections and what each one shows, and wait for my go.
 
 ```prompt title="Release Readiness"
 Audit {{?PRODUCT_NAME}} against the P8 launch checklist: each item PASS with evidence (file, URL, screenshot), FAIL with the fix, or N/A with the reason. Then operability: can I roll back in under 5 minutes, disable {{CORE_FEATURE}} by flag, rotate every secret, and restore yesterday's backup? Name the three scenarios most likely to page me in week one and the alert that catches each.
-Report first. After my go, write .offthemode/RUNBOOK.md with the exact steps for rollback, flag kill, secret rotation and restore.
+Report first, then write .offthemode/RUNBOOK.md with the exact steps for rollback, flag kill, secret rotation and restore.
 ```
 
 ### After launch
@@ -2148,7 +2148,7 @@ Project retro for {{?PRODUCT_NAME}}. Read .offthemode/DECISIONS.md, STATE.md, CH
 4. Extract: work done 3 or more times by hand that should become a script (listed in RULES.md §Commands) or a saved prompt.
 5. Taste: from the best and worst screens, what to keep and what to avoid, as lines for PRODUCT.md §Feeling and .offthemode/DESIGN.md; flag any pattern we used that has since become common in templates.
 6. Estimates: planned against actual per phase, and the root cause of the biggest miss, as a DECISIONS.md entry.
-7. One product lesson per phase that the vision questions should cover next time, and whether my approvals at the checkpoints changed a decision, as a DECISIONS.md entry.
+7. One product lesson per phase that the vision questions should cover next time, and whether my answers in the rounds changed a decision, as a DECISIONS.md entry.
 Change nothing until I approve each diff. When done, save where things stand with revisit-state's steps.
 ```
 
@@ -2314,7 +2314,7 @@ A model-driven core is one whose main work is done by an AI model call, such as 
 ```prompt title="Build the Eval Set"
 Build evals/ for {{?CORE_MODULE}} (.offthemode/SKELETON.md §Core contract). Start from the spike inputs and the demo and edge seeds. Aim for {{N | 50}} cases covering the typical input, the hardest real input, empty and huge inputs, adversarial inputs (injection in retrieved text, instructions hidden in user content), and every failure mode in the contract.
 Per case: the input, the properties the output must and must not have, and the graders (deterministic first; an LLM judge only for what can't be checked mechanically, with its rubric written out).
-First show me the case list and the graders, and wait for my go.
+First show me the case list and the graders, then write the cases.
 Then build the runner, reporting pass rate, failures per grader, p95 latency and cost per run; pick 20 cases for me to grade by hand and report the judge's agreement with my grades; add a CI trigger on changes to prompts, model ids, retrieval settings and the core contract. Add the eval command to .offthemode/RULES.md §Commands and the allowed drop to §Budgets, run it once, and record the baseline in SKELETON.md §Core contract.
 ```
 
@@ -2383,7 +2383,7 @@ Copy pass on {{SURFACE_OR_PATH}}. Edit only user-facing strings and the string c
 1. Table every string: current | problem (banned word, vague verb, wrong term, too long, blames the user, a sentence a competitor could publish unchanged) | rewrite.
 2. Every button predicts its result, every error has a next step, every empty state offers one action.
 3. Cut 30% of the words without losing meaning. Flag concepts that have no glossary term and propose one; where notes from watching real people use the product record their own words, prefer those.
-Show me the table and wait for my go. Then apply it and run the fast check from .offthemode/RULES.md §Commands.
+Show me the table, then apply it and run the fast check from .offthemode/RULES.md §Commands.
 ```
 
 ## Always-On · Real Data
@@ -2395,7 +2395,7 @@ AI tools design for the happy path of their own placeholder content. Layout bugs
 Three terms. A content model lists each kind of record, its fields, how long each field usually runs and how often it is empty. A deterministic seed is a script that fills the app with fake but realistic data, the same data on every run, because its random generator starts from a fixed number; that is what makes screenshots comparable over time. A states gallery is a page that exists only in development and shows each main component in every state side by side.
 
 ```prompt title="Build the Seed"
-Read {{CONTENT_MODEL_PATH}}. If it is missing, draft it first (entities, fields, min/typical/max length, optionality, cardinality, realistic distributions for {{MARKET}}). Show me the content model and the seed plan (profiles, files, the states route) and wait for my go.
+Read {{CONTENT_MODEL_PATH}}. If it is missing, draft it first (entities, fields, min/typical/max length, optionality, cardinality, realistic distributions for {{MARKET}}). Show me the content model and the seed plan (profiles, files, the states route).
 Then build a deterministic seed (fixed random seed) at {{SEED_PATH}} with @faker-js/faker or the stack's equivalent, writing to fixtures/. Profiles by environment variable:
 - demo: the product in month six with real users in {{MARKET}}; curated and believable; used for design reviews, the landing page demo and store screenshots.
 - edge: every case in the torture set pasted below at least once, every lifecycle state, archived records.
@@ -2692,8 +2692,8 @@ A search checklist that circulates in short videos, taken the way this method ta
 | "Rank #1 by Friday" | Drop | No one can guarantee a top ranking; judge a change after a few weeks | [Google](https://developers.google.com/search/docs/fundamentals/do-i-need-seo) |
 
 ```prompt title="Being Found Audit"
-Audit how {{?PRODUCT_NAME}} gets found. Talk first: report, then wait for my go before changing anything.
-Read .offthemode/PRODUCT.md (where the product should be found), .offthemode/GLOSSARY.md (the words people type), .offthemode/ROUTES.md (its Found column: yes, noindex or login) and .offthemode/DECISIONS.md (the AI-crawler choice). If PRODUCT.md doesn't say where the product should be found, stop and ask me that first, with your recommended answer.
+Audit how {{?PRODUCT_NAME}} gets found. Report first, before changing anything.
+Read .offthemode/PRODUCT.md (where the product should be found), .offthemode/GLOSSARY.md (the words people type), .offthemode/ROUTES.md (its Found column: yes, noindex or login) and .offthemode/DECISIONS.md (the AI-crawler choice). If PRODUCT.md doesn't say where the product should be found, ask me that first, with why and your pick.
 Check {{?SITE_URL}} and {{STORE_LISTINGS | none}} against those files, not against a generic checklist. Fetch each page's first HTML without running JavaScript ({{FETCH_TOOL | curl -sSL -D -}}), the way a crawler sees it.
 1. Every route with Found set to yes: answers 200; its words, title, meta description, canonical URL (absolute) and Open Graph tags are in the first HTML; it is in the sitemap; another page links to it in words that say what is there; no noindex anywhere.
 2. Every route that should stay out: noindex or behind a login, never only blocked in robots.txt; preview and staging deployments included.
@@ -2703,7 +2703,7 @@ Check {{?SITE_URL}} and {{STORE_LISTINGS | none}} against those files, not again
 6. Mobile: store fields against the store's current rules, checked on its developer pages today; the files under /.well-known/ served over HTTPS with no redirect.
 7. Measurement: whether Search Console and Bing Webmaster Tools are verified, and what their reports show now.
 Report Page or file | Check | Expected (and the file or official page that says so) | Actual | Proof (the command and its output, a response header, a screenshot or file:line) | Fix. A finding without proof is a question, not a finding.
-Never promise or predict a ranking, and propose no trick aimed at search engines or AI answers. After my go, fix the smallest items first and rerun the checks that failed.
+Never promise or predict a ranking, and propose no trick aimed at search engines or AI answers. After the report, fix the smallest items first and rerun the checks that failed.
 ```
 
 ## Always-On · Instrumentation
@@ -2742,7 +2742,7 @@ export function track<E extends keyof Events>(event: E, props: Events[E]): void 
 
 ```prompt title="Instrument This Feature"
 Before writing code for {{FEATURE}}, propose the events that answer {{QUESTIONS}}, one per question worth answering: name (object_action, glossary terms), exact trigger, typed properties, and the question each answers. Reject events that answer no question and properties that could hold personal data.
-Show me the list and wait for my go. Then add the events to .offthemode/TRACKING.md and the Events type, implement them through track() only, and test that each fires exactly once with the right properties on the happy path.
+Show me the list, then add the events to .offthemode/TRACKING.md and the Events type, implement them through track() only, and test that each fires exactly once with the right properties on the happy path.
 ```
 
 > **Pro move:** Instrument hesitation: abandoned flows, repeated undo, settings opened right after onboarding. Every stall is complexity leaking onto the person, and a candidate for a smart default.
@@ -2797,11 +2797,11 @@ Summarizing a long conversation in place (many tools call this compacting) is fo
 
 A batch run is the AI working from the command line, with no chat window: it takes a prompt, does the job, and exits. In Claude Code that is `claude -p`; in Codex, `codex exec`.
 
-Talk first still holds, for the batch as a whole. Have your AI describe the change, list the files and show one sample result. Say go, then start the loop. Each run is told it belongs to an approved batch, so it doesn't stall waiting for a go nobody will type, and it leaves `.offthemode/` alone: many runs rewriting STATE.md would overwrite each other. Update STATE.md once, at the end.
+For the batch as a whole, have your AI describe the change, list the files, show one sample result and say roughly what the batch costs, then start the loop. Each run is told it belongs to an approved batch, so it never stops to ask a question nobody is there to answer, and it leaves `.offthemode/` alone: many runs rewriting STATE.md would overwrite each other. Update STATE.md once, at the end.
 
 ```bash
 for f in $(git ls-files '{{FILES_GLOB}}'); do   # each run prints one line, so the loop's output is the log
-  {{AI_CLI}} "Part of an approved batch: don't wait for a go, don't edit .offthemode/. Apply .offthemode/prompts/copy-pass.md to $f. Edit strings only. Reply in one line: file, changed or unchanged, what changed."
+  {{AI_CLI}} "Part of an approved batch: never stop to ask, don't edit .offthemode/. Apply .offthemode/prompts/copy-pass.md to $f. Edit strings only. Reply in one line: file, changed or unchanged, what changed."
 done
 {{CHECK_CMD}}   # the check command from RULES.md §Commands, once, after the batch
 ```
@@ -2846,18 +2846,18 @@ Changelog: v4 references assigned by me, no recommendation (a generator grading 
 
 ## Always-On · Revisits
 
-> **Output:** five commands that each touch only what they own: `revisit-checklist` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md` only on your go, `revisit-comments` edits code comments only, `revisit-glossary` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`, and `revisit-state` saves where things stand to `.offthemode/STATE.md` and new decisions to `.offthemode/DECISIONS.md`; plus `view-project`, which opens the folder as one page in your browser and writes nothing in the project.
+> **Output:** five commands that each touch only what they own: `revisit-checklist` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md`, `revisit-comments` edits code comments only, `revisit-glossary` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`, and `revisit-state` saves where things stand to `.offthemode/STATE.md` and new decisions to `.offthemode/DECISIONS.md`; plus `view-project`, which opens the folder as one page in your browser and writes nothing in the project.
 
 Off the Mode has seven commands. `offthemode` sets up a project or shows its status, and `view-project` shows it as a page. The other five are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else.
 
 Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the link in Claude Code) or just say them: "reassess the project".
 
-> **Rule:** Every command except `view-project` and `revisit-state` talks first. It explains what it found and exactly what it will change, waits for your go, then does it and tells you what it did. `reassess` changes no code and no other file: its report is the result. It asks for a go before it runs a real input through the core, and before it saves the report. `view-project` and `revisit-state` act at once: `view-project` writes nothing in the project, and `revisit-state` only saves where things stand, with the earlier version kept in git where the project uses it, so your AI also runs it by itself after a reply that changes files or settles a decision.
+> **Rule:** Running a command is the request, so none asks whether to start. Every command except `view-project` and `revisit-state` explains what it found, asks only what you alone can settle, does the rest in that reply and tells you what it did. `reassess` changes no code and no other file: its report is the result. It saves that report to `.offthemode/REASSESS.md` and says so, and runs a real input through the core at once on test or seed data, asking you in the round first only when it would touch live data or other people. `view-project` and `revisit-state` act at once: `view-project` writes nothing in the project, and `revisit-state` only saves where things stand, with the earlier version kept in git where the project uses it, so your AI also runs it by itself after a reply that changes files or settles a decision.
 
 | Command | Its one job | Touches |
 |---|---|---|
 | `revisit-checklist [note]` | Shows the checklist, or places a new feature or idea where it belongs | `.offthemode/CHECKLIST.md` |
-| `reassess` | Compares what has actually been built with the core concept | Only its own report, `.offthemode/REASSESS.md`, if you say so |
+| `reassess` | Compares what has actually been built with the core concept | Only its own report, `.offthemode/REASSESS.md` |
 | `revisit-comments [path]` | Makes code comments true, necessary and useful | Comments only, never code |
 | `revisit-glossary` | Keeps a plain-words summary of the project that anyone can understand | The "In plain words" part of `.offthemode/GLOSSARY.md` |
 | `view-project` | Opens your project as a page in your browser | Nothing in your project: one temporary page |
@@ -2865,7 +2865,7 @@ Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the
 
 `revisit-checklist` is covered in Living Checklist, and `revisit-state` in P0 · Constitution, under Memory across sessions. The others:
 
-**`reassess` reads the code, not the docs.** Docs describe intentions; the code is what exists. It compares the code with the core concept in PRODUCT.md: what serves it, what drifted from it, what is missing, and what was built that serves no job at all. When the core can run, it proposes one real input and the exact command, using test or seed data so nothing real is sent, charged or changed, and after your go pushes it through the whole chain: the only honest check for a product that proves itself end to end. It edits nothing else, the checklist included. At the end it offers to save the report to `.offthemode/REASSESS.md`, replacing the last one; the first line gives the date and whether the project is on course, drifting or off course. If it finds work to capture, it gives you the exact note to pass to `revisit-checklist`.
+**`reassess` reads the code, not the docs.** Docs describe intentions; the code is what exists. It compares the code with the core concept in PRODUCT.md: what serves it, what drifted from it, what is missing, and what was built that serves no job at all. When the core can run, it proposes one real input and the exact command, using test or seed data so nothing real is sent, charged or changed, and pushes it through the whole chain at once (asking you in the round first only when it would touch live data or other people): the only honest check for a product that proves itself end to end. It edits nothing else, the checklist included. At the end it saves the report to `.offthemode/REASSESS.md` and says so, replacing the last one; the first line gives the date and whether the project is on course, drifting or off course. If it finds work to capture, it gives you the exact note to pass to `revisit-checklist`.
 
 **`revisit-comments` edits comments and nothing else.** It removes comments that lie (the code changed, the comment didn't), comments that narrate what the next line obviously does, commented-out code, and TODOs with no checklist id. It adds a short why where the code can't explain itself: a workaround, an invariant (a condition the code must always keep true), a magic number, a security decision. It proves it touched only comments: the diff (the list of changed lines) holds no code changes, and the checks still pass. When a comment reveals a bug, it reports the bug instead of fixing it.
 
@@ -2916,7 +2916,7 @@ Open the Mobile Addendum guide first. Then review {{SCREEN_OR_FLOW}} as the engi
 3. Resilience: kill mid-flow and relaunch, go offline, rotate, largest text size; screenshot each; list any lost state.
 4. Performance: profile a scroll through the scale seed on {{LOW_END_DEVICE}}; report dropped frames and main-thread work over the RULES.md §Budgets frame budget; name the worst three.
 5. Deep links: every screen opens cold from a link with its state restored and a sensible back stack built behind it.
-Report each finding with evidence (screenshot, profiler trace or file:line) and the fix you propose, then wait for my go. After fixing, re-run the affected checks on a simulator or device and show the before and after.
+Report each finding with evidence (screenshot, profiler trace or file:line) and the fix you propose, then make the fixes, re-run the affected checks on a simulator or device and show the before and after.
 ```
 
 ## Prompt Craft Toolkit
@@ -2939,11 +2939,11 @@ The Laws state the principles. These are the moves that put them to work, each w
 | Escalation ladder | Being stuck is a problem of context, scope or signal, rarely of intelligence | Hypotheses Before Fixes (P6 · Core Build & Iteration) |
 
 ```prompt title="Interview Me First"
-Before any plan or code, interview me about {{FEATURE}}. Batched, numbered questions, ordered by how much the answer changes architecture or UX, each with your recommended answer and what breaks if it is wrong; more rounds if needed. Ask only what would change the plan, and stop when no remaining question would. Then show me the answers as D-### entries for .offthemode/DECISIONS.md, and add them on my go.
+Before any plan or code, interview me about {{FEATURE}}. Batched, numbered questions, ordered by how much the answer changes architecture or UX, each with your recommended answer and what breaks if it is wrong; more rounds if needed. Ask only what would change the plan, and stop when no remaining question would. Then add the answers as D-### entries to .offthemode/DECISIONS.md and show me what you added.
 ```
 
 ```prompt title="Confirm Before Building"
-Before changing anything, list what you believe about {{TASK}}: data shapes, current behavior, user expectations, environment. Mark each VERIFIED (file:line) or HYPOTHESIS, written as "I think X, because Y". Confirm every hypothesis before building on it: check the code or docs, and ask me about the rest. Show me the list and your plan, and wait for my go. Build only on what is verified.
+Before changing anything, list what you believe about {{TASK}}: data shapes, current behavior, user expectations, environment. Mark each VERIFIED (file:line) or HYPOTHESIS, written as "I think X, because Y". Confirm every hypothesis before building on it: check the code or docs, and ask me about the rest. Show me the list and your plan, then start on what no open question changes. Build only on what is verified.
 ```
 
 ```prompt title="Constraint Stack"
@@ -2967,11 +2967,11 @@ If I confirm it applies beyond this task, propose one line for .offthemode/DESIG
 ```
 
 ```prompt title="Rubric First"
-Before designing {{SURFACE}} ({{onboarding, chart, editor, landing or OTHER}}), write the criteria that decide quality for this kind of surface, each certain to matter here and not already covered by DESIGN.md §Rubric, and show them to me. For each: what weak (1) and strong (3) look like, and which reference shows each. Include: the primary action is obvious at a glance; nothing that doesn't serve the job; the signature moment, if it lives here; {{?PERF_BUDGET}}. Wait for my go, then add them to .offthemode/DESIGN.md and build to them.
+Before designing {{SURFACE}} ({{onboarding, chart, editor, landing or OTHER}}), write the criteria that decide quality for this kind of surface, each certain to matter here and not already covered by DESIGN.md §Rubric, and show them to me. For each: what weak (1) and strong (3) look like, and which reference shows each. Include: the primary action is obvious at a glance; nothing that doesn't serve the job; the signature moment, if it lives here; {{?PERF_BUDGET}}. Then add them to .offthemode/DESIGN.md and build to them.
 ```
 
 ```prompt title="Checkpoint Plan"
-Break {{FEATURE}} into checkpoints of at most {{SIZE}}, each ending in a state that runs and can be checked (a test, a screenshot, a request): goal, files, exit check, decisions you need from me. Show me the plan and wait for my go. Then do checkpoint 1 only, run its exit check, update .offthemode/STATE.md with where things stand, and stop.
+Break {{FEATURE}} into checkpoints of at most {{SIZE}}, each ending in a state that runs and can be checked (a test, a screenshot, a request): goal, files, exit check, decisions you need from me. Show me the plan with your pick for each decision. Then do checkpoint 1 only (once I answer, if one of those decisions changes it), run its exit check, update .offthemode/STATE.md with where things stand, and stop.
 ```
 
 ```prompt title="Match the Exemplar"
@@ -3120,7 +3120,7 @@ For work inside an existing product, the working rules are enough. The whole gui
 
 ### Set up a project
 
-Open the project in your AI tool and say "set up off the mode". Setup talks first: it looks at the folder, tells you which door it is taking and why, lists exactly what it will create, and waits for your go.
+Open the project in your AI tool and say "set up off the mode". Setup asks first: it looks at the folder, tells you which door it is taking and why, lists exactly what it will create and asks only what the code and docs can't answer. Your answers are the consent: it creates the files in the reply that gets them.
 
 - **New project** (an empty folder, or just an idea). It asks about the product before anything else: what it is, who it's for, the job they need done, the moment they first get value, what it refuses to be, how it should feel. From your answers it writes the files.
 - **Existing project.** It reads the code first: the stack, the commands, the screens and flows that exist. It drafts PRODUCT.md from what the code shows, writes each guess as a hypothesis ("I think the main user is X, because Y") and confirms it with you. RULES.md gets your real stack and commands, and CHECKLIST.md sets what exists against what the core concept needs.
@@ -3138,7 +3138,7 @@ Setup changes no code. It writes the `.offthemode/` folder, plus one line you ap
 
 #### Optional files
 
-A guide adds one of these to `.offthemode/` only when its work needs it, on your go. Setup creates none of them, and a small project may never need any. Each one's shape is defined in its guide, most as a file block to copy.
+A guide adds one of these to `.offthemode/` only when its work needs it. Setup creates none of them, and a small project may never need any. Each one's shape is defined in its guide, most as a file block to copy.
 
 | File or folder | Guide | Written when |
 |---|---|---|
@@ -3154,9 +3154,9 @@ A guide adds one of these to `.offthemode/` only when its work needs it, on your
 | `VOICE.md` | Always-On · Words & Voice | The product has words people read |
 | `TRACKING.md` | Always-On · Instrumentation | The product gets analytics events |
 | `prompts/` | Always-On · Prompt Library | A prompt gets typed a second time |
-| `REASSESS.md` | Always-On · Revisits | You say yes when `reassess` offers to save its report; the next save replaces it |
+| `REASSESS.md` | Always-On · Revisits | Each `reassess` run saves its report; the next save replaces it |
 
-Code a guide calls for, such as design tokens, scripts and tests, is ordinary project code: it lives where code belongs and is written on your go. Screenshots go to `shots/`, which stays out of git.
+Code a guide calls for, such as design tokens, scripts and tests, is ordinary project code: it lives where code belongs and is written like any other change. Screenshots go to `shots/`, which stays out of git.
 
 Say "set up off the mode" again on a project that is already set up and you get its status: where things stand, and what's next on the checklist.
 
@@ -3197,17 +3197,17 @@ Normal sessions stay free-form. You say what you want in plain words; the files 
 1. **Open a session.** Your AI loads `.offthemode/RULES.md` and `.offthemode/STATE.md`, so it knows the standards and where things stand. If its first answer doesn't know, see How to add it.
 2. **Say what you want.** One concern at a time: a feature, a fix, a screen.
 3. **It opens the guide.** RULES.md §Guides maps each kind of work to a guide; your AI opens the matching one before planning, once per session. For a change inside what exists, the guide's working rules are enough.
-4. **It talks first.** It says what it understood, what it will change and what it isn't sure of, as hypotheses ("I think X, because Y"), and confirms each one before building on it. A small fix (a typo, a one-line change) gets one line and goes ahead; anything bigger waits for your go, with a real plan when it touches data, contracts or many files.
+4. **It asks to decide, never to start.** It says what it understood, what it will change and what it isn't sure of, as hypotheses ("I think X, because Y"), and settles each one in the code or docs, or in one numbered round of questions: only what you alone can settle, each with why and its pick. Meanwhile it builds what no answer changes, and your reply, in any words, starts the rest. One-way doors (lost data, money, messages to other people, a first publish) need your yes.
 5. **It builds in build order.** CHECKLIST.md lists the fragments in the order they depend on each other, core first, and your AI follows that order, held to RULES.md. You can still ask for anything at any time; revisit-checklist catches up.
 6. **It verifies before it says done.** The checks pass, the thing actually ran, and screens were looked at on phone, tablet and wide widths.
-7. **It records the work.** STATE.md is updated with where things stand, decisions go to DECISIONS.md, your AI names the checklist item the work closes (revisit-checklist records the mark and the evidence), and a correction you had to make twice becomes a proposed line in RULES.md §Project specifics, added on your go.
+7. **It records the work.** STATE.md is updated with where things stand, decisions go to DECISIONS.md, your AI names the checklist item the work closes (revisit-checklist records the mark and the evidence), and a correction you had to make twice becomes a proposed line in RULES.md §Project specifics, added on your yes.
 8. **Review in a fresh session** when the change matters: a second AI session asked to review, with no memory of building it.
 
 > **Why:** A fresh session with an up-to-date STATE.md picks up where the last one stopped, with none of the stale context. So when a piece of work ends, run `revisit-state` and start a fresh session, rather than waiting for the window to run out.
 
 ### When to run each command
 
-Every command except `view-project` and `revisit-state` talks first: it explains what it found and exactly what it will change, waits for your go, then does it and says what it did. `view-project` writes nothing in the project, so it opens its page at once, and `revisit-state` only saves where things stand, so it saves at once.
+Running a command is the request, so none asks whether to start. Every command except `view-project` and `revisit-state` explains what it found, asks only what you alone can settle, does the rest in that reply and says what it did. `view-project` writes nothing in the project, so it opens its page at once, and `revisit-state` only saves where things stand, so it saves at once.
 
 | Command | Run it |
 |---|---|

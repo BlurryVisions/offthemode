@@ -194,8 +194,8 @@ A search checklist that circulates in short videos, taken the way this method ta
 | "Rank #1 by Friday" | Drop | No one can guarantee a top ranking; judge a change after a few weeks | [Google](https://developers.google.com/search/docs/fundamentals/do-i-need-seo) |
 
 ```prompt title="Being Found Audit"
-Audit how {{?PRODUCT_NAME}} gets found. Talk first: report, then wait for my go before changing anything.
-Read .offthemode/PRODUCT.md (where the product should be found), .offthemode/GLOSSARY.md (the words people type), .offthemode/ROUTES.md (its Found column: yes, noindex or login) and .offthemode/DECISIONS.md (the AI-crawler choice). If PRODUCT.md doesn't say where the product should be found, stop and ask me that first, with your recommended answer.
+Audit how {{?PRODUCT_NAME}} gets found. Report first, before changing anything.
+Read .offthemode/PRODUCT.md (where the product should be found), .offthemode/GLOSSARY.md (the words people type), .offthemode/ROUTES.md (its Found column: yes, noindex or login) and .offthemode/DECISIONS.md (the AI-crawler choice). If PRODUCT.md doesn't say where the product should be found, ask me that first, with why and your pick.
 Check {{?SITE_URL}} and {{STORE_LISTINGS | none}} against those files, not against a generic checklist. Fetch each page's first HTML without running JavaScript ({{FETCH_TOOL | curl -sSL -D -}}), the way a crawler sees it.
 1. Every route with Found set to yes: answers 200; its words, title, meta description, canonical URL (absolute) and Open Graph tags are in the first HTML; it is in the sitemap; another page links to it in words that say what is there; no noindex anywhere.
 2. Every route that should stay out: noindex or behind a login, never only blocked in robots.txt; preview and staging deployments included.
@@ -205,5 +205,5 @@ Check {{?SITE_URL}} and {{STORE_LISTINGS | none}} against those files, not again
 6. Mobile: store fields against the store's current rules, checked on its developer pages today; the files under /.well-known/ served over HTTPS with no redirect.
 7. Measurement: whether Search Console and Bing Webmaster Tools are verified, and what their reports show now.
 Report Page or file | Check | Expected (and the file or official page that says so) | Actual | Proof (the command and its output, a response header, a screenshot or file:line) | Fix. A finding without proof is a question, not a finding.
-Never promise or predict a ranking, and propose no trick aimed at search engines or AI answers. After my go, fix the smallest items first and rerun the checks that failed.
+Never promise or predict a ranking, and propose no trick aimed at search engines or AI answers. After the report, fix the smallest items first and rerun the checks that failed.
 ```

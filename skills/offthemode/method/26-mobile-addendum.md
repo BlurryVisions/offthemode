@@ -29,5 +29,5 @@ Open the Mobile Addendum guide first. Then review {{SCREEN_OR_FLOW}} as the engi
 3. Resilience: kill mid-flow and relaunch, go offline, rotate, largest text size; screenshot each; list any lost state.
 4. Performance: profile a scroll through the scale seed on {{LOW_END_DEVICE}}; report dropped frames and main-thread work over the RULES.md §Budgets frame budget; name the worst three.
 5. Deep links: every screen opens cold from a link with its state restored and a sensible back stack built behind it.
-Report each finding with evidence (screenshot, profiler trace or file:line) and the fix you propose, then wait for my go. After fixing, re-run the affected checks on a simulator or device and show the before and after.
+Report each finding with evidence (screenshot, profiler trace or file:line) and the fix you propose, then make the fixes, re-run the affected checks on a simulator or device and show the before and after.
 ```

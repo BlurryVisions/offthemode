@@ -108,7 +108,7 @@ For work inside an existing product, the working rules are enough. The whole gui
 
 ### Set up a project
 
-Open the project in your AI tool and say "set up off the mode". Setup talks first: it looks at the folder, tells you which door it is taking and why, lists exactly what it will create, and waits for your go.
+Open the project in your AI tool and say "set up off the mode". Setup asks first: it looks at the folder, tells you which door it is taking and why, lists exactly what it will create and asks only what the code and docs can't answer. Your answers are the consent: it creates the files in the reply that gets them.
 
 - **New project** (an empty folder, or just an idea). It asks about the product before anything else: what it is, who it's for, the job they need done, the moment they first get value, what it refuses to be, how it should feel. From your answers it writes the files.
 - **Existing project.** It reads the code first: the stack, the commands, the screens and flows that exist. It drafts PRODUCT.md from what the code shows, writes each guess as a hypothesis ("I think the main user is X, because Y") and confirms it with you. RULES.md gets your real stack and commands, and CHECKLIST.md sets what exists against what the core concept needs.
@@ -126,7 +126,7 @@ Setup changes no code. It writes the `.offthemode/` folder, plus one line you ap
 
 #### Optional files
 
-A guide adds one of these to `.offthemode/` only when its work needs it, on your go. Setup creates none of them, and a small project may never need any. Each one's shape is defined in its guide, most as a file block to copy.
+A guide adds one of these to `.offthemode/` only when its work needs it. Setup creates none of them, and a small project may never need any. Each one's shape is defined in its guide, most as a file block to copy.
 
 | File or folder | Guide | Written when |
 |---|---|---|
@@ -142,9 +142,9 @@ A guide adds one of these to `.offthemode/` only when its work needs it, on your
 | `VOICE.md` | Always-On · Words & Voice | The product has words people read |
 | `TRACKING.md` | Always-On · Instrumentation | The product gets analytics events |
 | `prompts/` | Always-On · Prompt Library | A prompt gets typed a second time |
-| `REASSESS.md` | Always-On · Revisits | You say yes when `reassess` offers to save its report; the next save replaces it |
+| `REASSESS.md` | Always-On · Revisits | Each `reassess` run saves its report; the next save replaces it |
 
-Code a guide calls for, such as design tokens, scripts and tests, is ordinary project code: it lives where code belongs and is written on your go. Screenshots go to `shots/`, which stays out of git.
+Code a guide calls for, such as design tokens, scripts and tests, is ordinary project code: it lives where code belongs and is written like any other change. Screenshots go to `shots/`, which stays out of git.
 
 Say "set up off the mode" again on a project that is already set up and you get its status: where things stand, and what's next on the checklist.
 

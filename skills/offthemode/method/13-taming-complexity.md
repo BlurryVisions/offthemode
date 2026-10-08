@@ -95,7 +95,7 @@ Paste the audit into a new session, not the one that built the screens.
 ```prompt title="Complexity Audit"
 You are reviewing screens you did not build and have no memory of building. Audit rendered screens, not code; read .offthemode/PRODUCT.md and .offthemode/COMPLEXITY.md first. Screens {{ROUTES | "the core flow"}} at each of {{?SCREENSHOT_SIZES: screenshot_sizes in RULES.md §Budgets}}, each in empty, loading, error and populated states (via the state switcher), measured on the L1 state.
 Per surface: (1) count, do not estimate: distinct actions (the counting rule in COMPLEXITY.md), required decisions, mandatory inputs, competing emphasis, nav destinations; show the score against budget; (2) blur test on a blurredVision render: what stands out? If it is not the primary action, or two things compete, name them; (3) elements that belong in another layer (L0/L2/L3); (4) dead ends, confirms that should be undo, settings that should be defaults, hover-only actions, decoration carrying no information.
-Output one table, worst overage first: surface, score/budget, top 3 offenders with evidence. Fix nothing and recommend no moves; the Subtraction Pass chooses them. Then wait for my go before appending the scores to the Audit log in COMPLEXITY.md.
+Output one table, worst overage first: surface, score/budget, top 3 offenders with evidence. Fix nothing and recommend no moves; the Subtraction Pass chooses them. Then append the scores to the Audit log in COMPLEXITY.md.
 ```
 
 ```prompt title="Subtraction Pass"
@@ -106,7 +106,7 @@ Bring {{SURFACE}} within budget, using the latest Complexity Audit. Every job in
 4. Disclose (L2) on selection, focus, expansion or long-press; name the trigger. Hover never as the only path.
 5. Relocate (L3) to palette, shortcut or advanced panel, still findable by search.
 6. Merge controls never used independently.
-Exactly one primary action survives; nothing moves to L2/L3 without a findable trigger; the signature moment is untouched; no new UI may solve a subtraction. Show element -> fate -> mechanism and wait for my go. Then implement, re-render, re-score, and re-run the core job keyboard-only and touch-only.
+Exactly one primary action survives; nothing moves to L2/L3 without a findable trigger; the signature moment is untouched; no new UI may solve a subtraction. Show element -> fate -> mechanism, then implement, re-render, re-score, and re-run the core job keyboard-only and touch-only.
 ```
 
 Before a screen exists, fill its Disclosure map row. Assign each capability to exactly one layer, give every L2 item its intent signal and every L3 item its palette name and shortcut, and list anything that won't fit the L1 limit as a product question to decide, not a layout problem to solve.
@@ -117,5 +117,5 @@ Build the power layer for {{?PRODUCT_NAME}} without touching default surfaces. R
 2. Shortcuts: single keys for the verbs people use most, outside text fields, modifiers otherwise, a "?" overlay; no conflicts with OS, browser or assistive-tech bindings.
 3. Bulk ops: shift-click ranges, Cmd/Ctrl-click, select all in view; one undo reverts the batch.
 4. After a user repeats a slow path {{3}} times, show its shortcut once, inline and dismissible.
-Zero additions to L1 beyond a palette hint; every command reachable without a keyboard. Show me the command list and the shortcut map first and wait for my go. When it is built, test the core job keyboard-only and report the time against the mouse path.
+Zero additions to L1 beyond a palette hint; every command reachable without a keyboard. Show me the command list and the shortcut map first, then build it. When it is built, test the core job keyboard-only and report the time against the mouse path.
 ```

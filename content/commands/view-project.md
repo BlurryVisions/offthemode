@@ -5,7 +5,7 @@ description: Open the project's .offthemode/ notes as one page in the browser, r
 ---
 # Off the Mode · view project
 
-Open the project's `.offthemode/` notes as one page in the user's browser: the checklist, the plan, the plain summary, the decisions, where things stand and the last check against the core concept. This writes nothing in the project, only one temporary file, so the user typing the command is the go: run it at once, with no plan to approve first.
+Open the project's `.offthemode/` notes as one page in the user's browser: the checklist, the plan, the plain summary, the decisions, where things stand and the last check against the core concept. This writes nothing in the project, only one temporary file, so the user typing the command is the request: run it at once, with no plan to approve first.
 
 1. Find the nearest `.offthemode/` that holds RULES.md, in the folder you work in or a folder above it, and run the line from the folder that holds it (the home folder's `~/.offthemode/` holds only ME.md and is not a project). If there is none, say the project isn't set up yet and offer the offthemode command, which sets it up.
 2. Run the line for the user's system. It saves the view page as a temporary file, adds each `.offthemode/*.md` file to its end as base64 (text the page decodes), and opens it in the default browser.

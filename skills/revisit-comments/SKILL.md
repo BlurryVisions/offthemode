@@ -6,9 +6,9 @@ license: MIT
 
 # Off the Mode · revisit comments
 
-Scope: the path the user typed after the command; if none, the files changed on this branch against the main branch; if none, the whole repo. Change comments only: never code, names, formatting or imports. Talk first, then do: explain what you found and exactly what you will create or change, wait for the user's go, then do it and say what you did.
+Scope: the path the user typed after the command; if none, the files changed on this branch against the main branch; if none, the whole repo. Change comments only: never code, names, formatting or imports. Running the command is the request, so never ask whether to start: explain what you found, ask only what the user alone can settle, do the rest in that reply and say what you did.
 
-First, scan and propose: per file, how many comments you would remove, add and fix, with two or three examples, plus any bugs the comments reveal. Wait for go before editing.
+First, scan and propose: per file, how many comments you would remove, add and fix, with two or three examples, plus any bugs the comments reveal. Then edit and report what changed.
 
 Remove:
 - comments that no longer match the code

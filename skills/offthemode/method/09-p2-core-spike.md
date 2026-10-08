@@ -35,7 +35,7 @@ SPIKE {{RISK_ID}}: {{HYPOTHESIS}}
 Read .offthemode/SKELETON.md (Core contract, NFRs, Data flow), .offthemode/RISKS.md and RULES.md §Budgets. You are on the throwaway branch spike/{{NAME}}. This code is never merged; optimize for learning speed.
 Pass if {{THRESHOLD}} · fail if {{THRESHOLD}} · timebox {{N}} hours (at the limit, stop and report what you know).
 Allowed: hardcoded inputs, one plain page, no auth, any library. Forbidden: brand styling, abstractions, touching the main app, mocking or shrinking the hard part.
-1. State the smallest experiment that could falsify the hypothesis. Wait for my go.
+1. State the smallest experiment that could falsify the hypothesis, then start it in the same reply. Any step that writes to my real accounts or data waits for my answer.
 2. Build and measure with realistic data ({{DATA_SCALE}}) on {{TARGET_DEVICE_OR_ENV}}: p50, p95, throughput for streamed output, error rate, memory, cost per run. Numbers, not impressions.
 3. If it fails, try the alternatives most likely to pass, named before you start and inside the timebox.
 4. Model-driven core: save 20-30 real inputs with expected properties to evals/ and report the pass rate.
@@ -45,10 +45,10 @@ Deliver: the verdict; a measurement table, the method and an exact repro; the co
 The feel prototype is a greybox: system font, greys, no brand. What it must get right is time. It runs at the speed the spike measured, so the people trying it feel the real wait.
 
 ```prompt title="Feel Prototype"
-FEEL PROTOTYPE for {{?MOMENT_OF_VALUE}} (.offthemode/PRODUCT.md), built on the measurements from spike {{SPIKE_ID}}, on its own throwaway branch. First show me the plan (the branch, the sequence and the three bridges) and wait for my go.
+FEEL PROTOTYPE for {{?MOMENT_OF_VALUE}} (.offthemode/PRODUCT.md), built on the measurements from spike {{SPIKE_ID}}, on its own throwaway branch. First show me the plan (the branch, the sequence and the three bridges), then build it. Putting it at a public URL waits for my answer.
 Greybox: system font, greys, no brand, no design tokens. Forbidden: brand styling, and fake speed of any kind. Required: real timings (stream at the measured throughput, delay by the measured p95, fail at the measured error rate); the whole moment-of-value sequence from trigger to result; a rough cut of the signature-moment choreography with plain transforms; and three switchable ways to bridge the wait (?bridge=stream | work | optimistic): stream partial results; show the absorbed work (the inputs visibly becoming the result); an optimistic placeholder that resolves in place.
 Deliver: a URL or build I can put in front of 3 people who match {{?PERSON}}; a 5-line session script (what I say, what I must not explain); and a notes table for me to fill: Person | Described what happened in their own words? | Would wait? | Preferred bridge | Words they used for our nouns.
-After I paste the notes: the winning bridge as one DESIGN.md constraint line, GLOSSARY.md edits where their words differ from ours, and any PRODUCT.md or RISKS.md edits. Show them to me before writing.
+After I paste the notes: the winning bridge as one DESIGN.md constraint line, GLOSSARY.md edits where their words differ from ours, and any PRODUCT.md or RISKS.md edits. Show them to me with your picks; write them once I answer.
 ```
 
 > **Rule:** The feel gate passes when at least 2 of the 3 people describe what happened in their own words and say they'd wait. If it fails, redesign the moment (what streams, what's inferred, what happens first), never the pixels.

@@ -18,11 +18,11 @@ The Laws state the principles. These are the moves that put them to work, each w
 | Escalation ladder | Being stuck is a problem of context, scope or signal, rarely of intelligence | Hypotheses Before Fixes (P6 · Core Build & Iteration) |
 
 ```prompt title="Interview Me First"
-Before any plan or code, interview me about {{FEATURE}}. Batched, numbered questions, ordered by how much the answer changes architecture or UX, each with your recommended answer and what breaks if it is wrong; more rounds if needed. Ask only what would change the plan, and stop when no remaining question would. Then show me the answers as D-### entries for .offthemode/DECISIONS.md, and add them on my go.
+Before any plan or code, interview me about {{FEATURE}}. Batched, numbered questions, ordered by how much the answer changes architecture or UX, each with your recommended answer and what breaks if it is wrong; more rounds if needed. Ask only what would change the plan, and stop when no remaining question would. Then add the answers as D-### entries to .offthemode/DECISIONS.md and show me what you added.
 ```
 
 ```prompt title="Confirm Before Building"
-Before changing anything, list what you believe about {{TASK}}: data shapes, current behavior, user expectations, environment. Mark each VERIFIED (file:line) or HYPOTHESIS, written as "I think X, because Y". Confirm every hypothesis before building on it: check the code or docs, and ask me about the rest. Show me the list and your plan, and wait for my go. Build only on what is verified.
+Before changing anything, list what you believe about {{TASK}}: data shapes, current behavior, user expectations, environment. Mark each VERIFIED (file:line) or HYPOTHESIS, written as "I think X, because Y". Confirm every hypothesis before building on it: check the code or docs, and ask me about the rest. Show me the list and your plan, then start on what no open question changes. Build only on what is verified.
 ```
 
 ```prompt title="Constraint Stack"
@@ -46,11 +46,11 @@ If I confirm it applies beyond this task, propose one line for .offthemode/DESIG
 ```
 
 ```prompt title="Rubric First"
-Before designing {{SURFACE}} ({{onboarding, chart, editor, landing or OTHER}}), write the criteria that decide quality for this kind of surface, each certain to matter here and not already covered by DESIGN.md §Rubric, and show them to me. For each: what weak (1) and strong (3) look like, and which reference shows each. Include: the primary action is obvious at a glance; nothing that doesn't serve the job; the signature moment, if it lives here; {{?PERF_BUDGET}}. Wait for my go, then add them to .offthemode/DESIGN.md and build to them.
+Before designing {{SURFACE}} ({{onboarding, chart, editor, landing or OTHER}}), write the criteria that decide quality for this kind of surface, each certain to matter here and not already covered by DESIGN.md §Rubric, and show them to me. For each: what weak (1) and strong (3) look like, and which reference shows each. Include: the primary action is obvious at a glance; nothing that doesn't serve the job; the signature moment, if it lives here; {{?PERF_BUDGET}}. Then add them to .offthemode/DESIGN.md and build to them.
 ```
 
 ```prompt title="Checkpoint Plan"
-Break {{FEATURE}} into checkpoints of at most {{SIZE}}, each ending in a state that runs and can be checked (a test, a screenshot, a request): goal, files, exit check, decisions you need from me. Show me the plan and wait for my go. Then do checkpoint 1 only, run its exit check, update .offthemode/STATE.md with where things stand, and stop.
+Break {{FEATURE}} into checkpoints of at most {{SIZE}}, each ending in a state that runs and can be checked (a test, a screenshot, a request): goal, files, exit check, decisions you need from me. Show me the plan with your pick for each decision. Then do checkpoint 1 only (once I answer, if one of those decisions changes it), run its exit check, update .offthemode/STATE.md with where things stand, and stop.
 ```
 
 ```prompt title="Match the Exemplar"

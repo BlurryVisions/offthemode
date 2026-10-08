@@ -36,7 +36,7 @@ Taste is yours, not the product's, so carry §Taste and the folder to your next 
 4. Which traits of my hates the generic AI look shares, and which traits of my loves the anti-slop look shares. Both are modes I can fall into.
 5. The tensions between things I love. This is where a product gets its edge: a direction that resolves one of them is already off the mode.
 Then interview me with batched, numbered questions on the tensions and on anything I contradicted, each with your read as the recommended answer, in more rounds if needed.
-Show me the draft of .offthemode/DESIGN.md §Taste (under 60 lines) and write it after my go. If an earlier §Taste exists, end with the diff: what I stopped loving, what is new, which principle got sharper.
+Show me the draft of .offthemode/DESIGN.md §Taste (under 60 lines) and write it once I answer. If an earlier §Taste exists, end with the diff: what I stopped loving, what is new, which principle got sharper.
 ```
 
 ### Where references come from
@@ -70,7 +70,7 @@ Saturated traits live in DESIGN.md §Saturated and need a written product reason
 ```prompt title="Saturation Check"
 For each trait in .offthemode/design/directions/*.md and .offthemode/DESIGN.md (faces, colour strategy, grid model, surface treatment, motion signature, layout device), estimate how saturated it is. Search if you can (Fonts In Use, Framer and Webflow template marketplaces, recent design-award galleries, all from the last 12 months); otherwise say you are estimating. Roughly 20+ hits, or a match in DESIGN.md §Saturated, means mainstream: keep it only with a written product reason, or replace it with a move derived from a §Taste tension.
 Output: Trait | Evidence | Verdict (keep with reason | replace) | Replacement.
-Change nothing. After my go, log each kept trait's reason in .offthemode/DECISIONS.md and apply the replacements.
+Change nothing until I answer. Then log each kept trait's reason in .offthemode/DECISIONS.md and apply the replacements.
 ```
 
 ### Three directions, built apart
@@ -92,14 +92,14 @@ Act as a design director with a type designer's eye. .offthemode/design/refs/ ho
 Do not describe the images. Per reference: the ONE decision that makes it work, what it costs, and why it works perceptually.
 Then synthesize the principles for this product, keeping only those the references really support and the product's job needs. Each is a falsifiable sentence, not an adjective; traced to references by filename and to a §Taste principle or tension; expressed in type, colour, layout, motion and copy; paired with its failure mode (how an AI would misapply it into cliche).
 Also list: shared traits that are only current fashion or appear in §Saturated (dropped); 3 tensions between references to resolve; what NONE of the references do that this product's job demands. Never copy a layout, logo or signature element.
-Show me the result, then write it to .offthemode/DESIGN.md §Principles after my go.
+Show me the result, with your pick for each tension, and write it to .offthemode/DESIGN.md §Principles once I answer.
 ```
 
 ```prompt title="Three Divergent Directions"
 Direction {{A, B or C}} of three for {{?PRODUCT_NAME}}. This is a fresh session. The other directions exist elsewhere; do not look for them.
 Anchor, assigned by me: {{REF_FILE in .offthemode/design/refs/}}; take {{WHAT_TO_TAKE}}. Forbidden trait: {{TRAIT}}.
 Read .offthemode/DESIGN.md §Taste, §Principles, §Bans and §Saturated. The §Already used table is a ban list: share at most one attribute (column) with any row.
-First reply with a two-word name, a one-sentence thesis naming the metaphor, the density and the colour strategy, and the knob values you plan. Build after my go.
+Start your reply with a two-word name, a one-sentence thesis naming the metaphor, the density and the colour strategy, and the knob values you plan, then build it.
 Deliver: src/styles/directions/{{a, b or c}}.css using the tokens.css variable names; /lab/{{a, b or c}}/core ({{?HARDEST_SCREEN}} on edge-case data: long names, empty, max rows, error) and /lab/{{a, b or c}}/entry ({{?SECOND_SCREEN}}); a working signature moment; light and dark.
 Constraints: no HARD ban and no DEFAULT-OFF ban; one primary action per surface; real copy in the product's voice; no new dependency without a reason. Touch only the direction file and /lab/{{a, b or c}}.
 Finish: run {{?SHOTS_CMD}} on both routes and write .offthemode/design/directions/{{a, b or c}}.md: thesis, bet, weakest point, the §Taste tension it resolves. Do not compare yourself to anything and do not recommend.
@@ -286,7 +286,7 @@ tokens.css is locked at v1. Build /specimen, one page rendering the whole visual
 5. Data: a line, bar, area and table on large realistic data with the --data-* tokens and the highlight rule, direct labels, and designed empty, partial and loading chart states; shoot it with the colour-blind passes too.
 6. A real {{?HARDEST_SCREEN}} fragment built only from the parts above, and the signature moment on its own.
 Behaviour from {{PRIMITIVES_LIB}}; styling is ours. Zero raw colour, size or duration values in component files (1px hairlines excepted). Theme and reduced-motion toggles at the top.
-Before building, list any component or state the tokens cannot express yet, as token proposals, and wait for my go. When it is built, run the Screenshot Critique Loop on /specimen.
+Before building, list any component or state the tokens cannot express yet, as token proposals, each with your pick; build what they don't touch, and the rest once I answer. When it is built, run the Screenshot Critique Loop on /specimen.
 ```
 
 ### The craft layers
@@ -305,7 +305,7 @@ Before building, list any component or state the tokens cannot express yet, as t
 An AI writing CSS is guessing at pixels, and its confidence reflects how plausible the code looks, not how it renders. Give it eyes, and split the judging. A **deterministic audit** (a script that gives the same answer every run) owns the pixel facts a model cannot read from a screenshot: 1-3 px baseline drift, off-token values leaking in from library CSS or inline styles, undersized targets, contrast, accent share. The **critic** judges only what needs judgment: hierarchy, distinctiveness, feel. Your AI can explore with a browser tool (Playwright MCP, Chrome DevTools MCP); evidence comes from scripts. On native, capture with `xcrun simctl io booted screenshot`, `adb exec-out screencap -p` or Maestro. The app sets a `data-ready` attribute once data and fonts have settled, because waiting for "network idle" never finishes in apps with live connections (SSE, WebSockets, polling).
 
 ```prompt title="Screenshot and Audit Scripts"
-Write two scripts in this project's stack (Playwright for web; simulator or emulator tools for native) and add both to .offthemode/RULES.md §Commands. Show me the plan first; write them after my go.
+Write two scripts in this project's stack (Playwright for web; simulator or emulator tools for native) and add both to .offthemode/RULES.md §Commands. Show me the plan, then write them in the same reply.
 shots ROUTES: per route, at each size in screenshot_sizes (RULES.md §Budgets), a full-page shot in light and in dark at 2x density, touch emulated under 768 px. Force the theme two ways, the system colour scheme plus data-theme on the root element set before page scripts run, so the dark shot really is dark. Wait for [data-ready] and document.fonts.ready, never network idle; disable animations. Save shots/ROUTE-WIDTH-THEME.png, and add shots/ to .gitignore: shots are rebuilt on every run, and the ones worth keeping go to tests/baselines/. With VISION=deuteranopia,protanopia, add light shots through Chrome's Emulation.setEmulatedVisionDeficiency. Exit 1 if a light and dark pair is byte-identical: the theme is not switching.
 audit ROUTES: same sizes and themes. Collect every custom property declared on :root (media queries included) and resolve each through a hidden probe element for color, padding, font-size, font-family, transition-duration and box-shadow; those computed values are the only allowed ones. On every visible element outside [data-audit-skip], check text colour, size and face, background, padding, gaps, corner radius, shadow and transition duration against that set, ignoring 0, none, auto and transparent. Also flag, when RULES.md §Budgets holds those keys, text contrast against the nearest opaque background below contrast_text (contrast_large from large_text_px, or large_bold_text_px when bold); and always flag interactive elements under --touch-min when the tokens define it, and same-size sibling baselines in a row that differ by 1-3 px. Report the share of the first viewport filled with --accent. Print up to 40 findings per route, size and theme (element, property, value). Exit 1 on any finding.
 ```
@@ -324,7 +324,7 @@ Loop on {{ROUTE}}, one round at a time:
 2. Get a Design Critic review of the new shots from a session that did not build them, twice with the order swapped. If you cannot start one, stop and ask me to run it and paste the findings back.
 3. Fix the critic's findings, highest impact first, with tokens and component styles only.
 4. Re-shoot, re-audit and diff: improved, regressed.
-Before round 1, show me the audit findings, what you plan to fix and roughly what a round costs; after my go, run the rounds without asking again. Stop when the audit is clean and the .offthemode/DESIGN.md §Rubric ship bar is met, or when a round flips no loss (more rounds would go in circles). Then list what remains for my taste call. Never say it "looks great"; report wins, losses and ties.
+Before round 1, show me the audit findings, what you plan to fix and roughly what a round costs, then run the rounds without asking. Stop when the audit is clean and the .offthemode/DESIGN.md §Rubric ship bar is met, or when a round flips no loss (more rounds would go in circles). Then list what remains for my taste call. Never say it "looks great"; report wins, losses and ties.
 ```
 
 Vague feedback gets ignored or overcorrected; pixel-level feedback gets fixed. "Too cluttered" becomes "7 equal-weight toolbar buttons: keep Run as primary, move 5 to overflow, delete Refresh (auto-refresh exists)". "Looks generic" becomes "the 3-card row is the tell: make it one sequence where each item shows the real output it describes".
@@ -336,7 +336,7 @@ Audit {{SCOPE}} for statistical-average UI; every hit is a bug.
 3. Values: run {{?AUDIT_CMD}}; framework defaults and raw values become tokens. Icons that repeat their label: deleted.
 4. Delete test: remove each element in turn; if nothing is lost, it stays deleted.
 5. The signature moment exists and is the only loud thing.
-Report the findings and the planned changes first, and change nothing until I say go. Then make them and give a change summary with before and after screenshots.
+Report the findings and the planned changes, then make them and give a change summary with before and after screenshots.
 ```
 
 ### Enforce the bans

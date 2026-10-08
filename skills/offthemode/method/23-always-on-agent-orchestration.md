@@ -48,11 +48,11 @@ Summarizing a long conversation in place (many tools call this compacting) is fo
 
 A batch run is the AI working from the command line, with no chat window: it takes a prompt, does the job, and exits. In Claude Code that is `claude -p`; in Codex, `codex exec`.
 
-Talk first still holds, for the batch as a whole. Have your AI describe the change, list the files and show one sample result. Say go, then start the loop. Each run is told it belongs to an approved batch, so it doesn't stall waiting for a go nobody will type, and it leaves `.offthemode/` alone: many runs rewriting STATE.md would overwrite each other. Update STATE.md once, at the end.
+For the batch as a whole, have your AI describe the change, list the files, show one sample result and say roughly what the batch costs, then start the loop. Each run is told it belongs to an approved batch, so it never stops to ask a question nobody is there to answer, and it leaves `.offthemode/` alone: many runs rewriting STATE.md would overwrite each other. Update STATE.md once, at the end.
 
 ```bash
 for f in $(git ls-files '{{FILES_GLOB}}'); do   # each run prints one line, so the loop's output is the log
-  {{AI_CLI}} "Part of an approved batch: don't wait for a go, don't edit .offthemode/. Apply .offthemode/prompts/copy-pass.md to $f. Edit strings only. Reply in one line: file, changed or unchanged, what changed."
+  {{AI_CLI}} "Part of an approved batch: never stop to ask, don't edit .offthemode/. Apply .offthemode/prompts/copy-pass.md to $f. Edit strings only. Reply in one line: file, changed or unchanged, what changed."
 done
 {{CHECK_CMD}}   # the check command from RULES.md §Commands, once, after the batch
 ```

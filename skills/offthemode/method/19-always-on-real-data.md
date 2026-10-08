@@ -7,7 +7,7 @@ AI tools design for the happy path of their own placeholder content. Layout bugs
 Three terms. A content model lists each kind of record, its fields, how long each field usually runs and how often it is empty. A deterministic seed is a script that fills the app with fake but realistic data, the same data on every run, because its random generator starts from a fixed number; that is what makes screenshots comparable over time. A states gallery is a page that exists only in development and shows each main component in every state side by side.
 
 ```prompt title="Build the Seed"
-Read {{CONTENT_MODEL_PATH}}. If it is missing, draft it first (entities, fields, min/typical/max length, optionality, cardinality, realistic distributions for {{MARKET}}). Show me the content model and the seed plan (profiles, files, the states route) and wait for my go.
+Read {{CONTENT_MODEL_PATH}}. If it is missing, draft it first (entities, fields, min/typical/max length, optionality, cardinality, realistic distributions for {{MARKET}}). Show me the content model and the seed plan (profiles, files, the states route).
 Then build a deterministic seed (fixed random seed) at {{SEED_PATH}} with @faker-js/faker or the stack's equivalent, writing to fixtures/. Profiles by environment variable:
 - demo: the product in month six with real users in {{MARKET}}; curated and believable; used for design reviews, the landing page demo and store screenshots.
 - edge: every case in the torture set pasted below at least once, every lifecycle state, archived records.

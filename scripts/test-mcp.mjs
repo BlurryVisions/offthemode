@@ -59,9 +59,10 @@ expect(lr.includes("only the first word of the note") && lr.includes("the user's
 for (const name of ["offthemode", "reassess", "revisit-comments", "revisit-glossary", "view-project", "revisit-state"]) {
   const t = (await rpc("tools/call", { name, arguments: {} })).content[0].text;
   // Size guard: commands carry instructions only, so a status check stays cheap (~4 chars per token). Raised from 6000
-  // to 8000 on 2026-10-07 (D-015) because squeezing under 6000 had started to cost clarity, and to 9000 on 2026-10-08
-  // (D-023) for setup's old-name upgrade; quality wins over the guard.
-  expect(t.length > 500 && t.length < 9000 && t.includes("Off the Mode"), `tools/call ${name} · ${t.length} chars (~${Math.round(t.length / 4)} tokens, limit 2250)`);
+  // to 8000 on 2026-10-07 (D-015) because squeezing under 6000 had started to cost clarity, to 9000 on 2026-10-08
+  // (D-023) for setup's old-name upgrade, and to 10000 the same day (D-025) for the reach question and the old-go-line
+  // check; quality wins over the guard.
+  expect(t.length > 500 && t.length < 10000 && t.includes("Off the Mode"), `tools/call ${name} · ${t.length} chars (~${Math.round(t.length / 4)} tokens, limit 2500)`);
   if (name === "offthemode") expect(t.startsWith("Set up Off the Mode:") && !t.includes("Off the Mode · Set up"), "tools/call offthemode · header names it once");
   // view-project gives a line for each shell, each writing every note as a <template data-offthemode-file>, and the skills' offline copy.
   if (name === "view-project") expect(t.includes(`curl -fsSL https://offthemode.vercel.app/view -o "$OUT"`) && t.includes("Invoke-WebRequest https://offthemode.vercel.app/view") && (t.match(/<template data-offthemode-file=/g) ?? []).length === 2 && t.includes("view.html"),

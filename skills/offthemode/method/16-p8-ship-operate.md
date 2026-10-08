@@ -22,7 +22,7 @@ Build the first-contact page for {{?PRODUCT_NAME}} as a guided run of {{?MOMENT_
 Structure: a one-sentence thesis in {{?PERSON}}'s own nouns (.offthemode/PRODUCT.md, .offthemode/GLOSSARY.md); the product doing the job (interactive, or recorded from the real app, never a mock or an illustration of UI); one proof (a number, a customer, or something the product made); one action.
 Rules: every section is either an interaction or a real output; no section describes a feature it does not show; no pricing grid or FAQ unless a PRODUCT.md job needs one on this page; the same RULES.md §Look and feel and §Budgets numbers, the same audits and the same fresh-session review as product screens.
 Also: store screenshots captured from the real app on the demo seed, in moment-of-value order; per-route Open Graph images generated from the design tokens and real data.
-Before building, list the sections and what each one shows, and wait for my go.
+List the sections and what each one shows first, then build it.
 ```
 
 ### The launch checklist
@@ -36,7 +36,7 @@ Before building, list the sections and what each one shows, and wait for my go.
 
 ```prompt title="Release Readiness"
 Audit {{?PRODUCT_NAME}} against the P8 launch checklist: each item PASS with evidence (file, URL, screenshot), FAIL with the fix, or N/A with the reason. Then operability: can I roll back in under 5 minutes, disable {{CORE_FEATURE}} by flag, rotate every secret, and restore yesterday's backup? Name the three scenarios most likely to page me in week one and the alert that catches each.
-Report first. After my go, write .offthemode/RUNBOOK.md with the exact steps for rollback, flag kill, secret rotation and restore.
+Report first, then write .offthemode/RUNBOOK.md with the exact steps for rollback, flag kill, secret rotation and restore.
 ```
 
 ### After launch
@@ -63,7 +63,7 @@ Project retro for {{?PRODUCT_NAME}}. Read .offthemode/DECISIONS.md, STATE.md, CH
 4. Extract: work done 3 or more times by hand that should become a script (listed in RULES.md §Commands) or a saved prompt.
 5. Taste: from the best and worst screens, what to keep and what to avoid, as lines for PRODUCT.md §Feeling and .offthemode/DESIGN.md; flag any pattern we used that has since become common in templates.
 6. Estimates: planned against actual per phase, and the root cause of the biggest miss, as a DECISIONS.md entry.
-7. One product lesson per phase that the vision questions should cover next time, and whether my approvals at the checkpoints changed a decision, as a DECISIONS.md entry.
+7. One product lesson per phase that the vision questions should cover next time, and whether my answers in the rounds changed a decision, as a DECISIONS.md entry.
 Change nothing until I approve each diff. When done, save where things stand with revisit-state's steps.
 ```
 

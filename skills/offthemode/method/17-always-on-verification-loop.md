@@ -158,7 +158,7 @@ A model-driven core is one whose main work is done by an AI model call, such as 
 ```prompt title="Build the Eval Set"
 Build evals/ for {{?CORE_MODULE}} (.offthemode/SKELETON.md §Core contract). Start from the spike inputs and the demo and edge seeds. Aim for {{N | 50}} cases covering the typical input, the hardest real input, empty and huge inputs, adversarial inputs (injection in retrieved text, instructions hidden in user content), and every failure mode in the contract.
 Per case: the input, the properties the output must and must not have, and the graders (deterministic first; an LLM judge only for what can't be checked mechanically, with its rubric written out).
-First show me the case list and the graders, and wait for my go.
+First show me the case list and the graders, then write the cases.
 Then build the runner, reporting pass rate, failures per grader, p95 latency and cost per run; pick 20 cases for me to grade by hand and report the judge's agreement with my grades; add a CI trigger on changes to prompts, model ids, retrieval settings and the core contract. Add the eval command to .offthemode/RULES.md §Commands and the allowed drop to §Budgets, run it once, and record the baseline in SKELETON.md §Core contract.
 ```
 

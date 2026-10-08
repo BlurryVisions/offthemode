@@ -1,6 +1,6 @@
 ## P6 · Core Build & Iteration
 
-> **Output:** vertical slices merged but switched off in production behind expiring flags, each closing a `.offthemode/CHECKLIST.md` item with its evidence; change requests numbered CR-### in branch names and commit messages; screenshot baselines committed with the tests in `tests/baselines/`; evals gating every change to a model-driven core; refactor checkpoints and drift checks on a cadence; `.offthemode/STATE.md` kept current as the work happens, and decisions appended to `.offthemode/DECISIONS.md`.
+> **Output:** vertical slices merged but switched off in production behind expiring flags, each closing a `.offthemode/CHECKLIST.md` item with its evidence; change requests numbered CR-### in commit messages and in any branch RULES.md §Shipping makes for them; screenshot baselines committed with the tests in `tests/baselines/`; evals gating every change to a model-driven core; refactor checkpoints and drift checks on a cadence; `.offthemode/STATE.md` kept current as the work happens, and decisions appended to `.offthemode/DECISIONS.md`.
 
 <!-- offthemode:rules -->
 ### Working rules (for a change inside an existing product)
@@ -24,9 +24,9 @@ Build vertical slices, not horizontal layers. Layers (all tables, then all endpo
 
 ```prompt title="Vertical Slice"
 Vertical slice: {{SLICE_NAME}} (usually the next open item in .offthemode/CHECKLIST.md). Fence, the only files you may edit: {{FENCE}}. If I left the fence blank, propose one: the feature folder plus the files your plan names.
-Plan first. Change nothing until I say go.
-Resolve these from the docs and show each with its source ("PERSON <- PRODUCT.md L7"): {{?PERSON}}, {{?JOB}} and {{?MOMENT_OF_VALUE}} (PRODUCT.md); {{?PRINCIPLE}} it serves (DESIGN.md or PRODUCT.md); {{?JOURNEY_STEP}} (ROUTES.md); {{?EDGE_CASES}} (the edge seed profile); {{?FLAG_NAME}} (the flags module's naming). Ask only about what the docs don't answer. Write any doubt as "I think X, because Y" and confirm it before building on it.
-Restate the slice in 5 lines: person, job, moment of value, the single primary action, the principle. Then work in this order, stopping for my review after step 2:
+Plan first. Show me the plan, then build it.
+Resolve these from the docs and show each with its source ("PERSON <- PRODUCT.md L7"): {{?PERSON}}, {{?JOB}} and {{?MOMENT_OF_VALUE}} (PRODUCT.md); {{?PRINCIPLE}} it serves (DESIGN.md or PRODUCT.md); {{?JOURNEY_STEP}} (ROUTES.md); {{?EDGE_CASES}} (the edge seed profile); {{?FLAG_NAME}} (the flags module's naming). Ask only about what the docs don't answer. Write any doubt as "I think X, because Y" and settle it in the code or docs, or put it in the round, before building on it.
+Restate the slice in 5 lines: person, job, moment of value, the single primary action, the principle. Then work in this order:
 1. Data: migration plus seed rows covering empty, max length, unicode, a soft-deleted owner and the edge cases.
 2. Contract: request/response types and error codes. Show them before implementing.
 3. API: validation at the boundary; the authorization matrix enforced on the server.
@@ -50,7 +50,7 @@ ACCEPTANCE:
 - [ ] {{OBSERVABLE_CRITERION}}
 - [ ] Net visible actions on {{SURFACE}}: +0, or a reason for each one added
 VERIFY: {{VERIFY_METHOD}}, for example "test X red before, green after", "screenshots at each of screenshot_sizes (RULES.md §Budgets), light and dark, diffed against tests/baselines/, {{?AUDIT_CMD}} clean", or "p95 of Y (the time 95 of 100 runs beat) inside its RULES.md §Budgets limit".
-PROCESS: restate the change in 3 lines with the files you will touch; if any is outside the fence, stop. Wait for my go. Make a checkpoint commit "wip: before CR-{{NNN}}", then the smallest change that meets the criteria. Evidence, not claims. Anything you notice outside the fence becomes a proposed follow-up CR. Finish by running the checks in RULES.md §Commands, commit with "CR-{{NNN}}" in the message, and report the id, a one-line summary, the files and the commit hash. Then save where things stand with revisit-state's steps.
+PROCESS: restate the change in 3 lines with the files you will touch; if any is outside the fence, stop. Otherwise make a checkpoint commit "wip: before CR-{{NNN}}", then the smallest change that meets the criteria. Evidence, not claims. Anything you notice outside the fence becomes a proposed follow-up CR. Finish by running the checks in RULES.md §Commands, commit with "CR-{{NNN}}" in the message, and report the id, a one-line summary, the files and the commit hash. Then save where things stand with revisit-state's steps.
 ```
 
 ### Iteration loops
@@ -59,8 +59,8 @@ PROCESS: restate the change in 3 lines with the files you will touch; if any is 
 
 ```prompt title="Test-First"
 Behavior: {{BEHAVIOR}}. Rules and edge cases: {{RULES}}, including empty, huge, concurrent, offline, unauthorized.
-Phase 1, tests only. First list the tests you will write in {{TEST_PATH}}, one line each (the happy path, every rule, edge case and failure mode), and wait for my go. Then write them, confirm each fails for the intended reason (an assertion, not an import error), commit "test: {{BEHAVIOR}} (red)" and stop.
-Phase 2, after my go: the minimum implementation to pass. Never edit, skip, weaken or delete a phase-1 test; if one looks wrong, stop and argue. Commit "feat: {{BEHAVIOR}} (green)".
+Phase 1, tests only. First list the tests you will write in {{TEST_PATH}}, one line each (the happy path, every rule, edge case and failure mode), then write them, confirm each fails for the intended reason (an assertion, not an import error), commit "test: {{BEHAVIOR}} (red)".
+Phase 2, after the red commit: the minimum implementation to pass. Never edit, skip, weaken or delete a phase-1 test; if one looks wrong, stop and argue. Commit "feat: {{BEHAVIOR}} (green)".
 Phase 3: refactor, with the suite green after every step.
 ```
 
@@ -73,11 +73,11 @@ Phase 3: refactor, with the suite green after every step.
 **Rot control.** Inside files a CR already touches, your AI may fix one small smell, in its own commit. Everything else becomes a follow-up CR. Refactor checkpoints are triggered by events, not the calendar: every 5 CRs, a file past max_file_lines in RULES.md §Budgets, the same fix in three places, or a slice at twice its estimate.
 
 ```prompt title="Refactor Checkpoint"
-Refactor checkpoint after {{LAST_CR_ID}}; behavior must not change. Survey {{SCOPE}} and rank issues by future cost: duplicated logic, oversized files, imports crossing the boundaries in RULES.md §Code or .offthemode/ARCHITECTURE.md, dead exports, two patterns for one job, expired flags. Propose the refactors whose payoff beats their risk now, each with payoff, risk and files, and stop for my go.
-One commit per approved refactor, the full suite after each, revert on red. No new dependencies, contract changes or visual changes; tests/baselines/ must still match and evals must not regress. Then update .offthemode/ARCHITECTURE.md if the structure moved, and save where things stand with revisit-state's steps.
+Refactor checkpoint after {{LAST_CR_ID}}; behavior must not change. Survey {{SCOPE}} and rank issues by future cost: duplicated logic, oversized files, imports crossing the boundaries in RULES.md §Code or .offthemode/ARCHITECTURE.md, dead exports, two patterns for one job, expired flags. Propose the refactors whose payoff beats their risk now, each with payoff, risk and files, then make them.
+One commit per refactor, the full suite after each, revert on red. No new dependencies, contract changes or visual changes; tests/baselines/ must still match and evals must not regress. Then update .offthemode/ARCHITECTURE.md if the structure moved, and save where things stand with revisit-state's steps.
 ```
 
-**Git is the undo button.** Your tool's undo tracks file edits, not what shell commands did to your database or dependencies. So: a checkpoint commit before every editing run, a branch per CR, and a main branch that is always green.
+**Git is the undo button.** Your tool's undo tracks file edits, not what shell commands did to your database or dependencies. So: a checkpoint commit before every editing run, one branch per request when the work reaches other people (RULES.md §Shipping), and a live branch that is always green.
 
 > **Pro move:** When a change has real alternatives, run up to three attempts side by side. A git worktree is a second working folder on the same repo, on its own branch; give each one its own port, database and env file. Give each attempt a different constraint (A led by typography, B by motion, C by removing something). The same prompt three times gives you three samples of one mode.
 
@@ -103,16 +103,16 @@ git worktree remove ../myapp-b && git branch -D exp/cr-012-b
 | 8 | Write the 20-line kernel yourself, or change the requirement | Some things are cheaper to solve than to specify |
 
 ```prompt title="Hypotheses Before Fixes"
-Stop fixing. List 3 distinct hypotheses for {{BUG}}, each with evidence for and against and one cheap experiment (a log line, a test, a curl) that would falsify it. Run the experiments, which change no code beyond a temporary log line, and report the results with the fix you propose. Wait for my go, then fix only the confirmed cause and add a regression test.
+Stop fixing. List 3 distinct hypotheses for {{BUG}}, each with evidence for and against and one cheap experiment (a log line, a test, a curl) that would falsify it. Run the experiments, which change no code beyond a temporary log line, and report the results with the fix you propose, then fix only the confirmed cause and add a regression test.
 ```
 
 **Drift.** Thirty sensible CRs later, you have a second accent colour, four button styles and a settings page nobody designed. As a long session's context gets compacted (summarized to fit), early anchors lose weight. Three habits hold the line: every session starts from RULES.md and STATE.md, every CR names the principle it serves, and a drift check runs every 5 CRs and before each release. Intentional drift gets written into PRODUCT.md or DESIGN.md with a DECISIONS.md entry. Undocumented drift is a bug.
 
 ```prompt title="Drift Check"
-Drift check after {{LAST_CR_ID}}. Read-only: change nothing. Read .offthemode/PRODUCT.md and .offthemode/DESIGN.md in full; screenshot {{KEY_SURFACES}} at each of screenshot_sizes (RULES.md §Budgets), light and dark; read the code behind each. Leave DECISIONS.md and STATE.md until the end, so you judge what is there, not what was intended.
+Drift check after {{LAST_CR_ID}}. Read-only until the report: change nothing. Read .offthemode/PRODUCT.md and .offthemode/DESIGN.md in full; screenshot {{KEY_SURFACES}} at each of screenshot_sizes (RULES.md §Budgets), light and dark; read the code behind each. Leave DECISIONS.md and STATE.md until the end, so you judge what is there, not what was intended.
 1. Product: controls that serve no principle, surfaces over budget or with 2 or more primary actions, complexity pushed onto users that the system could infer.
 2. Visual: the De-Genericize checks and {{?AUDIT_CMD}} (report, don't fix); duplicate components; drift toward anything DESIGN.md bans or names as overused.
 3. Signature moment: intact, fast, still the one loud thing, compared against tests/baselines/.
 4. Architecture: the architecture you infer from the code, in 10 lines; where it disagrees with the boundaries in RULES.md §Code and .offthemode/ARCHITECTURE.md; whether {{CORE_MODULE}} still iterates without touching routing, auth or data access; code that looks copied from a tutorial.
-Give evidence per deviation (file:line or screenshot), marked ACCIDENTAL (propose a fix CR) or POSSIBLY INTENTIONAL (propose a doc update and a DECISIONS.md entry). End with the three highest-leverage fixes and wait for my go.
+Give evidence per deviation (file:line or screenshot), marked ACCIDENTAL (propose a fix CR) or POSSIBLY INTENTIONAL (propose a doc update and a DECISIONS.md entry). End with the three highest-leverage fixes; of those, make the ones marked ACCIDENTAL and ask me in the round whether each POSSIBLY INTENTIONAL one was meant.
 ```
