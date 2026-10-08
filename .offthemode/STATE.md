@@ -12,21 +12,21 @@ Live at https://offthemode.vercel.app (MCP at /mcp, method at /method, the view 
 6. Generate the method's "Load the Rules" prompt from content/server/instructions.md (F1.4): done when a grep finds one wording of the standing rule
 7. Prove D-025 in a real session, best with item 1 in lasscrobits: done when answers start the work with a read-back, no reply asks to start, commit or push, finished work goes live in the same reply, and Claude Code's auto mode lets the push through
 8. The rest of the 2026-10-08 log review: suggest a fresh chat at each natural end with the exact first message to type; size the security and infrastructure guides to who the product reaches (a one-person tool gets a short SECURITY.md); STATE.md carries unpushed work, a go not yet used and real dates, never "tomorrow"; a suggestion is made once, then parked in Waiting on me; "it can't work" needs the same proof as "done"
-9. Reassess without setup: on a project with no .offthemode/, /reassess first asks the few things only the owner knows (who relies on it, the job it must do, what it must never do), because a description written from the code alone makes the check circular; then it checks the code against those answers, runs one real input end to end, and saves the report only if the owner wants (from the author's finished aiml pipeline, 2026-10-08)
+9. One check for a project Off the Mode joins midway or at the end (D-027): in content/commands/reassess.md, a path for no .offthemode/ (light read, one round asking what it is for before saying it, deep read, check, one real run, verdict last, not proven when the run couldn't happen, report kept only if the owner says); setup's existing door (offthemode.md:33-36) points at those steps; revisit-checklist takes newer reassess notes; reassess reads newer decisions; the view's "saves it if you say so" (content/site/view-page.html:471) matches what reassess does. Done when: setup's door dry-run on supersense at commit 5c0f245 asks who it's for before saying it; /reassess on the aiml lineage site asks first, runs, and gives its verdict before any fix; /reassess on lasscrobits names PRODUCT.md:42 as replaced by D-070
 
 ## In flight
 - nothing pending in git; .claude/launch.json, a local preview config, stays out of git
 
 ## Unverified
 - the view in Safari and Firefox, a real folder dialog, drag and drop, and Chrome's real "Reopen" prompt (F8.1, F8.8)
-- reassess saving REASSESS.md in a real run (F8.4)
 - setup's no-file-access and no-UI paths, and the shipping step after its fixes (F5.2, F5.6, F5.9): only a dry run proves them
 - a project set up before 2026-10-08 working with the new names, through the link's mapping and /offthemode's offer
 - the link's command header (lib/content.ts: "requested by the user or by the project's RULES.md", "as the text below says") in Claude Code auto mode without the allow rule: one tool call
-- /revisit-state in a real session, typed, twice in a row, and on its own (F6.7); D-025 in a real session (Next 7)
+- /revisit-state in a real session, typed, twice in a row, and on its own (F6.7); D-025 in a real session (Next 7); reassess saving REASSESS.md in a real run (F8.4)
 - claude.ai accepting each per-skill zip (F3.5): skipped while the author's claude.ai is an org account
 
 ## Waiting on me · known broken · do not touch
+- The author, three choices on Next 9 (asked 2026-10-08): the purpose questions come with options but no suggested answer unless the author said it before; on a finished project, /reassess fixes the code problems it finds when told "fix" (verdict first, the same run again after, never commits or pushes); when to make the change (pick: together with Next 5, which also rewrites setup's first message).
 - The author: submit sitemap.xml in Search Console if not done yet; optional Bing import. Run /offthemode once in Supersense and lasscrobits (mlix done 2026-10-08, its old go lines replaced) so they get D-025's lines through UPDATES.md; in lasscrobits, after its running design run ends.
 - next dev writes a Next.js block into AGENTS.md: commit it when it appears (the author said ok, 2026-10-07).
 - In Claude Code auto mode, the MCP tools need the allow rule mcp__offthemode; the skills need none.
