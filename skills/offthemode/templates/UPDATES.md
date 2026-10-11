@@ -2,6 +2,9 @@ UPDATES · lines the templates replaced, newest first · /offthemode reads this 
 
 A project's line that still reads as a Was (its words, with that project's values filled in) gets the line named after it, from the current template, filled for that project. A line that matches neither is the owner's own wording: it stays, and the update names it in one line.
 
+## 2026-10-11 · hand off, don't carry (D-028)
+- RULES.md §Efficiency · Was: "- Read narrow: search first, then open only the lines you need. Never read generated files, lockfiles or build output; tail logs instead of reading them whole." · Now: the line starting "- Read narrow"; the new line starting "- Hand off, don't carry" goes after the one starting "- Many agents, one reading"
+
 ## 2026-10-08 · ask to decide, never to start (D-025)
 - RULES.md §This project · Was: "They win over this file on project specifics." or "...; a line in them changes only on my go, recorded in DECISIONS.md." · Now: the line ending "changes only on my yes, recorded in DECISIONS.md."
 - RULES.md §Shipping · Was: "- Never push, deploy or publish without my go: what goes live is mine to decide." · Now: the two lines starting "- Reaches:" and "- When live breaks"; Reaches comes from the user's answer, and until then counts as other people

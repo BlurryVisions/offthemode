@@ -1,10 +1,10 @@
 ## Always-On · Agent Orchestration
 
-> **Output:** one scout's brief that every other agent starts from, word for word; separate sessions for research, building and review; short structured results; scripts for anything that can be measured; a model and effort choice for each task.
+> **Output:** one scout's brief that every other agent starts from, word for word; long builds run as a relay of pieces, each handing a short note to the next; separate sessions for research, building and review; short structured results; scripts for anything that can be measured; a model and effort choice for each task.
 
 The context window is the AI's working memory: everything it has read and said in the current session, read again on every reply. Long sessions pile up stale and contradictory information. A fresh session has none of it, and a fresh session reviewing code has no stake in defending it.
 
-> **Rule:** Don't cap how many agents run. Remove the repetition between them. Every agent starts with a blank memory, so it re-reads what you already know, and you pay for that reading again: thirteen agents, thirteen readings. One scout reads once, and everyone else starts from its brief.
+> **Rule:** Don't cap how many agents run. Remove the repetition between them. Every agent starts with a blank memory, so it re-reads what you already know, and you pay for that reading again: thirteen agents, thirteen readings. One scout reads once, and everyone else starts from its brief. Then remove the repetition inside each agent: it re-reads everything it holds on every step, so it hands off finished work instead of carrying it.
 
 ### Many agents, one reading
 
@@ -24,10 +24,23 @@ Write a brief of at most 40 lines:
 - the contracts that must not break (types, API shapes, design tokens)
 - the checks that prove it works: {{?CHECK_CMD}}
 - open questions, written as hypotheses ("I think X, because Y")
-Then say how many agents this needs and why. One is the default; split only where the parts share no files.
+Then say how many agents this needs and why. One is the default; split only where the parts share no files. For a build longer than about 70 steps, list its pieces in order: a few commits each, with the check that ends each.
 End with the reply format every agent uses: done or blocked; files changed; check result; anything the brief got wrong. At most 10 lines.
 Every agent that follows starts its prompt with this brief, unchanged.
 ```
+
+### Hand off, don't carry
+
+An agent works like a session: on every step it re-reads everything it holds, including its own earlier thinking and the code it already wrote. So its cost grows with the square of its length, and a long build pays mostly for carrying finished work. One measured build agent ran 363 steps; its memory grew from 56k to 903k tokens and it re-read 209 million tokens in all. Half of that was its own finished work, a third was files it had printed, and two thirds came from things it took in during its first third of steps. The brief removes the repetition between agents; handing off removes it inside each one. Nothing is capped: effort, thinking, model and exploration stay as they are.
+
+1. **Cut the build at finished work.** The scout returns the build as ordered pieces: a few commits each, about 50 to 70 steps, each with the check that ends it. Small commits share a piece. Never cut in the middle of a piece, such as mid-debug, while its context is still in use.
+2. **One builder per piece, in order, the same way each time.** The pieces run one after another in one copy of the project, with the same model, effort and tools, so the shared start stays cached. Each prompt is the brief word for word, then the last piece's note, then this piece.
+3. **The note points; it doesn't retell.** The builder ends with a short note in a fixed shape: the commit, the files with line ranges, the decisions made (the unstated ones too: names, conventions, approaches tried and dropped), dead ends in one line each, open issues, and the check with its result. Only the last note goes forward; the code and git hold the rest.
+4. **The check ends the piece.** The builder fixes failures itself while it still holds the context, until the check passes. After repeated failures it ends as blocked, with the failure in its note.
+5. **The run returns a few lines.** One workflow runs the whole chain and returns at most 10 lines and the path of a file with the details. The main session reads that file narrowly, never whole, and after the run saves STATE.md and suggests a fresh session.
+6. **Measure the first run.** Per agent: steps, peak memory, total re-read, and what each new builder re-read to get going. For quality: how often a check failed the first time, rework on the previous piece's lines, and the reviewers' findings. Compare with a run from before the change.
+
+> **Trap:** Splitting too fine. Each new builder re-reads the files it needs, so below about 45 steps the saving flattens while the risk of a lost decision grows. A reviewer per piece roughly doubles the cost; keep the reviewers at the end of the run.
 
 ### Patterns
 
@@ -35,6 +48,7 @@ Every agent that follows starts its prompt with this brief, unchanged.
 |---|---|---|
 | Research agent | You need conclusions from a lot of reading | An agent or a separate session reads; the main session gets the summary |
 | Builder and reviewer | Any change worth checking | A second, fresh AI session asked to review, with no memory of building it |
+| Relay builders | A build longer than one piece | One builder per piece, in order, each starting from the brief and the last piece's note (Hand off, don't carry) |
 | Isolated builders | Samples that must not see each other (the three directions in P3, bake-offs) | One fresh session per sample, each in its own copy of the project |
 | Parallel features | Two or three features that share no files | One session each, in separate copies, after shared contracts have landed |
 | Batch run | One mechanical change across many files | Your tool's command-line mode in a loop, one file per run, each run logged |
