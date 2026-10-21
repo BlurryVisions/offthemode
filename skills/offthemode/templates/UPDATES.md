@@ -2,6 +2,12 @@ UPDATES · lines the templates replaced, newest first · /offthemode reads this 
 
 A project's line that still reads as a Was (its words, with that project's values filled in) gets the line named after it, from the current template, filled for that project. A line that matches neither is the owner's own wording: it stays, and the update names it in one line.
 
+## 2026-10-21 · every build hands off, review fresh, the main session is asked to hand off (D-029)
+- RULES.md §Efficiency · Was: "- Hand off, don't carry: an agent re-reads everything it holds on every step, so its cost grows with the square of its length. A long build runs as pieces of a few commits, in order: each builder starts from the brief and the last piece's short note (commit, files with line ranges, decisions, dead ends, open issues, check result) and ends when its check passes. Effort and thinking stay as they are." · Now: the line starting "- Hand off, don't carry"; the new line starting "- Review fresh, then only what changed" goes after it
+- RULES.md §Efficiency · Was: "- Keep sessions short: when a piece of work ends, suggest /revisit-state and a fresh session. A long session re-reads its whole history on every reply." · Now: the line starting "- Keep sessions short"
+- RULES.md §Guides · Was: "## Guides (open the matching one before the work; once per session is enough)" · Now: the heading starting "## Guides"
+- RULES.md §Efficiency · Was: "- Big runs (several agents, or hours): one I asked for gets its rough cost in the read-back and starts; one I didn't, run lean and offer it with its cost. Token cost is not a one-way door." · Now: the line starting "- Big runs"
+
 ## 2026-10-11 · hand off, don't carry (D-028)
 - RULES.md §Efficiency · Was: "- Read narrow: search first, then open only the lines you need. Never read generated files, lockfiles or build output; tail logs instead of reading them whole." · Now: the line starting "- Read narrow"; the new line starting "- Hand off, don't carry" goes after the one starting "- Many agents, one reading"
 
