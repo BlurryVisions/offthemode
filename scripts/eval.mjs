@@ -13,6 +13,7 @@ import { parseArgs } from "node:util";
 import { spawn } from "node:child_process";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { join, basename, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
 import { randomBytes } from "node:crypto";
 import { loadCase, CASES, CaseError, ARM_NAMES, caseEnv } from "./eval/case.mjs";
@@ -24,18 +25,30 @@ import { writeReport } from "./eval/report.mjs";
 import { makeSmoke } from "./eval/smoke.mjs";
 import { sh, say, logTo, M } from "./eval/run.mjs";
 
-const WORK = process.env.OTM_EVAL_WORK ?? join(homedir(), "offthemode-evals");
-const COPIES_AS_GIVEN = resolve(process.env.OTM_EVAL_COPIES ?? join(homedir(), "work-copies"));
+// An empty variable counts as unset: resolve("") would be the folder the eval was started from.
+const WORK = resolve(process.env.OTM_EVAL_WORK || join(homedir(), "offthemode-evals"));
+const COPIES_AS_GIVEN = resolve(process.env.OTM_EVAL_COPIES || join(homedir(), "work-copies"));
+const THIS_REPO = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const PROJECTS = join(homedir(), ".claude", "projects");
 const NAMES_IT = /offthemode|off[\s_-]*the[\s_-]*mode|revisit-(checklist|state|comments|glossary)|view-project|reassess/i;
 
-// The copies folder as Claude Code will see it (links resolved), since its session folders are named after that path.
+// Paths as Claude Code will see them (links resolved, letter case as on disk), since its session folders are named
+// after the folder a session starts in.
+const real = (p) => (existsSync(p) ? realpathSync.native(p) : resolve(p));
+const within = (a, b) => a === b || a.startsWith(b + "/");
+
+// The copies folder must stand apart: inside the records, the cases, the project or this repo, the deny rules would
+// cover the arms' own copies, and Claude Code would load the rule files of the folders above them.
 let COPIES = COPIES_AS_GIVEN;
-function useCopies() {
+function useCopies(c) {
   mkdirSync(COPIES_AS_GIVEN, { recursive: true, mode: 0o700 });
-  COPIES = realpathSync(COPIES_AS_GIVEN);
+  COPIES = real(COPIES_AS_GIVEN);
+  const apart = [["the records folder", WORK], ["the cases folder", CASES], ["the project", c.repo], ["this repo", THIS_REPO]];
+  for (const [name, path] of apart.map(([n, p]) => [n, real(p)])) {
+    if (within(COPIES, path) || within(path, COPIES)) throw new CaseError(`the copies folder (${COPIES}) and ${name} (${path}) must not sit inside each other; set OTM_EVAL_COPIES elsewhere`);
+    if (name !== "this repo" && within(PROJECTS, path)) throw new CaseError(`Claude Code's session folders (${PROJECTS}) sit inside ${name} (${path}), so the deny rules would cover the arms' own sessions`);
+  }
 }
-const real = (p) => (existsSync(p) ? realpathSync(p) : resolve(p));
 
 // A folder with a random name, holding one copy and its scratch folder (private, as Claude Code asks). The folder
 // above can be entered but not listed (write and enter, no read), so an arm can't find the other copies.
@@ -180,7 +193,7 @@ async function runCase(arg, opts) {
   const c = loadCase(arg);
   const arms = opts.arms ? opts.arms.split(",") : c.arms;
   if (!arms.length || arms.some((a) => !ARM_NAMES[a])) throw new CaseError(`--arms takes ${Object.keys(ARM_NAMES).join(",")}`);
-  useCopies();
+  useCopies(c);
   const started = new Date();
   let run = join(WORK, c.name, started.toLocaleString("sv-SE").slice(0, 16).replace(":", "").replace(" ", "-"));
   while (existsSync(run)) run += "+";

@@ -6,7 +6,7 @@ import { join, resolve, isAbsolute, dirname, basename } from "node:path";
 import { homedir } from "node:os";
 import { gitOr } from "./run.mjs";
 
-export const CASES = process.env.OTM_EVAL_CASES ?? join(homedir(), ".offthemode", "evals");
+export const CASES = resolve(process.env.OTM_EVAL_CASES || join(homedir(), ".offthemode", "evals"));
 export const ARM_NAMES = { plain: "Plain Claude Code", otm: "Off the Mode" };
 
 export class CaseError extends Error {}
