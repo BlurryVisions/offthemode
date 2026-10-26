@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
 import { appendFileSync, createWriteStream, existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-import { say, M } from "./run.mjs";
+import { say, M, track } from "./run.mjs";
 import { sessionFile, sessionUsage } from "./measure.mjs";
 import { changedFiles } from "./blind.mjs";
 import { ARM_NAMES } from "./case.mjs";
@@ -63,7 +63,7 @@ class ArmSession {
     this.open = new Map();
     Object.assign(this, { results: 0, last: Date.now(), result: null, busy: true, denials: 0, stoppedBy: null, buf: "", done: false, minutes: 0 });
     this.stream = createWriteStream(join(logDir, "stream.jsonl"));
-    this.child = spawn("claude", claudeArgs(c, arm, this.sid, settings), { cwd: dir, env: cleanEnv(tmp, dir), stdio: ["pipe", "pipe", "pipe"] });
+    this.child = track(spawn("claude", claudeArgs(c, arm, this.sid, settings), { cwd: dir, env: cleanEnv(tmp, dir), stdio: ["pipe", "pipe", "pipe"] }));
     this.child.stdin.on("error", () => {}); // a session that died is reported by its exit, not by a failed write
     this.child.stdout.setEncoding("utf8"); // a character split across two reads stays whole
     this.child.stdout.on("data", (d) => this.read(d));

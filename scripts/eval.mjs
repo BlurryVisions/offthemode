@@ -48,12 +48,20 @@ function allPlaces() {
 
 // The places a session must not read: the records (the key), the cases (the owner's goals), the real project (its
 // later commits), every copy but its own (earlier runs hold finished answers to the same ask), and Claude Code's
-// session folders for the real project and those copies (the owner's real sessions, the other arm's live chat).
-// Deny rules cover the file tools; a shell command can still reach them.
+// session folders for the real project and for every other copy, including copies already deleted (the owner's real
+// sessions, the other arm's live chat, earlier arms' chats). Deny rules cover the file tools; a shell command can
+// still reach them.
+const sessionsOf = (path) => join(PROJECTS, path.replace(/[^a-zA-Z0-9]/g, "-"));
+
 function fenced(c, places, own) {
   const others = [...new Set([...places, ...allPlaces()])].filter((p) => p !== own);
-  const sessions = [c.repo, ...others].map((p) => `${join(PROJECTS, p.replace(/[^a-zA-Z0-9]/g, "-"))}*`);
-  const deny = [WORK, CASES, c.repo, ...others, ...sessions].flatMap((p) => [`Read(/${p}/**)`, `Edit(/${p}/**)`]);
+  const ownName = basename(sessionsOf(join(own, basename(c.repo)))); // the session's own folder, never denied
+  const matchesOwn = (p) => (p.endsWith("-*") ? ownName.startsWith(basename(p).slice(0, -1)) : ownName === basename(p));
+  const prefix = basename(sessionsOf(COPIES)) + "-";
+  const earlier = existsSync(PROJECTS) ? readdirSync(PROJECTS).filter((n) => n.startsWith(prefix)).map((n) => join(PROJECTS, n)) : [];
+  const sessions = [c.repo, ...others].flatMap((p) => [sessionsOf(p), `${sessionsOf(p)}-*`]);
+  const paths = [WORK, CASES, c.repo, ...others, ...[...sessions, ...earlier].filter((p) => !matchesOwn(p))];
+  const deny = [...new Set(paths)].flatMap((p) => [`Read(/${p}/**)`, `Edit(/${p}/**)`]);
   const extra = c.settings.permissions ?? {};
   return { ...c.settings, permissions: { ...extra, deny: [...(extra.deny ?? []), ...deny] } };
 }

@@ -11,12 +11,22 @@ export function gitOr(cwd, ...args) {
   try { return git(cwd, ...args); } catch { return ""; }
 }
 
-// Each command runs in a process group of its own, which Ctrl-C no longer reaches: whatever still runs when the eval
-// exits or is stopped is stopped with it.
-const live = new Set();
-const stopAll = () => { for (const pid of live) { try { process.kill(-pid, "SIGKILL"); } catch { /* already gone */ } } };
+// Whatever the eval started stops with it, however it ends: case commands run in process groups of their own, which
+// Ctrl-C no longer reaches, and the claude sessions are tracked too.
+const live = new Set(), sessions = new Set();
+function stopAll() {
+  for (const pid of live) { try { process.kill(-pid, "SIGKILL"); } catch { /* already gone */ } }
+  for (const child of sessions) child.kill("SIGTERM");
+}
 process.on("exit", stopAll);
-for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => { stopAll(); process.exit(130); });
+for (const [signal, number] of [["SIGINT", 2], ["SIGTERM", 15]]) process.on(signal, () => { stopAll(); process.exit(128 + number); });
+
+// A claude session the eval started, stopped with the eval if it is still running then.
+export function track(child) {
+  sessions.add(child);
+  child.on("exit", () => sessions.delete(child));
+  return child;
+}
 
 // A case's own command (setup, install, check, score), run by the shell in a copy, its output kept in a log file.
 // It runs in its own process group: once the command exits, or at the timeout, whatever it left running (a watcher,
@@ -27,19 +37,15 @@ export function sh(command, { cwd, env = {}, logFile, timeoutMin = 30 }) {
     let out = "", done = false;
     live.add(child.pid);
     const stopGroup = () => { try { process.kill(-child.pid, "SIGKILL"); } catch { /* the group is already gone */ } };
-    const end = (code) => { if (!done) { done = true; live.delete(child.pid); clearTimeout(timer); resolve({ code, out }); } };
+    const end = (code) => { if (!done) { done = true; stopGroup(); live.delete(child.pid); clearTimeout(timer); resolve({ code, out }); } };
     const take = (d) => { out += d; if (logFile) appendFileSync(logFile, d); };
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
     child.stdout.on("data", take);
     child.stderr.on("data", take);
-    const timer = setTimeout(() => {
-      take(`\n(stopped after ${timeoutMin} minutes)\n`);
-      stopGroup();
-      end(124);
-    }, timeoutMin * 60_000);
+    const timer = setTimeout(() => { take(`\n(stopped after ${timeoutMin} minutes)\n`); end(124); }, timeoutMin * 60_000);
     child.on("error", (e) => { take(String(e)); end(127); });
-    child.on("exit", (code) => setTimeout(() => { stopGroup(); end(code ?? 1); }, 2000));
+    child.on("exit", (code) => setTimeout(() => end(code ?? 1), 2000));
     child.on("close", (code) => end(code ?? 1));
   });
 }

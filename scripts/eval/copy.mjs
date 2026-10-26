@@ -1,8 +1,8 @@
 // The copies an eval works in: the project as it stood at the case's commit, as one commit with no history, so
 // neither arm can see later work and the plain copy holds no trace of Off the Mode, not even in old commit messages.
 // Both copies get the case's setup, so they differ only in Off the Mode's own files (startDifferences checks it).
-import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join, dirname, isAbsolute, relative } from "node:path";
+import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { join, dirname, isAbsolute, relative, normalize } from "node:path";
 import { execFileSync } from "node:child_process";
 import { git, gitOr, sh } from "./run.mjs";
 import { CaseError, caseEnv } from "./case.mjs";
@@ -24,11 +24,15 @@ export const isOwnFile = (path) => path.startsWith(".offthemode/") || path === "
   || RULE_FILES.includes(path) || SETTINGS.includes(path) || MCP_FILES.includes(path)
   || SKILLS.some((p) => path === p || path.startsWith(`${p}/`));
 
-// Every folder between the copy and a path it strips must be a real folder: through a link, removing or rewriting
-// Off the Mode's files would change files outside the copy, perhaps in the real project.
+// A linked folder between the copy and a path it strips must lead somewhere inside the copy: otherwise removing or
+// rewriting Off the Mode's files would change files outside it, perhaps in the real project.
 function throughLink(dir, rel) {
-  const parts = rel.split("/").slice(0, -1);
-  return parts.some((_, i) => lstatSync(join(dir, ...parts.slice(0, i + 1)), { throwIfNoEntry: false })?.isSymbolicLink());
+  const root = realpathSync(dir), parts = rel.split("/").slice(0, -1);
+  return parts.some((_, i) => {
+    const p = join(dir, ...parts.slice(0, i + 1));
+    if (!lstatSync(p, { throwIfNoEntry: false })?.isSymbolicLink()) return false;
+    try { return !realpathSync(p).startsWith(root + "/"); } catch { return true; }
+  });
 }
 
 function mustBeInside(dir, rel) {
@@ -85,12 +89,30 @@ function stripOffTheMode(dir) {
   }
 }
 
+// Files Claude Code imports with @path from the rule files and every CLAUDE.md, as it does: relative to the
+// importing file, any characters but spaces, up to 5 hops.
+function imports(dir, tracked) {
+  const seen = new Set(), found = new Set(), has = new Set(tracked);
+  let wave = tracked.filter((f) => RULE_FILES.includes(f) || /(^|\/)(CLAUDE|CLAUDE\.local)\.md$/.test(f));
+  for (let hop = 0; hop < 5 && wave.length; hop++) {
+    const next = [];
+    for (const f of wave.filter((x) => !seen.has(x) && existsSync(join(dir, x)))) {
+      seen.add(f);
+      for (const [, raw] of readFileSync(join(dir, f), "utf8").matchAll(/(?:^|\s)@(\S+)/g)) {
+        const target = [raw, raw.replace(/[.,;:!?)\]]+$/, "")].map((r) => normalize(join(dirname(f), r))).find((t) => has.has(t));
+        if (target && !found.has(target)) { found.add(target); next.push(target); }
+      }
+    }
+    wave = next;
+  }
+  return found;
+}
+
 // Files in the plain copy that still name Off the Mode (a code comment, a script): shown in the report. One the AI
 // tool loads by itself stops the eval, because the plain arm would then work with the method.
 function mentions(dir) {
   const files = gitOr(dir, "grep", "-l", "-i", "-I", "-E", "offthemode|off[ _-]*the[ _-]*mode").split("\n").filter(Boolean);
-  const imported = new Set(RULE_FILES.filter((f) => existsSync(join(dir, f)))
-    .flatMap((f) => [...readFileSync(join(dir, f), "utf8").matchAll(/(?:^|\s)@([\w./-]+)/g)].map((m) => m[1].replace(/^\.\//, ""))));
+  const imported = imports(dir, git(dir, "ls-files", "-z").split("\0").filter(Boolean));
   const loaded = files.filter((f) => LOADED.test(f) || imported.has(f));
   if (loaded.length) throw new CaseError(`the plain copy would still load Off the Mode from ${loaded.join(", ")}; take it out with the case's setup (it runs in both copies) or pick another commit`);
   return files;
@@ -139,14 +161,16 @@ async function arrange(c, arm, dir, logFile) {
     if (!existsSync(rules)) throw new CaseError(`rules: the project has no .offthemode/RULES.md at ${c.commit}`);
     writeFileSync(rules, patchRules(readFileSync(rules, "utf8"), c.rulesText));
   }
-  return git(dir, "ls-files", "-z", "--others", "--ignored", "--exclude-standard", "--directory").split("\0").filter(Boolean).map((p) => p.replace(/\/$/, ""));
+  const ignored = git(dir, "status", "--porcelain=v1", "-z", "--ignored", "--untracked-files=normal").split("\0")
+    .filter((e) => e.startsWith("!! ")).map((e) => e.slice(3).replace(/\/$/, ""));
+  return ignored.filter((p) => !ignored.some((q) => p.startsWith(q + "/")));
 }
 
 // What the copy needs to run but git doesn't hold; all of it stays out of git through .git/info/exclude.
 async function furnish(c, dir, logFile, carry) {
   const put = (from, to) => {
     if (!existsSync(from)) throw new CaseError(`copy: no ${from}`);
-    if (existsSync(join(dir, to))) throw new CaseError(`files: ${to} is already in the project; pick another path`);
+    if (lstatSync(join(dir, to), { throwIfNoEntry: false })) throw new CaseError(`files: ${to} is already in the project (a file, a folder or a link); pick another path`);
     if (throughLink(dir, to)) throw new CaseError(`files: ${to} goes through a linked folder, so copying it would write outside the copy`);
     mkdirSync(dirname(join(dir, to)), { recursive: true });
     execFileSync("cp", [...CP_FLAGS, from, join(dir, to)]);

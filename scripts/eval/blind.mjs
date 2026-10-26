@@ -2,7 +2,7 @@
 import { execFileSync, spawn } from "node:child_process";
 import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { git } from "./run.mjs";
+import { git, track } from "./run.mjs";
 
 // Everything that differs from the start, committed or not, new files included, through a scratch index so the
 // copy's own index stays as the arm left it. .gitignore and .git/info/exclude keep fixtures and installs out.
@@ -107,7 +107,7 @@ function judgeOnce(c, arms, { changesDir, baseDir, settings, env }, lens) {
     "--model", c.model, "--tools", "Read,Grep,Glob", "--add-dir", changesDir, "--settings", JSON.stringify(settings), "--permission-mode", "default",
     "--permission-prompts", "none", "--strict-mcp-config"];
   return new Promise((resolve) => {
-    const child = spawn("claude", args, { cwd: baseDir, env, stdio: ["ignore", "pipe", "pipe"] });
+    const child = track(spawn("claude", args, { cwd: baseDir, env, stdio: ["ignore", "pipe", "pipe"] }));
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
     child.on("error", (e) => resolve({ lens: lens.key, name: lens.name, error: `the judge could not start: ${e.message}` }));
