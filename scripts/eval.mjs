@@ -11,8 +11,8 @@
 // --prepare makes the copies and runs the check and scorer at the start, for no tokens.
 import { parseArgs } from "node:util";
 import { spawn } from "node:child_process";
-import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, basename } from "node:path";
+import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { join, basename, resolve } from "node:path";
 import { homedir } from "node:os";
 import { randomBytes } from "node:crypto";
 import { loadCase, CASES, CaseError, ARM_NAMES, caseEnv } from "./eval/case.mjs";
@@ -25,9 +25,17 @@ import { makeSmoke } from "./eval/smoke.mjs";
 import { sh, say, logTo, M } from "./eval/run.mjs";
 
 const WORK = process.env.OTM_EVAL_WORK ?? join(homedir(), "offthemode-evals");
-const COPIES = process.env.OTM_EVAL_COPIES ?? join(homedir(), "work-copies");
+const COPIES_AS_GIVEN = resolve(process.env.OTM_EVAL_COPIES ?? join(homedir(), "work-copies"));
 const PROJECTS = join(homedir(), ".claude", "projects");
 const NAMES_IT = /offthemode|off[\s_-]*the[\s_-]*mode|revisit-(checklist|state|comments|glossary)|view-project|reassess/i;
+
+// The copies folder as Claude Code will see it (links resolved), since its session folders are named after that path.
+let COPIES = COPIES_AS_GIVEN;
+function useCopies() {
+  mkdirSync(COPIES_AS_GIVEN, { recursive: true, mode: 0o700 });
+  COPIES = realpathSync(COPIES_AS_GIVEN);
+}
+const real = (p) => (existsSync(p) ? realpathSync(p) : resolve(p));
 
 // A folder with a random name, holding one copy and its scratch folder (private, as Claude Code asks). The folder
 // above can be entered but not listed (write and enter, no read), so an arm can't find the other copies.
@@ -55,12 +63,19 @@ const sessionsOf = (path) => join(PROJECTS, path.replace(/[^a-zA-Z0-9]/g, "-"));
 
 function fenced(c, places, own) {
   const others = [...new Set([...places, ...allPlaces()])].filter((p) => p !== own);
-  const ownName = basename(sessionsOf(join(own, basename(c.repo)))); // the session's own folder, never denied
-  const matchesOwn = (p) => (p.endsWith("-*") ? ownName.startsWith(basename(p).slice(0, -1)) : ownName === basename(p));
-  const prefix = basename(sessionsOf(COPIES)) + "-";
-  const earlier = existsSync(PROJECTS) ? readdirSync(PROJECTS).filter((n) => n.startsWith(prefix)).map((n) => join(PROJECTS, n)) : [];
-  const sessions = [c.repo, ...others].flatMap((p) => [sessionsOf(p), `${sessionsOf(p)}-*`]);
-  const paths = [WORK, CASES, c.repo, ...others, ...[...sessions, ...earlier].filter((p) => !matchesOwn(p))];
+  const ownPlace = basename(sessionsOf(own)), entries = existsSync(PROJECTS) ? readdirSync(PROJECTS) : [];
+  const isOwn = (name) => name === ownPlace || name.startsWith(ownPlace + "-");
+  const ownName = basename(sessionsOf(join(own, basename(c.repo))));
+  // A pattern that would also match the session's own folder is replaced by the folders it matches today, but its own.
+  const expand = (pattern) => {
+    const name = basename(pattern), stem = name.endsWith("-*") ? name.slice(0, -1) : null;
+    if (!(stem ? ownName.startsWith(stem) : isOwn(name))) return [pattern];
+    return entries.filter((n) => (stem ? n.startsWith(stem) : n === name) && !isOwn(n)).map((n) => join(PROJECTS, n));
+  };
+  const repo = real(c.repo);
+  const sessions = [repo, ...others].flatMap((p) => [sessionsOf(p), `${sessionsOf(p)}-*`]).flatMap(expand);
+  const earlier = entries.filter((n) => n.startsWith(basename(sessionsOf(COPIES)) + "-") && !isOwn(n)).map((n) => join(PROJECTS, n));
+  const paths = [real(WORK), real(CASES), repo, ...others, ...sessions, ...earlier];
   const deny = [...new Set(paths)].flatMap((p) => [`Read(/${p}/**)`, `Edit(/${p}/**)`]);
   const extra = c.settings.permissions ?? {};
   return { ...c.settings, permissions: { ...extra, deny: [...(extra.deny ?? []), ...deny] } };
@@ -165,6 +180,7 @@ async function runCase(arg, opts) {
   const c = loadCase(arg);
   const arms = opts.arms ? opts.arms.split(",") : c.arms;
   if (!arms.length || arms.some((a) => !ARM_NAMES[a])) throw new CaseError(`--arms takes ${Object.keys(ARM_NAMES).join(",")}`);
+  useCopies();
   const started = new Date();
   let run = join(WORK, c.name, started.toLocaleString("sv-SE").slice(0, 16).replace(":", "").replace(" ", "-"));
   while (existsSync(run)) run += "+";
