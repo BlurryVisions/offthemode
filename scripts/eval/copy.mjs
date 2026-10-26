@@ -1,11 +1,12 @@
 // The copies an eval works in: the project as it stood at the case's commit, as one commit with no history, so
 // neither arm can see later work and the plain copy holds no trace of Off the Mode, not even in old commit messages.
 // Both copies get the case's setup, so they differ only in Off the Mode's own files (startDifferences checks it).
-import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { join, dirname, isAbsolute, relative, normalize } from "node:path";
+import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { join, dirname, isAbsolute, relative, normalize, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import { git, gitOr, sh } from "./run.mjs";
 import { CaseError, caseEnv } from "./case.mjs";
+import { realish, within } from "./sandbox.mjs";
 import { SKILL_FOLDERS } from "../../lib/install.mjs";
 
 const RULE_FILES = ["CLAUDE.md", "CLAUDE.local.md", ".claude/CLAUDE.md", "AGENTS.md", "GEMINI.md", ".github/copilot-instructions.md"];
@@ -45,6 +46,37 @@ function mustBeInside(dir, rel) {
 }
 
 const CP_FLAGS = process.platform === "darwin" ? ["-cR"] : ["-R"]; // -c: an APFS clone, instant and free on a Mac
+
+// Every link under a folder, not following links (a broken link counts too).
+function links(dir) {
+  if (!lstatSync(dir, { throwIfNoEntry: false })) return [];
+  return execFileSync("find", ["-P", dir, "-type", "l", "-print0"], { maxBuffer: 1 << 28 }).toString().split("\0").filter(Boolean);
+}
+
+// A link copied from the project that points back into the project itself (node_modules/node_modules pointed at
+// the owner's real node_modules in the replays) is pointed at the same place in the copy, as a relative link, so
+// the copy stands alone and no arm learns where the real project lives.
+function repoint(dir, sub, repo) {
+  const roots = [...new Set([resolve(repo), realish(repo)])];
+  for (const link of links(join(dir, sub))) {
+    const to = resolve(dirname(link), readlinkSync(link)), root = roots.find((r) => within(to, r));
+    if (!root) continue;
+    rmSync(link);
+    symlinkSync(relative(dirname(link), join(dir, relative(root, to))) || ".", link);
+  }
+}
+
+// Links that lead out of the copy, as "path -> target": none may be left once a copy is made, because the arm
+// would read the path (and, before the sandbox, follow it).
+export function linksOut(dir) {
+  const root = realpathSync(dir);
+  return links(root).flatMap((link) => {
+    const to = readlinkSync(link);
+    let real = null;
+    try { real = realpathSync(link); } catch { /* a broken link: its target's name is what counts */ }
+    return within(resolve(dirname(link), to), root) && (real === null || within(real, root)) ? [] : [`${relative(root, link)} -> ${to}`];
+  });
+}
 
 // A symlinked file becomes a plain file before it is changed, so the edit can't reach a file outside the copy.
 function unlink(path) {
@@ -180,6 +212,7 @@ async function furnish(c, dir, logFile, carry) {
     if (throughLink(dir, to)) throw new CaseError(`files: ${to} goes through a linked folder; give the real path inside the project`);
     mkdirSync(dirname(join(dir, to)), { recursive: true });
     execFileSync("cp", [...CP_FLAGS, from, join(dir, to)]);
+    repoint(dir, to, c.repo);
     appendFileSync(join(dir, ".git", "info", "exclude"), `/${to}\n`);
   };
   for (const [from, to] of carry) put(from, to);
@@ -209,6 +242,8 @@ export async function makeCopy(c, { dir, arm, source = c.repo, commit = c.commit
   const inside = hooks && (isAbsolute(hooks) ? relative(c.repo, hooks) : hooks);
   if (inside && !isAbsolute(inside) && !inside.startsWith("..")) git(dir, "config", "core.hooksPath", inside);
   await furnish(c, dir, logFile, carry);
+  const out = linksOut(dir);
+  if (out.length) throw new CaseError(`the ${arm} copy holds links that lead out of it, which hand the arm a path outside its copy: ${out.slice(0, 5).join(", ")}${out.length > 5 ? ` and ${out.length - 5} more` : ""}. Copy that folder for real in the case (a link back into the project itself is fixed on its own), or remove the link in the case's setup or install.`);
   return { dir, base: git(dir, "rev-parse", "HEAD"), mentions: arm === "plain" ? mentions(dir) : [], setupFiles };
 }
 

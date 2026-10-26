@@ -2,31 +2,38 @@
 // so background agents and workflows finish and report back. Never plain `claude -p` for this: its exit kills
 // background agents. A turn ends when the main chat has answered and is not working again, every background agent
 // and workflow has reported back, and nothing has moved for quietMinutes (no output, no agent file changing); then
-// the next logged reply goes in, or the session closes.
+// the next logged message (a reply, or the next ask of a case that replays several) goes in, or the session closes.
+// The session runs inside the arm's sandbox (sandbox.mjs), so neither it nor anything it starts reads outside its
+// copy.
 import { spawn } from "node:child_process";
 import { appendFileSync, createWriteStream, existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { randomUUID } from "node:crypto";
 import { say, M, track } from "./run.mjs";
 import { sessionFile, sessionUsage } from "./measure.mjs";
 import { changedFiles } from "./blind.mjs";
 import { ARM_NAMES } from "./case.mjs";
+import { asksOwner } from "./hurdles.mjs";
+import { sandboxed } from "./sandbox.mjs";
 
 // A background shell may never end (a dev server), so open shells hold a turn only this long. Nothing moving at all
 // for HANG_MINUTES, with agents still open or no answer yet, is a hang: the arm stops and the report says so.
 const SHELL_MINUTES = 20;
 const HANG_MINUTES = 60;
+// How often a turn is checked for its end; npm run test:eval shortens it to drive a stand-in claude quickly.
+const TICK_MS = Number(process.env.OTM_EVAL_TICK_MS) || 15_000;
 
 // What the launcher's environment would tell an arm about the eval stays out: the launching Claude session's own
 // settings (its id, effort, host socket), npm's variables (the package name, the eval script, this repo's path and
-// its node_modules/.bin on PATH) and the eval's own folders. The account settings stay. tmp: Claude Code's scratch
-// folder, kept next to the copy instead of /tmp, which macOS empties after 3 days.
+// its node_modules/.bin on PATH) and the eval's own folders. The account settings stay. tmp: the scratch folder for
+// Claude Code and for every tool it runs (TMPDIR), kept next to the copy: the sandbox closes Claude Code's usual
+// scratch folder in /tmp, where earlier replays kept their copies, and macOS empties /tmp after 3 days anyway.
 const KEEP = new Set(["CLAUDE_CODE_OAUTH_SCOPES", "CLAUDE_CODE_ORGANIZATION_UUID", "CLAUDE_CODE_ACCOUNT_UUID", "CLAUDE_CODE_USER_EMAIL"]);
 const DROP = (k) => (k.startsWith("CLAUDE") && !KEEP.has(k)) || /^(npm_|OTM_EVAL_)/i.test(k) || ["INIT_CWD", "OLDPWD", "PWD", "_"].includes(k);
 export const cleanEnv = (tmp, cwd) => ({
   ...Object.fromEntries(Object.entries(process.env).filter(([k]) => !DROP(k))),
   PATH: (process.env.PATH ?? "").split(":").filter((p) => !/node_modules\/\.bin$|node-gyp-bin/.test(p)).join(":"),
   PWD: cwd,
+  TMPDIR: tmp,
   CLAUDE_CODE_TMPDIR: tmp,
 });
 
@@ -51,26 +58,25 @@ function newest(dir) {
   return m;
 }
 
-// A turn asks the owner when its last words hold a question: the owner has to answer before the work goes on.
-const asksOwner = (text) => text.replace(/```[\s\S]*?```/g, "").replace(/https?:\S+/g, "").trim().slice(-600).includes("?");
 const DONE = new Set(["completed", "failed", "killed", "stopped", "cancelled"]);
 
 class ArmSession {
-  constructor({ c, arm, dir, base, logDir, tmp, settings }, resolve) {
-    Object.assign(this, { c, dir, base, logDir, resolve, name: ARM_NAMES[arm], sid: randomUUID() });
-    this.messages = [c.askText, ...c.replyTexts];
+  constructor({ c, arm, run, dir, base, logDir, tmp, settings, sid, profile, claude }, resolve) {
+    Object.assign(this, { c, dir, base, logDir, resolve, name: `${ARM_NAMES[arm]}${run ? ` run ${run}` : ""}`, sid });
+    this.messages = c.messages;
     this.turns = [];
     this.open = new Map();
     Object.assign(this, { results: 0, last: Date.now(), result: null, busy: true, denials: 0, stoppedBy: null, buf: "", done: false, minutes: 0 });
     this.stream = createWriteStream(join(logDir, "stream.jsonl"));
-    this.child = track(spawn("claude", claudeArgs(c, arm, this.sid, settings), { cwd: dir, env: cleanEnv(tmp, dir), stdio: ["pipe", "pipe", "pipe"] }));
+    const [cmd, args] = sandboxed(profile, claude, claudeArgs(c, arm, this.sid, settings));
+    this.child = track(spawn(cmd, args, { cwd: dir, env: cleanEnv(tmp, dir), stdio: ["pipe", "pipe", "pipe"] }));
     this.child.stdin.on("error", () => {}); // a session that died is reported by its exit, not by a failed write
     this.child.stdout.setEncoding("utf8"); // a character split across two reads stays whole
     this.child.stdout.on("data", (d) => this.read(d));
     this.child.stderr.on("data", (d) => appendFileSync(join(logDir, "stderr.log"), d));
     this.child.on("error", (e) => { appendFileSync(join(logDir, "stderr.log"), `${e}\n`); this.closed(null, String(e)); });
     this.child.on("exit", (code) => this.closed(code));
-    this.tick = setInterval(() => this.guard(() => this.watch()), 15_000);
+    this.tick = setInterval(() => this.guard(() => this.watch()), TICK_MS);
     this.brake = setInterval(() => this.guard(() => this.measure()), 60_000);
     this.send();
   }
@@ -81,11 +87,11 @@ class ArmSession {
   }
 
   send() {
-    this.turns.push({ sent: new Date().toISOString(), resultsBefore: this.results });
+    const m = this.messages[this.turns.length];
+    this.turns.push({ sent: new Date().toISOString(), kind: m.kind, step: m.step, resultsBefore: this.results });
     this.busy = true;
-    const content = this.messages[this.turns.length - 1];
-    this.child.stdin.write(JSON.stringify({ type: "user", message: { role: "user", content } }) + "\n");
-    say(`${this.name}: turn ${this.turns.length} sent`);
+    this.child.stdin.write(JSON.stringify({ type: "user", message: { role: "user", content: m.text } }) + "\n");
+    say(`${this.name}: turn ${this.turns.length} sent (${m.kind === "ask" ? `ask ${m.step}` : `a reply to ask ${m.step}`})`);
   }
 
   // The main chat is working from a model call's start (status "requesting", live output, a message) to its answer.

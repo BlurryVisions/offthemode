@@ -19,7 +19,8 @@
     "test:view-project": "node scripts/test-view-project.mjs",
     "audit": "node scripts/contrast.mjs",
     "usage": "node scripts/agent-usage.mjs",
-    "eval": "node scripts/eval.mjs"
+    "eval": "node scripts/eval.mjs",
+    "test:eval": "node scripts/test-eval.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.2.0",

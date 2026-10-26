@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import { lines, calls, profile, agentFiles } from "../agent-usage.mjs";
 import { M } from "./run.mjs";
+import { ownerText, sessionHurdles, HURDLES } from "./hurdles.mjs";
 
 const PROJECTS = join(homedir(), ".claude", "projects");
 
@@ -17,16 +18,8 @@ export function sessionFile(sid) {
   return null;
 }
 
-// What the owner typed: user messages in the main chat, not tool results, notices, interruptions or the summary
-// Claude Code writes when it compacts a long chat.
-function ownerMessages(file) {
-  return lines(file).flatMap((e) => {
-    if (e.type !== "user" || e.isSidechain || e.isMeta || e.isCompactSummary || e.isVisibleInTranscriptOnly || !e.timestamp) return [];
-    const c = e.message?.content;
-    const text = typeof c === "string" ? c : Array.isArray(c) ? c.filter((x) => x.type === "text").map((x) => x.text).join(" ") : "";
-    return text && !text.startsWith("<") && !text.startsWith("[Request interrupted") ? [{ at: e.timestamp, text }] : [];
-  });
-}
+// What the owner typed, with when (the same filter the hurdle counts use).
+const ownerMessages = (file) => lines(file).flatMap((e) => (ownerText(e) ? [{ at: e.timestamp }] : []));
 
 function workflowName(dir, file) {
   const id = file.match(/\/subagents\/workflows\/([^/]+)\//)?.[1];
@@ -61,4 +54,7 @@ export function printUsage(file) {
   console.log(`${file.split("/").at(-1)}: ${M(u.total)} read · main chat ${M(u.main)} · ${u.agents} agents ${M(u.agentsTotal)}`);
   for (const w of u.workflows) console.log(`  workflow ${w.name}: ${w.agents} agents, ${M(w.total)}`);
   u.turns.forEach((t, i) => console.log(`  turn ${i + 1} (${t.start.slice(5, 16)}): ${M(t.total)}, ${t.agents} agents`));
+  const h = sessionHurdles(file);
+  console.log(`hurdles over ${h.turns} owner turns: ${HURDLES.map(([k, what]) => `${what} ${h[k]}`).join(" · ")}`);
+  h.perTurn.forEach((t, i) => console.log(`  turn ${i + 1}: ${[t.asked && "asked the owner", t.goAhead && "asked to start/commit/push", t.ids && `${t.ids} ids (${t.idsSeen.join(", ")})`, `${t.chars} chars`, t.steps && `${t.steps} hand steps`].filter(Boolean).join(", ")}`));
 }

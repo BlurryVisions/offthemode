@@ -57,13 +57,20 @@ Everything comes from one source, [`content/`](content/). Edit there, then run `
 
 ### Test a change on a real ask first
 
-`npm run eval -- <case>` replays one real ask through plain Claude Code and through Off the Mode, side by side, each in its own copy of the project. Then it measures and scores both: tokens read, agents, time, how often each stopped to ask, the project's own check, the case's own scorer, and three blind judges who don't know which is which. It writes a short `report.md`.
+`npm run eval -- <case>` replays real asks through plain Claude Code and through Off the Mode, each in its own copy of the project, twice per side by default. Then it scores and measures both and writes a short `report.md`, most trustworthy first:
 
-- A case is a folder outside this repo, because it holds a real person's words and data: `~/.offthemode/evals/<name>/case.json` (or set `OTM_EVAL_CASES`). It names the project, the commit the ask was made at, the ask, the person's logged replies, and the check. Every field is listed in [`scripts/eval/case.mjs`](scripts/eval/case.mjs).
-- Each copy holds the project as it stood at that commit, as one commit with no history: neither side sees how the real build turned out, and the plain side sees no trace of Off the Mode. Copies go to `~/work-copies/` (or set `OTM_EVAL_COPIES`), each alone in a folder with a random name; that folder can't be listed, so to delete old copies run `chmod 700 ~/work-copies` first. Reports go to `~/offthemode-evals/` (or set `OTM_EVAL_WORK`).
-- What it can't stop yet: both sides run as you, on your Mac. Their file tools are denied the reports, the cases, the real project and the other copy, but a shell command could still read them. The report says when a copy still names Off the Mode or the two copies start differently.
-- Try it on the smoke case first: `npm run eval -- --make-smoke`, then `npm run eval -- smoke`. It costs under 1M tokens.
-- `--prepare` makes the copies and runs the check at the start, for free. A real case costs what two real builds cost: 40 to 350 million tokens.
-- `npm run eval -- --measure <session .jsonl>` shows where any Claude Code session's tokens went, per agent, workflow and turn.
+1. Scripted scores: the case's own scorer and the project's check. The same code always gets the same number.
+2. The owner's hurdles, counted in each side's session file: turns that ended asking the owner, asks to start, commit or push, Off the Mode's internal ids in replies, characters read per turn, and steps the owner must do by hand. The patterns are written out in [`scripts/eval/hurdles.mjs`](scripts/eval/hurdles.mjs).
+3. Cost: tokens read, agents, time.
+4. Three blind judges who don't know which is which. They are the noisy part: the same diff can score 1 to 3 points apart, so they come last.
+
+Every number is shown per run with its spread. A difference smaller than the spread between one side's own runs is not a result. `--runs N` sets the number of runs (default 2).
+
+- A case is a folder outside this repo, because it holds a real person's words and data: `~/.offthemode/evals/<name>/case.json` (or set `OTM_EVAL_CASES`). It names the project, the commit the ask was made at, the ask, the person's logged replies, and the check. To replay a stretch of real work, `asks` lists several asks in order, each with its own replies; each goes in once the turn before has ended. Every field is listed in [`scripts/eval/case.mjs`](scripts/eval/case.mjs).
+- Each copy holds the project as it stood at that commit, as one commit with no history: neither side sees how the real build turned out, and the plain side sees no trace of Off the Mode. A link that leads out of a copy stops the run (a link back into the project itself, like `node_modules/node_modules`, is pointed into the copy). Copies go to `~/work-copies/` (or set `OTM_EVAL_COPIES`), each alone in a folder with a random name. Reports go to `~/offthemode-evals/` (or set `OTM_EVAL_WORK`).
+- Each side, and each judge, runs inside a macOS sandbox ([`scripts/eval/sandbox.mjs`](scripts/eval/sandbox.mjs)). It can't read the real project, the cases, the reports, the other copies, Claude Code's records of other sessions, this repo or the desktop app's folder, and that holds for shell commands and everything they start. Before any token is spent, a probe tries `cat`, `git -C`, `find` and `python` on each of those places (all must fail) and on the side's own copy (all must work); the run stops if the sandbox doesn't hold. `npm run test:eval` runs the same probe on a small made-up project. The eval runs on a Mac only for now.
+- Try it on the smoke case first: `npm run eval -- --make-smoke`, then `npm run eval -- smoke`. Its two runs per side cost under 1M tokens.
+- `--prepare` makes the copies, proves the sandbox and runs the check and the scorer at the start, for free. A real case costs one real build per side per run, 40 to 350 million tokens each, so two runs cost four builds.
+- `npm run eval -- --measure <session .jsonl>` shows where any Claude Code session's tokens went, per agent, workflow and turn, and the owner's hurdles per turn.
 
 MIT licence.

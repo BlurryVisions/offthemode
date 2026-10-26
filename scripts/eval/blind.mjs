@@ -2,7 +2,9 @@
 import { execFileSync, spawn } from "node:child_process";
 import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { randomUUID } from "node:crypto";
 import { git, track } from "./run.mjs";
+import { sandboxed } from "./sandbox.mjs";
 
 // Everything that differs from the start, committed or not, new files included, through a scratch index so the
 // copy's own index stays as the arm left it. .gitignore and .git/info/exclude keep fixtures and installs out.
@@ -84,17 +86,21 @@ const schema = (letters) => ({
   },
 });
 
+// The owner's words: one ask with its replies, or several asks in order, each with its own.
+function ownerWords(c) {
+  const quote = (t) => `"""\n${t}\n"""`;
+  const replies = (s) => s.replyTexts.length
+    ? `\nAfter the answer, the owner replied (each reply sent once, in order, whatever the builder had said):\n${s.replyTexts.map(quote).join("\n")}\n` : "";
+  if (c.steps.length === 1) return `The owner asked for this, in their own words:\n${quote(c.steps[0].askText)}\n${replies(c.steps[0])}`;
+  return `The owner asked for these in one session, one after another, each once the builder's turn before had ended, in their own words:\n`
+    + c.steps.map((s, i) => `\nAsk ${i + 1}:\n${quote(s.askText)}\n${replies(s)}`).join("");
+}
+
 function brief(c, arms, changesDir, lens) {
   const letters = arms.map((a) => a.letter);
-  const replies = c.replyTexts.length
-    ? `\nAfter the first answer, the owner replied (each reply sent once, in order, whatever the builder had said):\n${c.replyTexts.map((r) => `"""\n${r}\n"""`).join("\n")}\n` : "";
   return `${c.about ?? ""}
 
-The owner asked for this, in their own words:
-"""
-${c.askText}
-"""
-${replies}${c.goals ? `\nWhat the owner needs, in short: ${c.goals}\n` : ""}
+${ownerWords(c)}${c.goals ? `\nWhat the owner needs, in short: ${c.goals}\n` : ""}
 ${letters.length} builders answered this from the same starting code, each in its own copy. Their changes are diffs: ${letters.map((l) => join(changesDir, `${l}.diff`)).join(", ")}. The project's own check after each: ${arms.map((a) => `${a.letter} ${a.check?.code === 0 ? "passed" : "failed"}`).join(", ")}. Your working folder is the starting code before any change: read files there for context (search first, open only what you need). Some builders may have stopped to ask the owner; judge each on what it delivered. Ignore placeholders like (decision), (risk), (item), (notes) or (method) in the diffs. Do not try to find out who built which, and don't edit anything.
 
 ${lens.text}
@@ -102,12 +108,15 @@ ${lens.text}
 Score ${letters.join(", ")} 1-10 on your lens, list what each does well and its problems, rank them, and give a verdict of at most three sentences.`;
 }
 
-function judgeOnce(c, arms, { changesDir, baseDir, settings, env }, lens) {
+// Each judge runs in the start copy's sandbox, with a session id of its own so its own file history stays open.
+function judgeOnce(c, arms, { changesDir, baseDir, settings, env, profileFor, claude }, lens) {
+  const sid = randomUUID();
   const args = ["-p", brief(c, arms, changesDir, lens), "--output-format", "json", "--json-schema", JSON.stringify(schema(arms.map((a) => a.letter))),
-    "--model", c.model, "--tools", "Read,Grep,Glob", "--add-dir", changesDir, "--settings", JSON.stringify(settings), "--permission-mode", "default",
-    "--permission-prompts", "none", "--strict-mcp-config"];
+    "--session-id", sid, "--model", c.model, "--tools", "Read,Grep,Glob", "--add-dir", changesDir, "--settings", JSON.stringify(settings),
+    "--permission-mode", "default", "--permission-prompts", "none", "--strict-mcp-config"];
   return new Promise((resolve) => {
-    const child = track(spawn("claude", args, { cwd: baseDir, env, stdio: ["ignore", "pipe", "pipe"] }));
+    const [cmd, wrapped] = sandboxed(profileFor(sid), claude, args);
+    const child = track(spawn(cmd, wrapped, { cwd: baseDir, env, stdio: ["ignore", "pipe", "pipe"] }));
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
     child.on("error", (e) => resolve({ lens: lens.key, name: lens.name, error: `the judge could not start: ${e.message}` }));
@@ -144,6 +153,6 @@ function combine(lens, runs, arms) {
 export async function judge(c, arms, where) {
   const orders = [arms, [...arms].reverse()];
   const runs = await Promise.all(LENSES.flatMap((lens) => orders.map((order) => judgeOnce(c, order, where, lens))));
-  writeFileSync(join(where.recordDir, "judges.json"), JSON.stringify(runs, null, 2));
+  writeFileSync(join(where.recordDir, where.file ?? "judges.json"), JSON.stringify(runs, null, 2));
   return LENSES.map((lens) => combine(lens, runs.filter((r) => r.lens === lens.key), arms));
 }
