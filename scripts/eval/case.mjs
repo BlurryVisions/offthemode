@@ -11,7 +11,7 @@ export const ARM_NAMES = { plain: "Plain Claude Code", otm: "Off the Mode" };
 
 export class CaseError extends Error {}
 
-// What a case's own commands (install, check, score, plainSetup) get to find their way.
+// What a case's own commands (setup, install, check, score) get to find their way.
 export const caseEnv = (c, copy) => ({ EVAL_CASE: c.dir, EVAL_REPO: c.repo, EVAL_START: c.commit, EVAL_COPY: copy });
 
 // Every field case.json may hold, its kind, and what it means.
@@ -25,7 +25,7 @@ const FIELDS = {
   install: ["string", "command run in each copy after copying, such as npm ci (case commands get EVAL_CASE, EVAL_REPO, EVAL_START, EVAL_COPY)"],
   check: ["string", "the project's check command, run before and after"],
   score: ["string", "the case's own scorer command, run in each copy after its turns and at the start"],
-  plainSetup: ["string", "command run in the plain copy after Off the Mode is removed, its changes committed"],
+  setup: ["string", "command run in both copies (after Off the Mode leaves the plain one) so the project works without .offthemode/; folded into the start"],
   rules: ["string", "file whose ## sections replace the same sections of RULES.md in the Off the Mode copy"],
   about: ["string", "a few sentences for the judges: what the product is and who uses it"],
   goals: ["string", "for the judges: what the owner needs, in short"],

@@ -11,16 +11,26 @@ export function gitOr(cwd, ...args) {
   try { return git(cwd, ...args); } catch { return ""; }
 }
 
-// A case's own command (install, check, score), run by the shell in a copy, its output kept in a log file.
+// A case's own command (setup, install, check, score), run by the shell in a copy, its output kept in a log file.
+// It runs in its own process group: once the command exits, or at the timeout, whatever it left running (a watcher,
+// a server) is stopped, so nothing holds the output open and the eval moves on with the command's own exit code.
 export function sh(command, { cwd, env = {}, logFile, timeoutMin = 30 }) {
   return new Promise((resolve) => {
-    const child = spawn("sh", ["-c", command], { cwd, env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"] });
-    let out = "";
+    const child = spawn("sh", ["-c", command], { cwd, env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"], detached: true });
+    let out = "", done = false;
+    const stopGroup = () => { try { process.kill(-child.pid, "SIGKILL"); } catch { /* the group is already gone */ } };
+    const end = (code) => { if (!done) { done = true; clearTimeout(timer); resolve({ code, out }); } };
     const take = (d) => { out += d; if (logFile) appendFileSync(logFile, d); };
     child.stdout.on("data", take);
     child.stderr.on("data", take);
-    const timer = setTimeout(() => child.kill("SIGTERM"), timeoutMin * 60_000);
-    child.on("close", (code) => { clearTimeout(timer); resolve({ code: code ?? 1, out }); });
+    const timer = setTimeout(() => {
+      take(`\n(stopped after ${timeoutMin} minutes)\n`);
+      stopGroup();
+      end(124);
+    }, timeoutMin * 60_000);
+    child.on("error", (e) => { take(String(e)); end(127); });
+    child.on("exit", (code) => setTimeout(() => { stopGroup(); end(code ?? 1); }, 2000));
+    child.on("close", (code) => end(code ?? 1));
   });
 }
 

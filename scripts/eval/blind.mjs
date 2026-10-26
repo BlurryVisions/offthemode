@@ -18,38 +18,51 @@ function withScratchIndex(dir, fn) {
   }
 }
 
+// Claude Code keeps an agent's own worktree inside the project; work left there never reached the copy itself.
+const WORKTREES = ":(exclude).claude/worktrees";
+
 export function changedFiles(dir, base) {
-  return withScratchIndex(dir, (run) => run("diff", "--cached", "--name-only", base).split("\n").filter(Boolean).length);
+  return withScratchIndex(dir, (run) => run("diff", "--cached", "--name-only", base, "--", ".", WORKTREES).split("\n").filter(Boolean).length);
 }
 
 // Off the Mode's own notes would give the arm away: .offthemode/ stays out, and its ids and name are masked.
+// What a judge could still use to guess is counted, and the report shows it.
 const NOTES = ":(exclude).offthemode";
 const MASKS = [
   [/\bD-\d{2,}\b/g, "(decision)"], [/\bR-\d{2,}\b/g, "(risk)"], [/\bF\d+\.\d+\b/g, "(item)"],
-  [/\.offthemode\/?[\w./-]*/g, "(notes)"], [/\b(CHECKLIST|STATE|DECISIONS|PRODUCT|GLOSSARY|RULES)\.md\b/g, "(notes)"],
-  [/\boff ?the ?mode\b/gi, "(method)"],
+  [/\.offthemode\b\/?[\w./-]*/g, "(notes)"], [/\b(CHECKLIST|STATE|DECISIONS|PRODUCT|GLOSSARY|RULES|REASSESS)\.md\b|\bCHECKLIST\b/g, "(notes)"],
+  [/off[\s_-]*the[\s_-]*mode/gi, "(method)"],
 ];
-const mask = (diff) => MASKS.reduce((d, [re, to]) => d.replace(re, to), diff);
+function mask(diff) {
+  let marks = 0;
+  const text = MASKS.reduce((d, [re, to]) => d.replace(re, () => { marks++; return to; }), diff);
+  return { text, marks };
+}
 
-export function writeDiffs(arm, blindDir) {
+export function writeDiffs(arm, changesDir) {
   const { dir, base, letter, logDir } = arm;
   return withScratchIndex(dir, (run) => {
-    writeFileSync(join(logDir, "full.diff"), run("diff", "--cached", "--no-color", "--no-ext-diff", base));
-    writeFileSync(join(blindDir, `${letter}.diff`), mask(run("diff", "--cached", "--no-color", "--no-ext-diff", base, "--", ".", NOTES)));
-    const stat = run("diff", "--cached", "--numstat", base, "--", ".", NOTES).split("\n").filter(Boolean).map((l) => l.split("\t"));
+    const diff = (...paths) => run("diff", "--cached", "--no-color", "--no-ext-diff", base, "--", ".", WORKTREES, ...paths);
+    writeFileSync(join(logDir, "full.diff"), diff());
+    const blind = mask(diff(NOTES));
+    writeFileSync(join(changesDir, `${letter}.diff`), blind.text);
+    const stat = run("diff", "--cached", "--numstat", base, "--", ".", WORKTREES, NOTES).split("\n").filter(Boolean).map((l) => l.split("\t"));
     return {
       files: stat.length,
       added: stat.reduce((s, [a]) => s + (Number(a) || 0), 0),
       removed: stat.reduce((s, [, r]) => s + (Number(r) || 0), 0),
       commits: Number(git(dir, "rev-list", "--count", `${base}..HEAD`)),
       uncommitted: git(dir, "status", "--porcelain").split("\n").filter(Boolean).length,
+      marks: blind.marks,
+      unmerged: git(dir, "branch", "--no-merged", "HEAD", "--format=%(refname:short)").split("\n").filter(Boolean),
     };
   });
 }
 
+// Random letters in random order, so neither arm always reads first or under the earlier letter.
 const LETTERS = "FGHJKLMNPQRSTVWXZ";
 export function pickLetters(n) {
-  return [...LETTERS].map((l) => [Math.random(), l]).sort((a, b) => a[0] - b[0]).slice(0, n).map(([, l]) => l).sort();
+  return [...LETTERS].map((l) => [Math.random(), l]).sort((a, b) => a[0] - b[0]).slice(0, n).map(([, l]) => l);
 }
 
 const LENSES = [
@@ -71,7 +84,7 @@ const schema = (letters) => ({
   },
 });
 
-function brief(c, arms, blindDir, lens) {
+function brief(c, arms, changesDir, lens) {
   const letters = arms.map((a) => a.letter);
   const replies = c.replyTexts.length
     ? `\nAfter the first answer, the owner replied (each reply sent once, in order, whatever the builder had said):\n${c.replyTexts.map((r) => `"""\n${r}\n"""`).join("\n")}\n` : "";
@@ -82,16 +95,16 @@ The owner asked for this, in their own words:
 ${c.askText}
 """
 ${replies}${c.goals ? `\nWhat the owner needs, in short: ${c.goals}\n` : ""}
-${letters.length} builders answered this from the same starting code, each in its own copy. Their changes are diffs: ${letters.map((l) => join(blindDir, `${l}.diff`)).join(", ")}. The project's own check after each: ${arms.map((a) => `${a.letter} ${a.check?.code === 0 ? "passed" : "failed"}`).join(", ")}. Your working folder is the starting code before any change: read files there for context (search first, open only what you need). Some builders may have stopped to ask the owner; judge each on what it delivered. Ignore placeholders like (decision), (risk), (item), (notes) or (method) in the diffs. Do not try to find out who built which, and don't edit anything.
+${letters.length} builders answered this from the same starting code, each in its own copy. Their changes are diffs: ${letters.map((l) => join(changesDir, `${l}.diff`)).join(", ")}. The project's own check after each: ${arms.map((a) => `${a.letter} ${a.check?.code === 0 ? "passed" : "failed"}`).join(", ")}. Your working folder is the starting code before any change: read files there for context (search first, open only what you need). Some builders may have stopped to ask the owner; judge each on what it delivered. Ignore placeholders like (decision), (risk), (item), (notes) or (method) in the diffs. Do not try to find out who built which, and don't edit anything.
 
 ${lens.text}
 
 Score ${letters.join(", ")} 1-10 on your lens, list what each does well and its problems, rank them, and give a verdict of at most three sentences.`;
 }
 
-function judgeOnce(c, arms, blindDir, baseDir, lens, env) {
-  const args = ["-p", brief(c, arms, blindDir, lens), "--output-format", "json", "--json-schema", JSON.stringify(schema(arms.map((a) => a.letter))),
-    "--model", c.model, "--tools", "Read,Grep,Glob", "--add-dir", blindDir, "--permission-mode", "default",
+function judgeOnce(c, arms, { changesDir, baseDir, settings, env }, lens) {
+  const args = ["-p", brief(c, arms, changesDir, lens), "--output-format", "json", "--json-schema", JSON.stringify(schema(arms.map((a) => a.letter))),
+    "--model", c.model, "--tools", "Read,Grep,Glob", "--add-dir", changesDir, "--settings", JSON.stringify(settings), "--permission-mode", "default",
     "--permission-prompts", "none", "--strict-mcp-config"];
   return new Promise((resolve) => {
     const child = spawn("claude", args, { cwd: baseDir, env, stdio: ["ignore", "pipe", "pipe"] });
@@ -117,15 +130,17 @@ function combine(lens, runs, arms) {
   if (!good.length) return { lens: lens.key, name: lens.name, error: runs[0]?.error, sids };
   const scores = Object.fromEntries(arms.map((a) => [a.letter, mean(good.map((r) => r.versions?.[a.letter]?.score).filter(Number.isFinite))]));
   const ranking = Object.keys(scores).sort((a, b) => (scores[b] ?? 0) - (scores[a] ?? 0));
-  const agree = good.length === runs.length && new Set(good.map((r) => r.ranking?.[0])).size === 1;
-  return { lens: lens.key, name: lens.name, scores, ranking, agree, verdict: good[0].verdict, sids };
+  const tie = ranking.length > 1 && scores[ranking[0]] === scores[ranking[1]];
+  const agree = !tie && good.length === runs.length && new Set(good.map((r) => r.ranking?.[0])).size === 1;
+  return { lens: lens.key, name: lens.name, scores, ranking, tie, agree, verdict: good[0].verdict, sids };
 }
 
 // Models favour whichever version they read first, so each lens judges twice, once in each order (the Verification
 // Loop guide); a lens's score is the mean of both, and the report says when the two orders pick different winners.
-export async function judge(c, arms, blindDir, baseDir, env) {
+// The judges' full findings go to the run's records, never next to the diffs, where a later judge could read them.
+export async function judge(c, arms, where) {
   const orders = [arms, [...arms].reverse()];
-  const runs = await Promise.all(LENSES.flatMap((lens) => orders.map((order) => judgeOnce(c, order, blindDir, baseDir, lens, env))));
-  writeFileSync(join(blindDir, "judges.json"), JSON.stringify(runs, null, 2));
+  const runs = await Promise.all(LENSES.flatMap((lens) => orders.map((order) => judgeOnce(c, order, where, lens))));
+  writeFileSync(join(where.recordDir, "judges.json"), JSON.stringify(runs, null, 2));
   return LENSES.map((lens) => combine(lens, runs.filter((r) => r.lens === lens.key), arms));
 }

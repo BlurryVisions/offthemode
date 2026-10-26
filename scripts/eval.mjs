@@ -4,15 +4,19 @@
 //   npm run eval -- --measure <session .jsonl>   a session's tokens per main chat, agent, workflow and turn
 //   npm run eval -- --make-smoke                 writes the smoke case, a tiny project, to the cases folder
 // A case is a folder outside this repo ($OTM_EVAL_CASES, default ~/.offthemode/evals; its fields are in
-// scripts/eval/case.mjs). Runs go to $OTM_EVAL_WORK (default ~/offthemode-evals), never to /tmp, which macOS
-// empties after 3 days. --prepare makes the copies and runs the check and scorer at the start, for no tokens.
+// scripts/eval/case.mjs). A run's records go to $OTM_EVAL_WORK (default ~/offthemode-evals); its copies go to
+// $OTM_EVAL_COPIES (default ~/work-copies), each alone in a folder with a random name inside a folder that can't be
+// listed, and each arm's file tools are denied the records, the cases, the real project and the other copies.
+// Never /tmp, which macOS empties after 3 days.
+// --prepare makes the copies and runs the check and scorer at the start, for no tokens.
 import { parseArgs } from "node:util";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, basename } from "node:path";
 import { homedir } from "node:os";
+import { randomBytes } from "node:crypto";
 import { loadCase, CASES, CaseError, ARM_NAMES, caseEnv } from "./eval/case.mjs";
-import { makeCopy } from "./eval/copy.mjs";
+import { makeCopy, startDifferences } from "./eval/copy.mjs";
 import { driveArm, cleanEnv } from "./eval/drive.mjs";
 import { sessionFile, sessionUsage, printUsage } from "./eval/measure.mjs";
 import { writeDiffs, pickLetters, judge } from "./eval/blind.mjs";
@@ -21,14 +25,35 @@ import { makeSmoke } from "./eval/smoke.mjs";
 import { sh, say, logTo, M } from "./eval/run.mjs";
 
 const WORK = process.env.OTM_EVAL_WORK ?? join(homedir(), "offthemode-evals");
+const COPIES = process.env.OTM_EVAL_COPIES ?? join(homedir(), "work-copies");
+const NAMES_IT = /offthemode|off[\s_-]*the[\s_-]*mode|revisit-(checklist|state|comments|glossary)|view-project|reassess/i;
+
+// A folder with a random name, holding one copy and its scratch folder (private, as Claude Code asks). The folder
+// above can be entered but not listed (write and enter, no read), so an arm can't find the other copies.
+function newPlace() {
+  const place = join(COPIES, randomBytes(4).toString("hex"));
+  mkdirSync(join(place, "tmp"), { recursive: true, mode: 0o700 });
+  chmodSync(COPIES, 0o300);
+  return place;
+}
+
+// The places a session must not read: the records (the key), the cases (the owner's goals), the real project (its
+// later commits), and every copy but its own. Deny rules cover the file tools; a shell command can still reach them.
+function fenced(c, run, places, own) {
+  const deny = [WORK, CASES, c.repo, ...places.filter((p) => p !== own)].flatMap((p) => [`Read(/${p}/**)`, `Edit(/${p}/**)`]);
+  const extra = c.settings.permissions ?? {};
+  return { ...c.settings, permissions: { ...extra, deny: [...(extra.deny ?? []), ...deny] } };
+}
 
 // Off the Mode installed for the whole account reaches the plain arm too: the report says so.
 function leaks() {
   const home = join(homedir(), ".claude"), out = [];
+  const names = (dir, depth) => !existsSync(dir) || !depth ? [] : readdirSync(dir, { withFileTypes: true })
+    .flatMap((e) => [...(NAMES_IT.test(e.name) ? [join(dir, e.name)] : []), ...(e.isDirectory() ? names(join(dir, e.name), depth - 1) : [])]);
   const md = join(home, "CLAUDE.md");
-  if (existsSync(md) && /offthemode|off the mode/i.test(readFileSync(md, "utf8"))) out.push("~/.claude/CLAUDE.md names Off the Mode, and the plain arm reads it");
-  const skills = existsSync(join(home, "skills")) ? readdirSync(join(home, "skills")).filter((n) => /offthemode|revisit-|reassess|view-project/.test(n)) : [];
-  if (skills.length) out.push(`Off the Mode's skills are installed for the whole account (${skills.join(", ")}), so the plain arm has them too`);
+  if (existsSync(md) && NAMES_IT.test(readFileSync(md, "utf8"))) out.push("~/.claude/CLAUDE.md names Off the Mode, and the plain arm reads it");
+  const found = [...names(join(home, "skills"), 3), ...names(join(home, "plugins"), 3), ...names(join(home, "commands"), 2)];
+  if (found.length) out.push(`Off the Mode is installed for the whole account (${found.slice(0, 5).join(", ")}), so the plain arm has it too`);
   return out;
 }
 
@@ -39,22 +64,27 @@ async function checkAndScore(c, dir, logDir) {
   return { check: { code: check.code, out: check.out.slice(-4000) }, score: score && { code: score.code, out: score.out.slice(-4000) } };
 }
 
-// One copy per arm, each in a folder named by its blind letter, and a clean copy of the start for the judges.
+// One copy per arm and a clean copy of the start for the baseline and the judges, with the diffs beside it.
 async function prepare(c, arms, run) {
   const letters = pickLetters(arms.length), copies = [];
   for (const [i, arm] of arms.entries()) {
-    const logDir = join(run, letters[i]);
+    const logDir = join(run, letters[i]), place = newPlace();
     mkdirSync(logDir, { recursive: true });
     say(`${ARM_NAMES[arm]}: making its copy`);
-    const copy = await makeCopy(c, { dir: join(logDir, basename(c.repo)), arm, logFile: join(logDir, "setup.log") });
-    copies.push({ arm, letter: letters[i], logDir, turns: [], ...copy });
+    const copy = await makeCopy(c, { dir: join(place, basename(c.repo)), arm, logFile: join(logDir, "setup.log") });
+    copies.push({ arm, letter: letters[i], logDir, place, tmp: join(place, "tmp"), turns: [], ...copy });
   }
-  const first = copies.find((a) => a.arm === "plain") ?? copies[0];
-  const baseDir = join(run, "base", basename(c.repo));
+  const first = copies.find((a) => a.arm === "plain") ?? copies[0], place = newPlace();
+  const base = { dir: join(place, basename(c.repo)), place, changesDir: join(place, "changes"), tmp: join(place, "tmp") };
+  mkdirSync(base.changesDir);
   mkdirSync(join(run, "base"), { recursive: true });
   say("start: making a clean copy for the baseline and the judges");
-  await makeCopy(c, { dir: baseDir, arm: "base", source: first.dir, commit: first.base, logFile: join(run, "base", "setup.log") });
-  return { copies, baseDir };
+  const carry = first.setupFiles.map((p) => [join(first.dir, p), p]);
+  await makeCopy(c, { dir: base.dir, arm: "base", source: first.dir, commit: first.base, logFile: join(run, "base", "setup.log"), carry });
+  const places = [...copies.map((a) => a.place), place];
+  for (const a of copies) a.settings = fenced(c, run, places, a.place);
+  base.settings = fenced(c, run, places, place);
+  return { copies, base };
 }
 
 function save(run, r) {
@@ -64,7 +94,8 @@ function save(run, r) {
 
 async function judgeRun(c, run, r) {
   say("judges: three lenses, each reading the diffs in both orders");
-  r.judges = await judge(c, r.arms, join(run, "blind"), join(run, "base", basename(c.repo)), cleanEnv());
+  const arms = [...r.arms].sort((a, b) => a.letter.localeCompare(b.letter));
+  r.judges = await judge(c, arms, { changesDir: r.base.changesDir, baseDir: r.base.dir, recordDir: run, settings: r.base.settings, env: cleanEnv(r.base.tmp, r.base.dir) });
   for (const v of r.judges) v.tokens = v.sids.map(sessionFile).reduce((s, f) => s + (f ? sessionUsage(f).total : 0), 0);
 }
 
@@ -78,14 +109,31 @@ async function rejudge(run) {
   say(`done: ${join(run, "report.md")}`);
 }
 
-async function playArm(c, a, blindDir, save) {
-  Object.assign(a, await driveArm({ c, arm: a.arm, dir: a.dir, base: a.base, logDir: a.logDir }));
-  a.diff = writeDiffs(a, blindDir);
-  Object.assign(a, await checkAndScore(c, a.dir, a.logDir));
-  const file = sessionFile(a.sid);
-  a.usage = file ? sessionUsage(file) : null;
-  say(`${ARM_NAMES[a.arm]}: ${a.usage ? M(a.usage.total) : "?"} read, check ${a.check.code === 0 ? "passed" : "failed"}`);
+// One arm from its first turn to its score. A failure stays with that arm: the other one runs on. Its masked diff
+// waits in the records until both arms are done, so the slower arm can't read the faster one's answer.
+async function playArm(c, a, save) {
+  try {
+    Object.assign(a, await driveArm({ c, arm: a.arm, dir: a.dir, base: a.base, logDir: a.logDir, tmp: a.tmp, settings: a.settings }));
+    a.diff = writeDiffs(a, a.logDir);
+    Object.assign(a, await checkAndScore(c, a.dir, a.logDir));
+    const file = sessionFile(a.sid);
+    a.usage = file ? sessionUsage(file) : null;
+    say(`${ARM_NAMES[a.arm]}: ${a.usage ? M(a.usage.total) : "?"} read, check ${a.check.code === 0 ? "passed" : "failed"}`);
+  } catch (e) {
+    a.error = String(e.stack ?? e);
+    say(`${ARM_NAMES[a.arm]}: failed: ${String(e.message ?? e).slice(0, 300)}`);
+  }
   save();
+}
+
+function startWarnings(copies) {
+  const out = copies.filter((a) => a.mentions.length)
+    .map((a) => `the plain copy still names Off the Mode in ${a.mentions.join(", ")} (the case's setup can change that)`);
+  if (copies.length === 2) {
+    const differ = startDifferences(copies[0].dir, copies[1].dir);
+    if (differ.length) out.push(`the two copies start differently outside Off the Mode's own files: ${differ.slice(0, 8).join(", ")}`);
+  }
+  return out;
 }
 
 async function runCase(arg, opts) {
@@ -95,25 +143,25 @@ async function runCase(arg, opts) {
   const started = new Date();
   let run = join(WORK, c.name, started.toLocaleString("sv-SE").slice(0, 16).replace(":", "").replace(" ", "-"));
   while (existsSync(run)) run += "+";
-  const blindDir = join(run, "blind");
-  mkdirSync(blindDir, { recursive: true });
+  mkdirSync(run, { recursive: true });
   logTo(join(run, "eval.log"));
   if (process.platform === "darwin") spawn("caffeinate", ["-i", "-w", String(process.pid)], { stdio: "ignore" }).unref();
   const warnings = leaks();
   warnings.forEach((w) => say(`warning: ${w}`));
 
-  const { copies, baseDir } = await prepare(c, arms, run);
-  for (const a of copies.filter((x) => x.mentions.length)) warnings.push(`the plain copy still names Off the Mode in ${a.mentions.join(", ")} (plainSetup can change that)`);
+  const { copies, base } = await prepare(c, arms, run);
+  for (const w of startWarnings(copies)) { warnings.push(w); say(`warning: ${w}`); }
   say("start: running the check and the scorer");
-  const r = { case: c.name, caseDir: c.dir, started: started.toISOString(), ask: c.askText, replies: c.replyTexts.length, model: c.model, settings: c.settings,
-    baseline: await checkAndScore(c, baseDir, join(run, "base")), arms: copies, warnings, judges: null };
+  const r = { case: c.name, caseDir: c.dir, started: started.toISOString(), ask: c.askText, replies: c.replyTexts.length, model: c.model,
+    settings: c.settings, baseline: await checkAndScore(c, base.dir, join(run, "base")), base, arms: copies, warnings, judges: null };
   writeFileSync(join(run, "key.json"), JSON.stringify(Object.fromEntries(copies.map((a) => [a.letter, a.arm]))) + "\n");
   save(run, r);
   if (opts.prepare) return say(`prepared, no tokens spent: ${join(run, "report.md")}`);
 
   say(`driving ${copies.map((a) => ARM_NAMES[a.arm]).join(" and ")} side by side`);
-  await Promise.all(copies.map((a) => playArm(c, a, blindDir, () => save(run, r))));
-  if (c.judge && !opts["no-judge"] && copies.length > 1) await judgeRun(c, run, r);
+  await Promise.all(copies.map((a) => playArm(c, a, () => save(run, r))));
+  for (const a of copies.filter((x) => x.diff)) copyFileSync(join(a.logDir, `${a.letter}.diff`), join(base.changesDir, `${a.letter}.diff`));
+  if (c.judge && !opts["no-judge"] && copies.filter((a) => a.diff).length > 1) await judgeRun(c, run, r);
   save(run, r);
   say(`done: ${join(run, "report.md")}`);
 }
@@ -122,7 +170,7 @@ const HELP = `npm run eval -- <case> [--arms plain,otm] [--prepare] [--no-judge]
 npm run eval -- --rejudge <run folder>
 npm run eval -- --measure <session .jsonl>
 npm run eval -- --make-smoke
-cases: ${CASES} · runs: ${WORK}`;
+cases: ${CASES} · records: ${WORK} · copies: ${COPIES}`;
 
 try {
   const { values: opts, positionals } = parseArgs({ allowPositionals: true, options: {

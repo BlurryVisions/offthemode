@@ -23,9 +23,13 @@ function armSection(a) {
   }
   out.push(`- Time working: ${minutes(a.turns)} min over ${a.turns.length} turns. Turns that ended asking the owner: ${stops}.`);
   a.turns.forEach((t, i) => out.push(`  - turn ${i + 1}: ${t.asked ? "asked the owner" : "no question"}, ${t.changed} files changed by its end${t.error ? `, ended with ${t.error}` : ""}`));
+  if (a.error) out.push(`- The eval failed on this arm: ${a.error.split("\n")[0]}`);
   if (a.stoppedBy) out.push(`- Stopped early: ${a.stoppedBy}. This run is not a full sample.`);
+  if (a.openTasks?.length) out.push(`- Still running when the session closed: ${a.openTasks.join("; ")}.`);
   if (a.denials) out.push(`- Actions the permission check refused: ${a.denials}.`);
   if (d) out.push(`- Changes: ${d.files} files, +${d.added} −${d.removed}, ${d.commits} commits, ${d.uncommitted} files left uncommitted.`);
+  if (d?.unmerged?.length) out.push(`- Branches with work that never reached the copy, so the diff leaves it out: ${d.unmerged.join(", ")}.`);
+  if (d?.marks) out.push(`- Off the Mode marks masked in its diff for the judges: ${d.marks}. A judge may still guess which arm this is.`);
   out.push(`- Check: ${checkLine(a.check)}`);
   if (a.score) out.push(`- Score:\n\n\`\`\`\n${tail(a.score.out, 20)}\n\`\`\``);
   out.push(`- Last words to the owner: "${lastWords(a.turns.at(-1)?.text)}"`);
@@ -38,9 +42,9 @@ function judgeSection(verdicts, arms) {
   const who = Object.fromEntries(arms.map((a) => [a.letter, ARM_NAMES[a.arm]]));
   const lines = verdicts.map((v) => v.error
     ? `- ${v.name}: the judge failed (${v.error.slice(0, 200)})`
-    : `- ${v.name}: ${v.ranking.map((l) => `${who[l] ?? l} ${v.scores[l] ?? "?"}`).join(", ")} (${v.agree ? "both reading orders agree" : "the two reading orders disagree, so treat it as a tie"}). ${v.verdict ?? ""}`);
+    : `- ${v.name}: ${v.ranking.map((l) => `${who[l] ?? l} ${v.scores[l] ?? "?"}`).join(", ")} (${v.tie ? "a tie" : v.agree ? "both reading orders agree" : "the two reading orders disagree, so treat it as a tie"}). ${v.verdict ?? ""}`);
   const tokens = verdicts.reduce((s, v) => s + (v.tokens ?? 0), 0);
-  return `## Blind judges (scores 1-10, best first, each the mean of two readings in opposite orders; findings in blind/judges.json)\n${lines.join("\n")}\n- The judges read ${M(tokens)} in all. They are a model's opinion: read their findings before trusting a score.`;
+  return `## Blind judges (scores 1-10, best first, each the mean of two readings in opposite orders; findings in judges.json)\n${lines.join("\n")}\n- The judges read ${M(tokens)} in all. They are a model's opinion: read their findings before trusting a score.`;
 }
 
 export function writeReport(run, r) {

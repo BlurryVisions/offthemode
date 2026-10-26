@@ -17,10 +17,11 @@ export function sessionFile(sid) {
   return null;
 }
 
-// What the owner typed: user messages in the main chat, not tool results, notices or interruptions.
+// What the owner typed: user messages in the main chat, not tool results, notices, interruptions or the summary
+// Claude Code writes when it compacts a long chat.
 function ownerMessages(file) {
   return lines(file).flatMap((e) => {
-    if (e.type !== "user" || e.isSidechain || e.isMeta || !e.timestamp) return [];
+    if (e.type !== "user" || e.isSidechain || e.isMeta || e.isCompactSummary || e.isVisibleInTranscriptOnly || !e.timestamp) return [];
     const c = e.message?.content;
     const text = typeof c === "string" ? c : Array.isArray(c) ? c.filter((x) => x.type === "text").map((x) => x.text).join(" ") : "";
     return text && !text.startsWith("<") && !text.startsWith("[Request interrupted") ? [{ at: e.timestamp, text }] : [];
