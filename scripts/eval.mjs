@@ -26,6 +26,7 @@ import { sh, say, logTo, M } from "./eval/run.mjs";
 
 const WORK = process.env.OTM_EVAL_WORK ?? join(homedir(), "offthemode-evals");
 const COPIES = process.env.OTM_EVAL_COPIES ?? join(homedir(), "work-copies");
+const PROJECTS = join(homedir(), ".claude", "projects");
 const NAMES_IT = /offthemode|off[\s_-]*the[\s_-]*mode|revisit-(checklist|state|comments|glossary)|view-project|reassess/i;
 
 // A folder with a random name, holding one copy and its scratch folder (private, as Claude Code asks). The folder
@@ -37,10 +38,22 @@ function newPlace() {
   return place;
 }
 
+// Every copy folder there is, this run's and earlier runs' (the folder above them can't be listed, so it is opened
+// for the moment it takes to read it).
+function allPlaces() {
+  if (!existsSync(COPIES)) return [];
+  chmodSync(COPIES, 0o700);
+  try { return readdirSync(COPIES).map((n) => join(COPIES, n)); } finally { chmodSync(COPIES, 0o300); }
+}
+
 // The places a session must not read: the records (the key), the cases (the owner's goals), the real project (its
-// later commits), and every copy but its own. Deny rules cover the file tools; a shell command can still reach them.
-function fenced(c, run, places, own) {
-  const deny = [WORK, CASES, c.repo, ...places.filter((p) => p !== own)].flatMap((p) => [`Read(/${p}/**)`, `Edit(/${p}/**)`]);
+// later commits), every copy but its own (earlier runs hold finished answers to the same ask), and Claude Code's
+// session folders for the real project and those copies (the owner's real sessions, the other arm's live chat).
+// Deny rules cover the file tools; a shell command can still reach them.
+function fenced(c, places, own) {
+  const others = [...new Set([...places, ...allPlaces()])].filter((p) => p !== own);
+  const sessions = [c.repo, ...others].map((p) => `${join(PROJECTS, p.replace(/[^a-zA-Z0-9]/g, "-"))}*`);
+  const deny = [WORK, CASES, c.repo, ...others, ...sessions].flatMap((p) => [`Read(/${p}/**)`, `Edit(/${p}/**)`]);
   const extra = c.settings.permissions ?? {};
   return { ...c.settings, permissions: { ...extra, deny: [...(extra.deny ?? []), ...deny] } };
 }
@@ -82,8 +95,8 @@ async function prepare(c, arms, run) {
   const carry = first.setupFiles.map((p) => [join(first.dir, p), p]);
   await makeCopy(c, { dir: base.dir, arm: "base", source: first.dir, commit: first.base, logFile: join(run, "base", "setup.log"), carry });
   const places = [...copies.map((a) => a.place), place];
-  for (const a of copies) a.settings = fenced(c, run, places, a.place);
-  base.settings = fenced(c, run, places, place);
+  for (const a of copies) a.settings = fenced(c, places, a.place);
+  base.settings = fenced(c, places, place);
   return { copies, base };
 }
 
@@ -100,9 +113,13 @@ async function judgeRun(c, run, r) {
 }
 
 // Runs the judges again on a finished run, for when they failed or a lens changed; the arms are not run again.
+// The judges read the start from the run's base copy, so it must still be there; the diffs come from the records.
 async function rejudge(run) {
   if (!existsSync(join(run, "run.json"))) throw new CaseError(`no run.json in ${run}`);
   const r = JSON.parse(readFileSync(join(run, "run.json"), "utf8"));
+  if (!existsSync(r.base?.dir ?? "")) throw new CaseError(`this run's start copy is gone (${r.base?.dir}), so the judges have no code to read`);
+  mkdirSync(r.base.changesDir, { recursive: true });
+  for (const a of r.arms.filter((x) => x.diff)) copyFileSync(join(a.logDir, `${a.letter}.diff`), join(r.base.changesDir, `${a.letter}.diff`));
   logTo(join(run, "eval.log"));
   await judgeRun(loadCase(r.caseDir), run, r);
   save(run, r);

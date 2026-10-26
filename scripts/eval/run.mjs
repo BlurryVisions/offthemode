@@ -11,6 +11,13 @@ export function gitOr(cwd, ...args) {
   try { return git(cwd, ...args); } catch { return ""; }
 }
 
+// Each command runs in a process group of its own, which Ctrl-C no longer reaches: whatever still runs when the eval
+// exits or is stopped is stopped with it.
+const live = new Set();
+const stopAll = () => { for (const pid of live) { try { process.kill(-pid, "SIGKILL"); } catch { /* already gone */ } } };
+process.on("exit", stopAll);
+for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => { stopAll(); process.exit(130); });
+
 // A case's own command (setup, install, check, score), run by the shell in a copy, its output kept in a log file.
 // It runs in its own process group: once the command exits, or at the timeout, whatever it left running (a watcher,
 // a server) is stopped, so nothing holds the output open and the eval moves on with the command's own exit code.
@@ -18,9 +25,12 @@ export function sh(command, { cwd, env = {}, logFile, timeoutMin = 30 }) {
   return new Promise((resolve) => {
     const child = spawn("sh", ["-c", command], { cwd, env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"], detached: true });
     let out = "", done = false;
+    live.add(child.pid);
     const stopGroup = () => { try { process.kill(-child.pid, "SIGKILL"); } catch { /* the group is already gone */ } };
-    const end = (code) => { if (!done) { done = true; clearTimeout(timer); resolve({ code, out }); } };
+    const end = (code) => { if (!done) { done = true; live.delete(child.pid); clearTimeout(timer); resolve({ code, out }); } };
     const take = (d) => { out += d; if (logFile) appendFileSync(logFile, d); };
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
     child.stdout.on("data", take);
     child.stderr.on("data", take);
     const timer = setTimeout(() => {
@@ -43,4 +53,4 @@ export function say(line) {
   if (logFile) appendFileSync(logFile, text + "\n");
 }
 
-export const M = (tokens) => `${(tokens / 1e6).toFixed(1)}M`;
+export const M = (tokens) => (tokens < 1e6 ? `${Math.round(tokens / 1000)}k` : `${(tokens / 1e6).toFixed(1)}M`);

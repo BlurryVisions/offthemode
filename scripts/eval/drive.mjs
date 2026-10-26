@@ -65,6 +65,7 @@ class ArmSession {
     this.stream = createWriteStream(join(logDir, "stream.jsonl"));
     this.child = spawn("claude", claudeArgs(c, arm, this.sid, settings), { cwd: dir, env: cleanEnv(tmp, dir), stdio: ["pipe", "pipe", "pipe"] });
     this.child.stdin.on("error", () => {}); // a session that died is reported by its exit, not by a failed write
+    this.child.stdout.setEncoding("utf8"); // a character split across two reads stays whole
     this.child.stdout.on("data", (d) => this.read(d));
     this.child.stderr.on("data", (d) => appendFileSync(join(logDir, "stderr.log"), d));
     this.child.on("error", (e) => { appendFileSync(join(logDir, "stderr.log"), `${e}\n`); this.closed(null, String(e)); });

@@ -4,8 +4,14 @@ import { join } from "node:path";
 import { ARM_NAMES } from "./case.mjs";
 import { M } from "./run.mjs";
 
-const minutes = (turns) => Math.round(turns.reduce((s, t) => s + (Date.parse(t.ended ?? t.sent) - Date.parse(t.sent)), 0) / 60_000);
-const lastWords = (text) => (text ?? "").trim().split("\n").filter(Boolean).slice(-3).join(" ").slice(-300);
+function working(turns) {
+  const secs = Math.round(turns.reduce((s, t) => s + (Date.parse(t.ended ?? t.sent) - Date.parse(t.sent)), 0) / 1000);
+  return secs < 120 ? `${secs} s` : `${Math.round(secs / 60)} min`;
+}
+function lastWords(text) {
+  const words = (text ?? "").trim().split("\n").filter(Boolean).slice(-3).join(" ");
+  return words.length > 300 ? `…${words.slice(-300)}` : words;
+}
 const tail = (text, n = 12) => (text ?? "").trim().split("\n").slice(-n).join("\n");
 
 function checkLine(check) {
@@ -21,7 +27,7 @@ function armSection(a) {
     for (const w of u.workflows) out.push(`  - workflow ${w.name}: ${w.agents} agents, ${M(w.total)}`);
     u.turns.forEach((t, i) => out.push(`  - turn ${i + 1}: ${M(t.total)}, ${t.agents} agents`));
   }
-  out.push(`- Time working: ${minutes(a.turns)} min over ${a.turns.length} turns. Turns that ended asking the owner: ${stops}.`);
+  out.push(`- Time working: ${working(a.turns)} over ${a.turns.length} turns. Turns that ended asking the owner: ${stops}.`);
   a.turns.forEach((t, i) => out.push(`  - turn ${i + 1}: ${t.asked ? "asked the owner" : "no question"}, ${t.changed} files changed by its end${t.error ? `, ended with ${t.error}` : ""}`));
   if (a.error) out.push(`- The eval failed on this arm: ${a.error.split("\n")[0]}`);
   if (a.stoppedBy) out.push(`- Stopped early: ${a.stoppedBy}. This run is not a full sample.`);

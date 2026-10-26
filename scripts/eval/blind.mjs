@@ -108,6 +108,9 @@ function judgeOnce(c, arms, { changesDir, baseDir, settings, env }, lens) {
     "--permission-prompts", "none", "--strict-mcp-config"];
   return new Promise((resolve) => {
     const child = spawn("claude", args, { cwd: baseDir, env, stdio: ["ignore", "pipe", "pipe"] });
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.on("error", (e) => resolve({ lens: lens.key, name: lens.name, error: `the judge could not start: ${e.message}` }));
     let out = "", err = "";
     child.stdout.on("data", (d) => (out += d));
     child.stderr.on("data", (d) => (err += d));

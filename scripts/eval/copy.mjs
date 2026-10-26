@@ -14,13 +14,26 @@ const MENTION = /offthemode|off[\s_-]*the[\s_-]*mode/i;
 
 // Off the Mode's skills installed inside the project rather than for the whole account.
 const SKILLS = SKILL_FOLDERS.flatMap((n) => [`.claude/skills/${n}`, `.agents/skills/${n}`, `.claude/commands/${n}.md`]);
-// Files the AI tool loads by itself: one of these naming Off the Mode would hand the plain arm the method.
-const LOADED = /^(\.claude|\.agents|\.cursor)\/|^(CLAUDE|CLAUDE\.local|AGENTS|GEMINI)\.md$|^\.github\/copilot-instructions\.md$|^\.mcp\.json$/;
+const MCP_FILES = [".mcp.json", ".cursor/mcp.json"];
+// Files Claude Code loads by itself (the eval drives Claude Code): one of these naming Off the Mode would hand the
+// plain arm the method. Files the root rule files import with @ count too (see mentions).
+const LOADED = /^(\.claude|\.agents)\/|(^|\/)(CLAUDE|CLAUDE\.local)\.md$|^(AGENTS|GEMINI)\.md$|^\.github\/copilot-instructions\.md$|^\.mcp\.json$/;
 
 // Off the Mode's own files, and the files where it adds a line or an entry: the only places the two copies may differ.
 export const isOwnFile = (path) => path.startsWith(".offthemode/") || path === ".cursor/rules/offthemode.mdc"
-  || RULE_FILES.includes(path) || SETTINGS.includes(path) || path === ".mcp.json"
+  || RULE_FILES.includes(path) || SETTINGS.includes(path) || MCP_FILES.includes(path)
   || SKILLS.some((p) => path === p || path.startsWith(`${p}/`));
+
+// Every folder between the copy and a path it strips must be a real folder: through a link, removing or rewriting
+// Off the Mode's files would change files outside the copy, perhaps in the real project.
+function throughLink(dir, rel) {
+  const parts = rel.split("/").slice(0, -1);
+  return parts.some((_, i) => lstatSync(join(dir, ...parts.slice(0, i + 1)), { throwIfNoEntry: false })?.isSymbolicLink());
+}
+
+function mustBeInside(dir, rel) {
+  if (throughLink(dir, rel)) throw new CaseError(`the plain copy reaches ${rel} through a linked folder, so Off the Mode can't be taken out of it without changing files outside the copy`);
+}
 
 const CP_FLAGS = process.platform === "darwin" ? ["-cR"] : ["-R"]; // -c: an APFS clone, instant and free on a Mac
 
@@ -45,6 +58,9 @@ function editJson(path, edit) {
 // Takes Off the Mode out of the plain copy's files: its folder, Cursor rule and project skills, the rule-file lines
 // that name it (a rule file left with nothing else goes too), its MCP server entry, and its settings entries.
 function stripOffTheMode(dir) {
+  for (const p of [".offthemode", ".cursor/rules/offthemode.mdc", ...SKILLS, ...RULE_FILES, ...SETTINGS, ...MCP_FILES]) {
+    if (lstatSync(join(dir, p), { throwIfNoEntry: false })) mustBeInside(dir, p);
+  }
   for (const p of [".offthemode", ".cursor/rules/offthemode.mdc", ...SKILLS]) rmSync(join(dir, p), { recursive: true, force: true });
   for (const f of RULE_FILES.filter((f) => existsSync(join(dir, f)))) {
     unlink(join(dir, f));
@@ -52,13 +68,16 @@ function stripOffTheMode(dir) {
     const kept = readFileSync(join(dir, f), "utf8").split("\n").filter((l) => !MENTION.test(l)).join("\n");
     if (kept.trim()) writeFileSync(join(dir, f), kept); else rmSync(join(dir, f));
   }
-  editJson(join(dir, ".mcp.json"), (d) => {
-    for (const k of Object.keys(d.mcpServers ?? {})) if (MENTION.test(k + JSON.stringify(d.mcpServers[k]))) delete d.mcpServers[k];
-    return Object.keys(d.mcpServers ?? {}).length > 0 || Object.keys(d).some((k) => k !== "mcpServers");
-  });
+  for (const f of MCP_FILES) {
+    editJson(join(dir, f), (d) => {
+      for (const k of Object.keys(d.mcpServers ?? {})) if (MENTION.test(k + JSON.stringify(d.mcpServers[k]))) delete d.mcpServers[k];
+      return Object.keys(d.mcpServers ?? {}).length > 0 || Object.keys(d).some((k) => k !== "mcpServers");
+    });
+  }
   for (const f of SETTINGS) {
     editJson(join(dir, f), (d) => {
       for (const k of ["allow", "ask", "deny"]) if (d.permissions?.[k]) d.permissions[k] = d.permissions[k].filter((x) => !MENTION.test(x));
+      for (const k of ["enabledMcpjsonServers", "disabledMcpjsonServers"]) if (Array.isArray(d[k])) d[k] = d[k].filter((x) => !MENTION.test(x));
       for (const k of ["enabledPlugins", "extraKnownMarketplaces"]) for (const name of Object.keys(d[k] ?? {})) if (MENTION.test(name + JSON.stringify(d[k][name]))) delete d[k][name];
       for (const event of Object.keys(d.hooks ?? {})) d.hooks[event] = d.hooks[event].filter((h) => !MENTION.test(JSON.stringify(h)));
       return true;
@@ -70,7 +89,9 @@ function stripOffTheMode(dir) {
 // tool loads by itself stops the eval, because the plain arm would then work with the method.
 function mentions(dir) {
   const files = gitOr(dir, "grep", "-l", "-i", "-I", "-E", "offthemode|off[ _-]*the[ _-]*mode").split("\n").filter(Boolean);
-  const loaded = files.filter((f) => LOADED.test(f));
+  const imported = new Set(RULE_FILES.filter((f) => existsSync(join(dir, f)))
+    .flatMap((f) => [...readFileSync(join(dir, f), "utf8").matchAll(/(?:^|\s)@([\w./-]+)/g)].map((m) => m[1].replace(/^\.\//, ""))));
+  const loaded = files.filter((f) => LOADED.test(f) || imported.has(f));
   if (loaded.length) throw new CaseError(`the plain copy would still load Off the Mode from ${loaded.join(", ")}; take it out with the case's setup (it runs in both copies) or pick another commit`);
   return files;
 }
@@ -118,7 +139,7 @@ async function arrange(c, arm, dir, logFile) {
     if (!existsSync(rules)) throw new CaseError(`rules: the project has no .offthemode/RULES.md at ${c.commit}`);
     writeFileSync(rules, patchRules(readFileSync(rules, "utf8"), c.rulesText));
   }
-  return git(dir, "status", "--porcelain", "--ignored").split("\n").filter((l) => l.startsWith("!! ")).map((l) => l.slice(3).replace(/\/$/, ""));
+  return git(dir, "ls-files", "-z", "--others", "--ignored", "--exclude-standard", "--directory").split("\0").filter(Boolean).map((p) => p.replace(/\/$/, ""));
 }
 
 // What the copy needs to run but git doesn't hold; all of it stays out of git through .git/info/exclude.
@@ -126,6 +147,7 @@ async function furnish(c, dir, logFile, carry) {
   const put = (from, to) => {
     if (!existsSync(from)) throw new CaseError(`copy: no ${from}`);
     if (existsSync(join(dir, to))) throw new CaseError(`files: ${to} is already in the project; pick another path`);
+    if (throughLink(dir, to)) throw new CaseError(`files: ${to} goes through a linked folder, so copying it would write outside the copy`);
     mkdirSync(dirname(join(dir, to)), { recursive: true });
     execFileSync("cp", [...CP_FLAGS, from, join(dir, to)]);
     appendFileSync(join(dir, ".git", "info", "exclude"), `/${to}\n`);
