@@ -59,13 +59,17 @@ function parse(raw, file) {
     const field = FIELDS[key];
     if (!field) throw new CaseError(`${file}: unknown field "${key}" (known: ${Object.keys(FIELDS).join(", ")})`);
     const want = field[0], got = kind(value);
-    const fits = got === want || (want === "object" && got === "map") || (want === "map" && got === "object" && !Object.keys(value).length);
+    // An empty object fits a map, and an empty list fits a list of objects (an empty "asks" is caught below).
+    const fits = got === want || (want === "object" && got === "map") || (want === "map" && got === "object" && !Object.keys(value).length)
+      || (want === "array" && Array.isArray(value) && !value.length);
     if (!fits) throw new CaseError(`${file}: "${key}" should be ${SAY[want] ?? `a ${want}`} (${field[1]}), not ${SAY[got] ?? `a ${got}`}`);
   }
   for (const key of ["repo", "commit", "check"]) {
     if (!raw[key]) throw new CaseError(`${file}: "${key}" is required (${FIELDS[key][1]})`);
   }
-  if (!raw.ask === !raw.asks) throw new CaseError(`${file}: give "ask" (${FIELDS.ask[1]}) or "asks" (${FIELDS.asks[1]}), not both`);
+  if (!raw.ask && !raw.asks) throw new CaseError(`${file}: give "ask" (${FIELDS.ask[1]}) or "asks" (${FIELDS.asks[1]})`);
+  if (raw.ask && raw.asks) throw new CaseError(`${file}: give "ask" or "asks", not both`);
+  if (raw.asks && !raw.asks.length) throw new CaseError(`${file}: "asks" lists no ask; give at least one {"ask": file}`);
   if (raw.asks && raw.replies) throw new CaseError(`${file}: with "asks", each ask lists its own "replies"`);
   for (const [i, step] of (raw.asks ?? []).entries()) {
     const where = `${file}: asks[${i}]`;

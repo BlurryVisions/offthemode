@@ -78,6 +78,22 @@ export function linksOut(dir) {
   });
 }
 
+// Build tools' caches: they record the owner's later work. Vitest's results.json under node_modules/.vite named
+// the tests of the owner's real fix, written two days after the case's commit. They go from anything copied in;
+// the tools make them again in the copy.
+const CACHES = ["-path", "*/node_modules/.vite", "-o", "-path", "*/node_modules/.vite-temp", "-o", "-path", "*/node_modules/.cache",
+  "-o", "-path", "*/.next/cache", "-o", "-name", ".turbo", "-o", "-name", ".parcel-cache", "-o", "-name", ".eslintcache", "-o", "-name", ".DS_Store"];
+function dropCaches(path) {
+  execFileSync("find", [path, "(", ...CACHES, ")", "-prune", "-exec", "rm", "-rf", "{}", "+"]);
+}
+
+// Files written after the case's commit that a copied folder still holds (packages unpack with old dates, so these
+// are what tools wrote later): a start warning names them.
+function newerThan(path, commitDate) {
+  const at = new Date(commitDate).toLocaleString("sv-SE");
+  return execFileSync("find", [path, "-type", "f", "-newermt", at], { encoding: "utf8", maxBuffer: 1 << 28 }).split("\n").filter(Boolean);
+}
+
 // A symlinked file becomes a plain file before it is changed, so the edit can't reach a file outside the copy.
 function unlink(path) {
   if (!lstatSync(path, { throwIfNoEntry: false })?.isSymbolicLink()) return;
@@ -203,9 +219,11 @@ async function arrange(c, arm, dir, logFile) {
   return ignored.filter((p) => !ignored.some((q) => p.startsWith(q + "/"))); // a folder carries what is inside it
 }
 
-// What the copy needs to run but git doesn't hold; all of it stays out of git through .git/info/exclude.
+// What the copy needs to run but git doesn't hold; all of it stays out of git through .git/info/exclude. Returns
+// the files in what was copied from the project that are newer than the case's commit.
 async function furnish(c, dir, logFile, carry) {
-  const put = (from, to) => {
+  const commitDate = git(dir, "log", "-1", "--format=%cI", "HEAD"), newer = [];
+  const put = (from, to, fromProject = false) => {
     if (!existsSync(from)) throw new CaseError(`copy: no ${from}`);
     if (lstatSync(join(dir, to), { throwIfNoEntry: false })) throw new CaseError(`files: ${to} is already in the project (a file, a folder or a link); pick another path`);
     // Git doesn't follow links, so a file put through one could not be kept out of git and would count as work.
@@ -213,15 +231,20 @@ async function furnish(c, dir, logFile, carry) {
     mkdirSync(dirname(join(dir, to)), { recursive: true });
     execFileSync("cp", [...CP_FLAGS, from, join(dir, to)]);
     repoint(dir, to, c.repo);
+    if (fromProject) {
+      dropCaches(join(dir, to));
+      newer.push(...newerThan(join(dir, to), commitDate).map((p) => relative(dir, p)));
+    }
     appendFileSync(join(dir, ".git", "info", "exclude"), `/${to}\n`);
   };
   for (const [from, to] of carry) put(from, to);
-  for (const p of c.copy) put(join(c.repo, p), p);
+  for (const p of c.copy) put(join(c.repo, p), p, true);
   if (c.install) {
     const r = await sh(c.install, { cwd: dir, env: caseEnv(c, dir), logFile });
     if (r.code !== 0) throw new CaseError(`install failed in ${dir} (exit ${r.code}); see ${logFile}`);
   }
   for (const [to, from] of Object.entries(c.files)) put(from, to);
+  return newer;
 }
 
 // arm: "plain", "otm", or "base" (a clone of the plain copy's start, for the baseline and the judges; carry names
@@ -241,10 +264,10 @@ export async function makeCopy(c, { dir, arm, source = c.repo, commit = c.commit
   const hooks = gitOr(c.repo, "config", "--local", "core.hooksPath");
   const inside = hooks && (isAbsolute(hooks) ? relative(c.repo, hooks) : hooks);
   if (inside && !isAbsolute(inside) && !inside.startsWith("..")) git(dir, "config", "core.hooksPath", inside);
-  await furnish(c, dir, logFile, carry);
+  const newer = await furnish(c, dir, logFile, carry);
   const out = linksOut(dir);
   if (out.length) throw new CaseError(`the ${arm} copy holds links that lead out of it, which hand the arm a path outside its copy: ${out.slice(0, 5).join(", ")}${out.length > 5 ? ` and ${out.length - 5} more` : ""}. Copy that folder for real in the case (a link back into the project itself is fixed on its own), or remove the link in the case's setup or install.`);
-  return { dir, base: git(dir, "rev-parse", "HEAD"), mentions: arm === "plain" ? mentions(dir) : [], setupFiles };
+  return { dir, base: git(dir, "rev-parse", "HEAD"), mentions: arm === "plain" ? mentions(dir) : [], setupFiles, newer };
 }
 
 // Paths whose content differs between two starts, outside Off the Mode's own files: should be none.

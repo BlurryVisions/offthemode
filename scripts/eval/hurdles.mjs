@@ -15,9 +15,9 @@ export function ownerText(e) {
   return text && !text.startsWith("<") && !text.startsWith("[Request interrupted") ? text : "";
 }
 
-// The end of a reply, where a question to the owner sits: its last 600 characters, code blocks and links left out
-// (a "?" in a URL or a snippet is no question).
-const ending = (text) => text.replace(/```[\s\S]*?```/g, "").replace(/https?:\S+/g, "").trim().slice(-600);
+// The end of a reply, where a question to the owner sits: its last 600 characters, code blocks, inline code and
+// links left out (a "?" in a URL or a snippet, such as `user?.name` or `/progress?tab=done`, is no question).
+const ending = (text) => text.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "").replace(/https?:\S+/g, "").trim().slice(-600);
 
 // 1. A turn that ended asking the owner: its last reply's ending holds a "?". The owner must answer before the work
 //    goes on.
@@ -25,14 +25,19 @@ export const asksOwner = (text) => ending(text).includes("?");
 
 // 2. A turn that ended asking for a go-ahead: to start, build, commit, push or ship (D-025: ask to decide, never to
 //    start). The phrases come from the research count of lasscrobits' real turns (35 of 118 before D-025, 13 of 133
-//    after), with commit, merge, deploy and proceed added.
+//    after), with commit, merge, deploy and proceed added, and "Go to push?" (two real turns ended on it). "Your
+//    call" counts only with a start, build, ship or push word close after it: alone it hands the owner a decision,
+//    the kind of question D-025 asks for ("the next step is your call: keep waiting, or move renames to the phone
+//    app").
 export const GO_AHEAD = new RegExp([
   String.raw`want me to`, String.raw`shall i`,
   String.raw`should i (?:push|start|go|build|commit|ship|merge|deploy|proceed|begin)`,
   String.raw`ready (?:to|for me to)`, String.raw`say (?:go|yes)`, String.raw`your go\b`, String.raw`give me (?:a|the) go`,
   String.raw`ok(?:ay)? to (?:push|start|ship|commit|merge|deploy|proceed)`,
   String.raw`(?:ship|push|commit|merge|deploy) (?:it|them|this|these)(?: now)?\?`,
-  String.raw`start (?:it|now|on it)\?`, String.raw`go ahead\?`, String.raw`your call`,
+  String.raw`start (?:it|now|on it)\?`, String.raw`go ahead\?`,
+  String.raw`go to (?:push|start|build|ship|commit|merge|deploy)\b`,
+  String.raw`your calls?\b[\s\S]{0,40}?\b(?:push|start|build|ship|commit|merge|deploy)\b`,
 ].join("|"), "i");
 export const asksGoAhead = (text) => GO_AHEAD.test(ending(text));
 

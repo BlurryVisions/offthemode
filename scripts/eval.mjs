@@ -9,12 +9,12 @@
 // empties after 3 days.
 // Each arm runs --runs times (default 2), each time in a fresh copy; the report shows every run and the spread,
 // because one run is one sample. Every claude the eval starts runs in a macOS sandbox (scripts/eval/sandbox.mjs)
-// that can't read the real project, the cases, the records, the other copies or other sessions' records; a probe
-// proves it before any token is spent, and the run stops if it doesn't hold.
+// that can't read the real project, the cases, the records, the other copies or other sessions' records, nor connect
+// to another session; a probe proves it before any token is spent, and the run stops if it doesn't hold.
 // --prepare makes the copies, proves the sandbox, and runs the check and scorer at the start, for no tokens.
 import { parseArgs } from "node:util";
 import { spawn, execFileSync } from "node:child_process";
-import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { chmodSync, closeSync, copyFileSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join, basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir, userInfo } from "node:os";
@@ -50,22 +50,79 @@ function useCopies(c) {
   for (const [name, path] of apart.map(([n, p]) => [n, real(p)])) {
     if (within(COPIES, path) || within(path, COPIES)) throw new CaseError(`the copies folder (${COPIES}) and ${name} (${path}) must not sit inside each other; set OTM_EVAL_COPIES elsewhere`);
   }
+  // Each arm's Claude Code keeps its messaging socket in its scratch folder; a Unix socket's path holds at most 103
+  // bytes, and past that Claude Code puts it in /tmp, which the sandbox closes.
+  const socket = join(COPIES, "12345678", "tmp", "cc-socks", "99999.sock");
+  if (Buffer.byteLength(socket) > 103) throw new CaseError(`the copies folder's path (${COPIES}) is too long for the arms' messaging sockets (${socket} is over 103 bytes); set OTM_EVAL_COPIES to a shorter path`);
+}
+
+// Editors that keep a local history of every file saved in them, the real project's too (VS Code and its forks).
+const EDITORS = ["Code", "Code - Insiders", "Cursor", "VSCodium", "Windsurf"];
+
+// Files and folders beside the project whose names start with its name and go on with no letter (lasscrobits-keys,
+// a spike, another worktree): the owner's side work and secrets for that project.
+function besideProject(repo) {
+  const r = real(repo), name = basename(r).toLowerCase(), parent = dirname(r);
+  let entries = [];
+  try { entries = readdirSync(parent, { withFileTypes: true }); } catch { return []; }
+  return entries.filter((e) => e.name.toLowerCase().startsWith(name) && e.name.length > name.length && !/[a-z]/i.test(e.name[name.length]))
+    .map((e) => join(parent, e.name));
+}
+
+// Loose files in the temp folders that name Off the Mode or the project (a check's log, a tool's cache of the real
+// project's code): an arm could find them, so every fence closes them, each with the whole temp entry it sits in
+// (tsx-501, say: hundreds of cached files). Two levels deep, the first MB of each file under 4 MB. The arms keep
+// their own temp folder (TMPDIR), so they need none of these.
+function strayFiles(c, closed) {
+  let userTemp = "";
+  try { userTemp = execFileSync("/usr/bin/getconf", ["DARWIN_USER_TEMP_DIR"], { encoding: "utf8" }).trim(); } catch { /* not a Mac */ }
+  const project = real(c.repo), names = new RegExp(`${NAMES_IT.source}|${basename(project).replace(/[^\w]/g, "\\$&")}`, "i");
+  const found = new Set(), buf = Buffer.alloc(1 << 20);
+  const named = (file) => {
+    if (names.test(basename(file))) return true;
+    let fd;
+    try { fd = openSync(file, "r"); return names.test(buf.toString("latin1", 0, readSync(fd, buf, 0, buf.length, 0))); } catch { return false; } finally { if (fd !== undefined) closeSync(fd); }
+  };
+  const walk = (dir, depth, top) => {
+    let entries = [];
+    try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const p = join(dir, e.name);
+      if (closed.some((d) => within(p, d)) || found.has(top ?? p)) continue;
+      if (e.isDirectory() && depth > 1) walk(p, depth - 1, top ?? p);
+      else if (e.isFile() && statSync(p, { throwIfNoEntry: false })?.size < 4 << 20 && named(p)) found.add(top ?? p);
+    }
+  };
+  for (const dir of [...new Set(["/tmp", userTemp].filter(Boolean).map(real))]) walk(dir, 2);
+  return [...found];
 }
 
 // The places no arm or judge may read, besides each other's copies: see sandbox.mjs for how.
 function places(c) {
   const main = gitOr(THIS_REPO, "rev-parse", "--path-format=absolute", "--git-common-dir");
-  return {
+  const uid = userInfo().uid, support = join(homedir(), "Library", "Application Support");
+  const where = {
     repo: c.repo, cases: CASES, records: WORK, copies: COPIES, projects: PROJECTS, fileHistory: join(homedir(), ".claude", "file-history"),
     alsoDeny: [
       // Off the Mode itself, which the plain arm must not find (and every worktree of it).
       ["this repo", THIS_REPO], ...(main ? [["this repo's main checkout", dirname(main)]] : []),
       // Claude Code's usual scratch folders, where earlier replays kept their copies with finished answers.
-      ["Claude Code's scratch folders in /tmp", realish(`/tmp/claude-${userInfo().uid}`)],
+      ["Claude Code's scratch folders in /tmp", realish(`/tmp/claude-${uid}`)],
+      // Other Claude Code sessions: the list of live ones (their names, folders and messaging keys), their messaging
+      // sockets (the folders Claude Code's own sandbox closes too), and the editors' links to Claude Code with their
+      // tokens. A session outside the sandbox can read the real project, so an arm must not reach one.
+      ["the list of live Claude Code sessions", join(homedir(), ".claude", "sessions")],
+      ["the editors' links to Claude Code", join(homedir(), ".claude", "ide")],
+      ...["cc-socks", `cc-socks-${uid}`, `cc-daemon-${uid}`].map((n) => ["Claude Code's messaging sockets", realish(`/tmp/${n}`)]),
       // The desktop app's own records of sessions and notes.
-      ["the desktop app's folder", join(homedir(), "Library", "Application Support", "Claude")],
+      ["the desktop app's folder", join(support, "Claude")],
+      ...besideProject(c.repo).map((p) => ["a folder beside the project, named after it", p]),
+      ...EDITORS.map((e) => [`${e}'s local history of saved files`, join(support, e, "User", "History")]),
     ],
   };
+  const closed = [where.repo, where.cases, where.records, where.copies, ...where.alsoDeny.map(([, p]) => p)].map(realish);
+  where.alsoDeny.push(...strayFiles(c, closed).map((p) => ["a temp file or folder naming Off the Mode or the project", p]));
+  return where;
 }
 
 // The claude the arms run, by its full path: inside the sandbox, a PATH lookup could land elsewhere.
@@ -87,7 +144,16 @@ function newPlace() {
   return place;
 }
 
-// Off the Mode installed for the whole account reaches the plain arm too: the report says so.
+// Where in a JSON value a text names Off the Mode, as key paths (autoMode.environment[2]).
+function namedAt(value, path = "") {
+  if (typeof value === "string") return NAMES_IT.test(value) ? [path || "(the whole file)"] : [];
+  if (Array.isArray(value)) return value.flatMap((v, i) => namedAt(v, `${path}[${i}]`));
+  if (value && typeof value === "object") return Object.entries(value).flatMap(([k, v]) => [...(NAMES_IT.test(k) ? [`${path ? `${path}.` : ""}${k}`] : []), ...namedAt(v, path ? `${path}.${k}` : k)]);
+  return [];
+}
+
+// Off the Mode installed for the whole account reaches the plain arm too, and the account's own files that Claude
+// Code needs stay readable in the sandbox: the report says what they hold.
 function leaks() {
   const home = join(homedir(), ".claude"), out = [];
   const names = (dir, depth) => !existsSync(dir) || !depth ? [] : readdirSync(dir, { withFileTypes: true })
@@ -96,6 +162,13 @@ function leaks() {
   if (existsSync(md) && NAMES_IT.test(readFileSync(md, "utf8"))) out.push("~/.claude/CLAUDE.md names Off the Mode, and the plain arm reads it");
   const found = [...names(join(home, "skills"), 3), ...names(join(home, "plugins"), 3), ...names(join(home, "commands"), 2)];
   if (found.length) out.push(`Off the Mode is installed for the whole account (${found.slice(0, 5).join(", ")}), so the plain arm has it too`);
+  // Claude Code loads these in both arms, so the sandbox leaves them open; the plain arm can read them too.
+  for (const [file, shown, why] of [[join(home, "settings.json"), "~/.claude/settings.json", "Claude Code loads it in both arms (auto mode's checker reads autoMode.environment)"],
+    [join(homedir(), ".claude.json"), "~/.claude.json", "Claude Code needs it, so it stays open in both arms"]]) {
+    let at = [];
+    try { at = namedAt(JSON.parse(readFileSync(file, "utf8"))); } catch { /* no file, or not JSON */ }
+    if (at.length) out.push(`${shown} names Off the Mode (${at.slice(0, 4).join(", ")}${at.length > 4 ? ` and ${at.length - 4} more` : ""}); ${why}, and the plain arm can read it`);
+  }
   return out;
 }
 
@@ -111,19 +184,21 @@ async function checkAndScore(c, dir, logDir) {
 const nameOf = (a) => `${ARM_NAMES[a.arm]} run ${a.run} (${a.letter})`;
 
 // Proves each fence before any token is spent: every denied place refused, every open one usable. Stops the run
-// if one doesn't hold.
+// if one doesn't hold. The socket each probe serves in a denied place sits in a folder of the copies folder that no
+// fence opens (a short path: a socket's path holds at most 103 bytes), removed after.
 async function proveFences(c, run, w, all) {
-  const results = await Promise.all(all.map(async (x) => {
+  const sockets = join(COPIES, `.probe-${randomBytes(3).toString("hex")}`);
+  const results = await Promise.all(all.map(async (x, i) => {
     const others = all.filter((o) => o !== x).map((o) => o.dir);
-    const earlier = readdirSync(COPIES, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => join(COPIES, e.name))
+    const earlier = readdirSync(COPIES, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith(".")).map((e) => join(COPIES, e.name))
       .filter((p) => !all.some((o) => o.place === p)).slice(0, 2);
     const repoSessions = join(PROJECTS, sessionFolderName(real(c.repo)));
-    const list = probePlaces(w, x.fence, { copy: x.dir, tmp: x.tmp, others: [...others, ...earlier], caseDir: c.dir, records: run, repoSessions });
+    const list = probePlaces(w, x.fence, { copy: x.dir, tmp: x.tmp, others: [...others, ...earlier], caseDir: c.dir, records: run, repoSessions, socket: join(sockets, `${i}.sock`) });
     const r = await probe(profile(x.fence), list, { cwd: x.dir, env: cleanEnv(x.tmp, x.dir) });
     const lines = probeLines(r);
     writeFileSync(join(x.logDir, "sandbox-probe.txt"), lines.join("\n") + "\n");
     return { who: x.who, ok: r.ok, denied: r.results.filter((p) => p.expect === "denied").length, open: r.results.filter((p) => p.expect === "open").length, lines };
-  }));
+  })).finally(() => rmSync(sockets, { recursive: true, force: true }));
   for (const r of results) say(`sandbox: ${r.who}: ${r.ok ? `held (${r.denied} places refused, ${r.open} open)` : "DID NOT HOLD"}`);
   const bad = results.filter((r) => !r.ok);
   if (bad.length) throw new CaseError(`the sandbox did not hold, so no arm runs:\n${bad.map((r) => `${r.who}:\n  ${r.lines.filter((l) => !/^(denied|open) /.test(l)).join("\n  ")}`).join("\n")}`);
@@ -210,6 +285,8 @@ async function playArm(c, a, bin, save) {
 function startWarnings(copies) {
   const out = [...new Set(copies.filter((a) => a.mentions.length).map((a) => a.mentions.join(", ")))]
     .map((m) => `the plain copy still names Off the Mode in ${m} (the case's setup can change that)`);
+  const newer = [...new Set(copies.flatMap((a) => a.newer ?? []))];
+  if (newer.length) out.push(`what the case copies from the project holds ${newer.length} files written after the case's commit, which may record later work: ${newer.slice(0, 5).join(", ")}${newer.length > 5 ? " and more" : ""}. The case can build such a folder with its install (npm ci) instead of copying it`);
   for (const a of copies.slice(1)) {
     const differ = startDifferences(copies[0].dir, a.dir);
     if (differ.length) out.push(`${a.who} starts differently from ${copies[0].who} outside Off the Mode's own files: ${differ.slice(0, 8).join(", ")}`);
