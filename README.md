@@ -55,4 +55,14 @@ The server only hands out instructions and templates. It never sees your code: y
 
 Everything comes from one source, [`content/`](content/). Edit there, then run `npm run content` to rebuild the skills, and `npm run check` before committing. After a change to the site's colors, you can run `npm run audit`: it checks the color contrast of both pages, in light and dark, against WCAG AA. It is optional and not part of `npm run check`.
 
+### Test a change on a real ask first
+
+`npm run eval -- <case>` replays one real ask through plain Claude Code and through Off the Mode, side by side, each in its own copy of the project. Then it measures and scores both: tokens read, agents, time, how often each stopped to ask, the project's own check, the case's own scorer, and three blind judges who don't know which is which. It writes a short `report.md`.
+
+- A case is a folder outside this repo, because it holds a real person's words and data: `~/.offthemode/evals/<name>/case.json` (or set `OTM_EVAL_CASES`). It names the project, the commit the ask was made at, the ask, the person's logged replies, and the check. Every field is listed in [`scripts/eval/case.mjs`](scripts/eval/case.mjs).
+- Runs go to `~/offthemode-evals/` (or set `OTM_EVAL_WORK`).
+- Try it on the smoke case first: `npm run eval -- --make-smoke`, then `npm run eval -- smoke`. It costs under 1M tokens.
+- `--prepare` makes the copies and runs the check at the start, for free. A real case costs what two real builds cost: 40 to 350 million tokens.
+- `npm run eval -- --measure <session .jsonl>` shows where any Claude Code session's tokens went, per agent, workflow and turn.
+
 MIT licence.
