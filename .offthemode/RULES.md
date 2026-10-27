@@ -108,7 +108,7 @@ Scripts read the json below, and every other file names a key (such as max_file_
 ```
 
 ## Commands (fill once the toolchain exists; the revisit commands run these)
-check `npm run check` · full check `npm run check && npm run build` · run `npm run dev` · end-to-end `npm run test:mcp` (with the site running: `npm run build && npm start`; add `MCP_URL=https://offthemode.vercel.app/mcp` for the live site) · evals none yet (CHECKLIST F6.6) · dead code none · audit `npm run audit` (contrast, optional) · agent usage `npm run usage -- <session .jsonl>` (where a Claude Code session's tokens went, per agent)
+check `npm run check` · full check `npm run check && npm run build` · run `npm run dev` · end-to-end `npm run test:mcp` (with the site running: `npm run build && npm start`; add `MCP_URL=https://offthemode.vercel.app/mcp` for the live site) · eval `npm run eval -- <case>` (one real ask replayed through plain Claude Code and Off the Mode, measured and blind-judged; cases in ~/.offthemode/evals, runs in ~/offthemode-evals; `--prepare` is free, the smoke case under 1M tokens, a real case 40-350M; test every change to Off the Mode with it before it ships) · dead code none · audit `npm run audit` (contrast, optional) · agent usage `npm run usage -- <session .jsonl>` (where a Claude Code session's tokens went, per agent)
 
 ## Done means verified
 Checks pass, the thing actually ran (the site started and the MCP test passed), and UI changes were looked at on screen in light and dark. "Should work" is not done: say what you verified and how.
