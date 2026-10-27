@@ -192,7 +192,7 @@ function isolationLine(r) {
   if (!r.isolation?.length) return "";
   const bad = r.isolation.filter((x) => !x.ok);
   return bad.length ? `**The sandbox did not hold for ${bad.map((x) => x.who).join(", ")}: no arm ran.**`
-    : `Every arm and judge runs in its own sandbox. Before the run, a probe tried cat, git, find and python on the places each must not read, and a connection to a socket in one (${r.isolation[0].denied} for the first), and all were refused; its own copy, folders and socket stayed open (sandbox-probe.txt in each run's folder).`;
+    : `Every arm and judge runs in its own sandbox. Before the run, a probe tried cat, git, find and python on the places each must not read, and a connection to a socket in one (${r.isolation[0].denied} for the first), and all were refused; ${r.isolation[0].readOnly ? `the owner's shared files (~/.offthemode with ME.md, ~/.claude's rules, settings, skills, agents and commands) could be read but not written; ` : ""}no folder above a closed place could be renamed, and no process outside its sandbox could be signalled; its own copy, folders and socket stayed open (sandbox-probe.txt in each run's folder).`;
 }
 
 export function writeReport(run, r) {

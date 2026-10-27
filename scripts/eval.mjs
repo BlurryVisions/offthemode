@@ -124,6 +124,8 @@ function places(c) {
     shared: [
       ["the owner's Off the Mode folder (ME.md)", join(homedir(), ".offthemode")],
       ["the owner's Claude Code rules for every project", join(homedir(), ".claude", "CLAUDE.md")],
+      ["the owner's Claude Code settings", join(homedir(), ".claude", "settings.json")],
+      ...["skills", "agents", "commands"].map((n) => [`the owner's Claude Code ${n}`, join(homedir(), ".claude", n)]),
     ],
   };
   const closed = [where.repo, where.cases, where.records, where.copies, ...where.alsoDeny.map(([, p]) => p)].map(realish);
@@ -207,7 +209,7 @@ async function proveFences(c, run, w, all) {
   })).finally(() => rmSync(sockets, { recursive: true, force: true }));
   for (const r of results) say(`sandbox: ${r.who}: ${r.ok ? `held (${r.denied} places refused, ${r.readOnly} read only, ${r.open} open)` : "DID NOT HOLD"}`);
   const bad = results.filter((r) => !r.ok);
-  if (bad.length) throw new CaseError(`the sandbox did not hold, so no arm runs:\n${bad.map((r) => `${r.who}:\n  ${r.lines.filter((l) => !/^(denied|open) /.test(l)).join("\n  ")}`).join("\n")}`);
+  if (bad.length) throw new CaseError(`the sandbox did not hold, so no arm runs:\n${bad.map((r) => `${r.who}:\n  ${r.lines.filter((l) => !/^(denied|open|read-only) /.test(l)).join("\n  ")}`).join("\n")}`);
   return results;
 }
 
