@@ -56,9 +56,13 @@ try {
     put(at("file-history", "other-sid", "f@v1"), "an edited file\n");
     put(at("this-repo", "content", "method.md"), "the method\n");
     put(at("loose", "check.log"), "offthemode: npm run check passed\n");
+    put(at("home-otm", "ME.md"), "# ME\n");
+    put(at("dot-claude", "projects", "other", "s.jsonl"), "{}\n");
     symlinkSync(at("project"), join(own, "project", "link-out"));
     const where = { repo: at("project"), cases: at("cases"), records: at("records"), copies: at("copies"), projects: at("projects"),
-      fileHistory: at("file-history"), alsoDeny: [["this repo", at("this-repo")], ["a loose temp file", at("loose", "check.log")]] };
+      fileHistory: at("file-history"), alsoDeny: [["this repo", at("this-repo")], ["a loose temp file", at("loose", "check.log")]],
+      shared: [["the owner's Off the Mode folder", at("home-otm")]], home: at() };
+    where.alsoDeny.push(["another session's records, one folder down", at("dot-claude", "projects")]);
     const fence = fenceFor(where, { own, sid: "own-sid" });
     const copy = join(own, "project"), tmp = join(own, "tmp");
     const outsideSocket = at("copies", ".probe", "0.sock");
@@ -66,6 +70,7 @@ try {
       ...probePlaces(where, fence, { copy, tmp, others: [join(other, "project")], caseDir: at("cases", "case1"), records: at("records", "run1"), repoSessions: at("projects", sessionFolderName(at("project"))), socket: outsideSocket }),
       { name: "the real project through a link in the copy", dir: join(copy, "link-out"), file: join(copy, "link-out", "secret.txt"), expect: "denied" },
       { name: "its own file history", dir: at("file-history", "own-sid"), expect: "open", write: true },
+      { name: "cloning a folder inside its own copy", dir: copy, expect: "open", clone: true },
       { name: "a socket in the records, served from outside", dir: at("records", "s.sock"), expect: "denied", socket: true },
     ];
     const env = { ...process.env, TMPDIR: tmp };
@@ -75,6 +80,18 @@ try {
     const tried = new Set(r.results.flatMap((p) => p.tried.filter((t) => t.outside === 0).map((t) => t.probe)));
     expect(["cat", "git-log", "git-grep", "find", "python", "write", "connect"].every((x) => tried.has(x)), `every kind of probe counted somewhere (${[...tried].join(", ")})`);
     expect(r.results.find((p) => p.dir === at("loose", "check.log"))?.tried.some((t) => t.probe === "cat" && t.outside === 0 && t.inside !== 0), "a loose file among the denied places is refused to cat");
+    expect(r.results.find((p) => p.dir === at("home-otm"))?.held && readFileSync(at("home-otm", "ME.md"), "utf8") === "# ME\n", "the owner's shared folder is read but not written");
+    expect(r.results.find((p) => p.dir === at("dot-claude"))?.held && existsSync(at("dot-claude", "projects")), "a folder above a closed place can't be renamed (mv ~/.claude away and back is refused)");
+    expect(r.results.filter((p) => p.signal).every((p) => p.held), "a process outside the sandbox can't be signalled; its own can");
+    const unshared = await probe(profile({ ...fence, shared: [] }), list, { cwd: copy, env });
+    expect(!unshared.ok && probeLines(unshared).some((l) => l.startsWith("WRITABLE") && l.includes(at("home-otm"))), "a fence that lets the shared folder be written is caught (WRITABLE)");
+    const moveable = await probe(profile({ ...fence, above: [] }), list, { cwd: copy, env });
+    expect(!moveable.ok && !moveable.results.find((p) => p.dir === at("dot-claude")).held && existsSync(at("dot-claude", "projects")), "a fence that lets a folder above a closed place be renamed is caught (LEAK), and the folder is put back");
+    expect(r.results.filter((p) => p.clone).length >= 3 && r.results.filter((p) => p.clone).every((p) => p.held), "a closed place, a folder above one and the home folder can't be cloned whole");
+    const clonable = await probe(profile(fence).split("\n").filter((l) => !l.startsWith("(deny file-clone ")).join("\n"), list, { cwd: copy, env });
+    expect(!clonable.ok && clonable.results.some((p) => p.clone && p.dir === at("dot-claude") && !p.held), "a fence that lets a folder above a closed place be cloned is caught (LEAK)");
+    const signalling = await probe(profile(fence).replace("(deny signal)\n", ""), list, { cwd: copy, env });
+    expect(!signalling.ok && !signalling.results.find((p) => p.signal && p.expect === "denied").held, "a fence that lets an outside process be signalled is caught (LEAK)");
     // The probe must be able to fail: a fence that forgets the real project is caught.
     const holed = { ...fence, deny: fence.deny.filter((d) => d !== at("project")) };
     const h = await probe(profile(holed), list, { cwd: copy, env });

@@ -119,6 +119,14 @@ function places(c) {
       ...besideProject(c.repo).map((p) => ["a folder beside the project, named after it", p]),
       ...EDITORS.map((e) => [`${e}'s local history of saved files`, join(support, e, "User", "History")]),
     ],
+    // The owner's files every session reads: an arm reads them like any session, but its writes would reach the owner
+    // and every later arm (an Off the Mode save adds lines to ME.md).
+    shared: [
+      ["the owner's Off the Mode folder (ME.md)", join(homedir(), ".offthemode")],
+      ["the owner's Claude Code rules for every project", join(homedir(), ".claude", "CLAUDE.md")],
+      ["the owner's Claude Code settings", join(homedir(), ".claude", "settings.json")],
+      ...["skills", "agents", "commands"].map((n) => [`the owner's Claude Code ${n}`, join(homedir(), ".claude", n)]),
+    ],
   };
   const closed = [where.repo, where.cases, where.records, where.copies, ...where.alsoDeny.map(([, p]) => p)].map(realish);
   where.alsoDeny.push(...strayFiles(c, closed).map((p) => ["a temp file or folder naming Off the Mode or the project", p]));
@@ -197,11 +205,11 @@ async function proveFences(c, run, w, all) {
     const r = await probe(profile(x.fence), list, { cwd: x.dir, env: cleanEnv(x.tmp, x.dir) });
     const lines = probeLines(r);
     writeFileSync(join(x.logDir, "sandbox-probe.txt"), lines.join("\n") + "\n");
-    return { who: x.who, ok: r.ok, denied: r.results.filter((p) => p.expect === "denied").length, open: r.results.filter((p) => p.expect === "open").length, lines };
+    return { who: x.who, ok: r.ok, denied: r.results.filter((p) => p.expect === "denied").length, open: r.results.filter((p) => p.expect === "open").length, readOnly: r.results.filter((p) => p.expect === "read-only").length, lines };
   })).finally(() => rmSync(sockets, { recursive: true, force: true }));
-  for (const r of results) say(`sandbox: ${r.who}: ${r.ok ? `held (${r.denied} places refused, ${r.open} open)` : "DID NOT HOLD"}`);
+  for (const r of results) say(`sandbox: ${r.who}: ${r.ok ? `held (${r.denied} places refused, ${r.readOnly} read only, ${r.open} open)` : "DID NOT HOLD"}`);
   const bad = results.filter((r) => !r.ok);
-  if (bad.length) throw new CaseError(`the sandbox did not hold, so no arm runs:\n${bad.map((r) => `${r.who}:\n  ${r.lines.filter((l) => !/^(denied|open) /.test(l)).join("\n  ")}`).join("\n")}`);
+  if (bad.length) throw new CaseError(`the sandbox did not hold, so no arm runs:\n${bad.map((r) => `${r.who}:\n  ${r.lines.filter((l) => !/^(denied|open|read-only) /.test(l)).join("\n  ")}`).join("\n")}`);
   return results;
 }
 
