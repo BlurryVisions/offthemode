@@ -56,9 +56,11 @@ try {
     put(at("file-history", "other-sid", "f@v1"), "an edited file\n");
     put(at("this-repo", "content", "method.md"), "the method\n");
     put(at("loose", "check.log"), "offthemode: npm run check passed\n");
+    put(at("home-otm", "ME.md"), "# ME\n");
     symlinkSync(at("project"), join(own, "project", "link-out"));
     const where = { repo: at("project"), cases: at("cases"), records: at("records"), copies: at("copies"), projects: at("projects"),
-      fileHistory: at("file-history"), alsoDeny: [["this repo", at("this-repo")], ["a loose temp file", at("loose", "check.log")]] };
+      fileHistory: at("file-history"), alsoDeny: [["this repo", at("this-repo")], ["a loose temp file", at("loose", "check.log")]],
+      shared: [["the owner's Off the Mode folder", at("home-otm")]] };
     const fence = fenceFor(where, { own, sid: "own-sid" });
     const copy = join(own, "project"), tmp = join(own, "tmp");
     const outsideSocket = at("copies", ".probe", "0.sock");
@@ -75,6 +77,9 @@ try {
     const tried = new Set(r.results.flatMap((p) => p.tried.filter((t) => t.outside === 0).map((t) => t.probe)));
     expect(["cat", "git-log", "git-grep", "find", "python", "write", "connect"].every((x) => tried.has(x)), `every kind of probe counted somewhere (${[...tried].join(", ")})`);
     expect(r.results.find((p) => p.dir === at("loose", "check.log"))?.tried.some((t) => t.probe === "cat" && t.outside === 0 && t.inside !== 0), "a loose file among the denied places is refused to cat");
+    expect(r.results.find((p) => p.dir === at("home-otm"))?.held && readFileSync(at("home-otm", "ME.md"), "utf8") === "# ME\n", "the owner's shared folder is read but not written");
+    const unshared = await probe(profile({ ...fence, shared: [] }), list, { cwd: copy, env });
+    expect(!unshared.ok && probeLines(unshared).some((l) => l.startsWith("WRITABLE") && l.includes(at("home-otm"))), "a fence that lets the shared folder be written is caught (WRITABLE)");
     // The probe must be able to fail: a fence that forgets the real project is caught.
     const holed = { ...fence, deny: fence.deny.filter((d) => d !== at("project")) };
     const h = await probe(profile(holed), list, { cwd: copy, env });

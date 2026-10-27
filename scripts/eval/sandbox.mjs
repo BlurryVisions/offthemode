@@ -2,7 +2,9 @@
 // would tell it the answer: the real project, the cases, the records, every other copy, and the session records of
 // other Claude Code sessions. It can't connect to a Unix socket in those places either, so it can't ask a process
 // outside the sandbox (another Claude Code session) to read for it. Its own copy, its scratch folder, its own
-// session folder and the rest of the machine (tools, caches, the network) stay open, the same for both arms.
+// session folder and the rest of the machine (tools, caches, the network) stay open, the same for both arms. The
+// owner's files every session reads (Off the Mode's ~/.offthemode/ME.md, Claude Code's ~/.claude/CLAUDE.md) stay
+// readable but can't be written: an arm's save once wrote the owner's real ME.md, which every later arm then read.
 //
 // Why sandbox-exec around the whole claude process, and not Claude Code's own sandbox (checked on 2.1.280 and its
 // docs, code.claude.com/docs/en/sandboxing): Claude Code's sandbox (sandbox.filesystem.denyRead) wraps shell
@@ -43,7 +45,8 @@ const quote = (p) => {
 
 // The fence for one claude process. where: the eval's places (real paths are taken here): repo (the real project),
 // cases, records, copies (the folder holding every copy), projects (Claude Code's session folders), fileHistory
-// (its copies of files other sessions edited), alsoDeny ([name, path] pairs). own: the folder holding its copy and
+// (its copies of files other sessions edited), alsoDeny ([name, path] pairs), shared ([name, path] pairs read but
+// never written). own: the folder holding its copy and
 // scratch folder. sid: its session id, so it keeps its own file history. bin: the claude it runs.
 export function fenceFor(where, { own, sid, bin }) {
   const projects = realish(where.projects), history = realish(where.fileHistory);
@@ -54,13 +57,14 @@ export function fenceFor(where, { own, sid, bin }) {
   // install folder opens, read-only.
   const binDir = bin && dirname(realish(bin));
   const readOnly = binDir && deny.some((d) => within(binDir, d)) ? [binDir] : [];
-  return { deny: [...new Set(deny)], allow, sessions, readOnly };
+  const shared = (where.shared ?? []).map(([, p]) => realish(p));
+  return { deny: [...new Set(deny)], allow, sessions, readOnly, shared };
 }
 
 // The Seatbelt profile for a fence. In a profile the last rule that matches wins, so the openings come after the
 // denials. Folders between a denied place and an opening inside it may be looked at (stat), never listed: without
 // that, a shell can't even cd into its own copy.
-export function profile({ deny, allow, sessions, readOnly = [] }) {
+export function profile({ deny, allow, sessions, readOnly = [], shared = [] }) {
   const opened = [...allow, sessions, ...readOnly];
   const between = new Set();
   for (const a of opened) for (const d of deny.filter((x) => within(a, x) && a !== x)) {
@@ -80,6 +84,8 @@ export function profile({ deny, allow, sessions, readOnly = [] }) {
     `(allow file-read* file-write* (literal ${quote(sessions)}) (prefix ${quote(sessions + "-")}))`,
     ...(readOnly.length ? [`(allow file-read* ${sub(readOnly)})`] : []),
     ...(inner.length ? [`(deny file-read* file-write* ${sub(inner)})`] : []),
+    // Last, so no opening above can lift it.
+    ...(shared.length ? [`(deny file-write* ${sub(shared)})`] : []),
     // Connecting to a Unix socket is not a file read: a process outside the sandbox listening in a denied place
     // (another Claude Code session's messaging socket, a server another session left running) would still answer,
     // and could read for the arm. So the denied places are closed to connections too. macOS matches the socket's
@@ -105,6 +111,7 @@ export const sandboxed = (prof, cmd, args) => [SANDBOX_EXEC, ["-p", prof, cmd, .
 // A socket place is tried by connecting to a Unix socket the probe serves from outside the sandbox.
 // Each probe runs once outside the sandbox first: only probes that work there count, so a place that is denied must
 // fail every one of them inside, and an open one must pass every one. Write probes (open places only) leave nothing.
+// A shared place (read, never written) gets the write probe too, which must fail while every read passes.
 // mode: r (read), w (read and write), s (connect to the socket at dir).
 const PROBES = `
 while [ $# -gt 0 ]; do
@@ -149,7 +156,9 @@ export function probePlaces(where, fence, { copy, tmp, others = [], caseDir, rec
     { name: "a socket in its scratch folder", dir: join(tmp, "probe.sock"), expect: "open", socket: true },
   ];
   const sockets = socket ? [{ name: `a socket served from outside, in a denied place ${socket}`, dir: socket, expect: "denied", socket: true }] : [];
-  return [...denied, ...sockets, ...open];
+  const shared = (where.shared ?? []).filter(([, p]) => existsSync(p) && statSync(p).isDirectory())
+    .map(([name, dir]) => ({ name: `${name} ${dir}`, dir, expect: "read-only", write: true }));
+  return [...denied, ...sockets, ...shared, ...open];
 }
 
 // A small file inside a folder, for cat and python to open (searched outside the sandbox, two levels deep).
@@ -176,7 +185,7 @@ function serve(path) {
   });
 }
 
-// places: [{ name, dir, file?, expect: "denied" | "open", write?, socket? }]. Returns each place with its probes'
+// places: [{ name, dir, file?, expect: "denied" | "open" | "read-only", write?, socket? }]. Returns each place with its probes'
 // results (outside → inside exit codes) and whether it held; ok is true when every place held and each had a probe
 // that counted.
 export async function probe(prof, places, { cwd, env }) {
@@ -195,7 +204,9 @@ export async function probe(prof, places, { cwd, env }) {
   const results = places.map((p, i) => {
     const tried = [...out.keys()].filter((k) => k.startsWith(`p${i} `)).map((k) => ({ probe: k.split(" ")[1], outside: out.get(k), inside: ins.get(k) }));
     const counted = tried.filter((t) => t.outside === 0);
-    const held = counted.length > 0 && counted.every((t) => (p.expect === "denied" ? t.inside !== 0 : t.inside === 0));
+    const refused = (t) => (p.expect === "denied" || (p.expect === "read-only" && t.probe === "write"));
+    const held = counted.length > 0 && counted.every((t) => (refused(t) ? t.inside !== 0 : t.inside === 0))
+      && (p.expect !== "read-only" || counted.some((t) => t.probe === "write"));
     return { ...p, tried, counted: counted.length, held };
   });
   return { ok: !inside.error && results.every((r) => r.held), error: inside.error ?? null, results };
@@ -205,7 +216,9 @@ export async function probe(prof, places, { cwd, env }) {
 export function probeLines(r) {
   const lines = r.results.map((p) => {
     const shown = p.tried.map((t) => `${t.probe} ${t.outside !== 0 ? "n/a" : t.inside === 0 ? "read" : "refused"}`.replace(/^(write|connect) read$/, "$1 ok")).join(", ");
-    const verdict = !p.counted ? "NOT CHECKED (no probe works even outside)" : p.held ? (p.expect === "denied" ? "denied" : "open") : p.expect === "denied" ? "LEAK" : "BLOCKED";
+    const wrote = p.tried.some((t) => t.probe === "write" && t.outside === 0 && t.inside === 0);
+    const verdict = !p.counted ? "NOT CHECKED (no probe works even outside)" : p.held ? (p.expect === "open" ? "open" : p.expect)
+      : p.expect === "denied" ? "LEAK" : p.expect === "read-only" && wrote ? "WRITABLE" : "BLOCKED";
     return `${verdict.padEnd(7)} ${p.name}: ${shown}`;
   });
   return r.error ? [`the sandbox could not start: ${r.error}`, ...lines] : lines;
