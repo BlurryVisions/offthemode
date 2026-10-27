@@ -70,6 +70,7 @@ try {
       ...probePlaces(where, fence, { copy, tmp, others: [join(other, "project")], caseDir: at("cases", "case1"), records: at("records", "run1"), repoSessions: at("projects", sessionFolderName(at("project"))), socket: outsideSocket }),
       { name: "the real project through a link in the copy", dir: join(copy, "link-out"), file: join(copy, "link-out", "secret.txt"), expect: "denied" },
       { name: "its own file history", dir: at("file-history", "own-sid"), expect: "open", write: true },
+      { name: "cloning a folder inside its own copy", dir: copy, expect: "open", clone: true },
       { name: "a socket in the records, served from outside", dir: at("records", "s.sock"), expect: "denied", socket: true },
     ];
     const env = { ...process.env, TMPDIR: tmp };
@@ -86,6 +87,9 @@ try {
     expect(!unshared.ok && probeLines(unshared).some((l) => l.startsWith("WRITABLE") && l.includes(at("home-otm"))), "a fence that lets the shared folder be written is caught (WRITABLE)");
     const moveable = await probe(profile({ ...fence, above: [] }), list, { cwd: copy, env });
     expect(!moveable.ok && !moveable.results.find((p) => p.dir === at("dot-claude")).held && existsSync(at("dot-claude", "projects")), "a fence that lets a folder above a closed place be renamed is caught (LEAK), and the folder is put back");
+    expect(r.results.filter((p) => p.clone).length >= 3 && r.results.filter((p) => p.clone).every((p) => p.held), "a closed place, a folder above one and the home folder can't be cloned whole");
+    const clonable = await probe(profile(fence).split("\n").filter((l) => !l.startsWith("(deny file-clone ")).join("\n"), list, { cwd: copy, env });
+    expect(!clonable.ok && clonable.results.some((p) => p.clone && p.dir === at("dot-claude") && !p.held), "a fence that lets a folder above a closed place be cloned is caught (LEAK)");
     const signalling = await probe(profile(fence).replace("(deny signal)\n", ""), list, { cwd: copy, env });
     expect(!signalling.ok && !signalling.results.find((p) => p.signal && p.expect === "denied").held, "a fence that lets an outside process be signalled is caught (LEAK)");
     // The probe must be able to fail: a fence that forgets the real project is caught.

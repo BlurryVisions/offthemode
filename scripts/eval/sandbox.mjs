@@ -6,7 +6,8 @@
 // owner's files every session reads (Off the Mode's ~/.offthemode/ME.md, Claude Code's ~/.claude/CLAUDE.md) stay
 // readable but can't be written: an arm's save once wrote the owner's real ME.md, which every later arm then read.
 // No folder above a closed place may be renamed (mv ~/.claude ~/.c2 would move every place under it out from under
-// its rule), and an arm can signal only processes in its own sandbox: an arm freeing a port must not stop the
+// its rule) or cloned whole (clonefile(2) on a folder copies the closed places inside it to a path no rule covers;
+// cp -c and ditto --clone go file by file and are refused anyway), and an arm can signal only processes in its own sandbox: an arm freeing a port must not stop the
 // Off the Mode server another arm is using, or the other arm's app.
 //
 // Why sandbox-exec around the whole claude process, and not Claude Code's own sandbox (checked on 2.1.280 and its
@@ -16,7 +17,7 @@
 // it sends the network through a proxy that would change what the arms can do. sandbox-exec applies one Seatbelt
 // profile (the engine Claude Code's own sandbox uses on macOS) to the claude process; macOS hands it on to every
 // process it starts (shells, git, python, agents' tools, hooks) and none of them can lift it. Tested on macOS 26.6:
-// cat, git -C, find, python open, symlinks, hard links, clones, ../ paths, other letter case and osascript's
+// cat, git -C, find, python open, symlinks, hard links, file clones, ../ paths, other letter case and osascript's
 // do shell script are all refused. One cost: a sandbox can't start inside another, so Claude Code's own sandbox is
 // turned off in the arms (see armSettings in eval.mjs).
 import { spawn } from "node:child_process";
@@ -62,15 +63,18 @@ export function fenceFor(where, { own, sid, bin }) {
   const binDir = bin && dirname(realish(bin));
   const readOnly = binDir && deny.some((d) => within(binDir, d)) ? [binDir] : [];
   const shared = (where.shared ?? []).map(([, p]) => realish(p));
-  const home = realish(where.home ?? homedir()), above = new Set();
-  for (const p of [...deny, ...shared]) for (let d = dirname(p); within(d, home) && d !== home; d = dirname(d)) above.add(d);
-  return { deny: [...new Set(deny)], allow, sessions, readOnly, shared, above: [...above] };
+  const home = realish(where.home ?? homedir()), above = new Set(), clonable = new Set();
+  for (const p of [...deny, ...shared]) {
+    for (let d = dirname(p); within(d, home) && d !== home; d = dirname(d)) above.add(d);
+    for (let d = dirname(p); ; d = dirname(d)) { clonable.add(d); if (d === dirname(d)) break; }
+  }
+  return { deny: [...new Set(deny)], allow, sessions, readOnly, shared, above: [...above], aboveClone: [...clonable] };
 }
 
 // The Seatbelt profile for a fence. In a profile the last rule that matches wins, so the openings come after the
 // denials. Folders between a denied place and an opening inside it may be looked at (stat), never listed: without
 // that, a shell can't even cd into its own copy.
-export function profile({ deny, allow, sessions, readOnly = [], shared = [], above = [] }) {
+export function profile({ deny, allow, sessions, readOnly = [], shared = [], above = [], aboveClone = [] }) {
   const opened = [...allow, sessions, ...readOnly];
   const between = new Set();
   for (const a of opened) for (const d of deny.filter((x) => within(a, x) && a !== x)) {
@@ -83,16 +87,19 @@ export function profile({ deny, allow, sessions, readOnly = [], shared = [], abo
   return [
     "(version 1)",
     "(allow default)",
-    `(deny file-read* file-write* ${sub(deny)})`,
+    // file-clone is its own operation, not part of file-write*: each rule names it so a clone follows the same lines.
+    `(deny file-read* file-write* file-clone ${sub(deny)})`,
     ...(between.size ? [`(allow file-read-metadata ${[...between].map((p) => `(literal ${quote(p)})`).join(" ")})`] : []),
-    `(allow file-read* file-write* ${sub(allow)})`,
+    `(allow file-read* file-write* file-clone ${sub(allow)})`,
     // Its own session folder and the ones its agents' worktrees get (the same name with more after a dash).
-    `(allow file-read* file-write* (literal ${quote(sessions)}) (prefix ${quote(sessions + "-")}))`,
+    `(allow file-read* file-write* file-clone (literal ${quote(sessions)}) (prefix ${quote(sessions + "-")}))`,
     ...(readOnly.length ? [`(allow file-read* ${sub(readOnly)})`] : []),
-    ...(inner.length ? [`(deny file-read* file-write* ${sub(inner)})`] : []),
+    ...(inner.length ? [`(deny file-read* file-write* file-clone ${sub(inner)})`] : []),
     // Last, so no opening above can lift them.
     ...(shared.length ? [`(deny file-write* ${sub(shared)})`] : []),
     ...(above.length ? [`(deny file-write-unlink ${above.map((p) => `(literal ${quote(p)})`).join(" ")})`] : []),
+    // Cloning a shared place or a folder above any closed place, up to / (a clone of the home folder holds them all).
+    `(deny file-clone ${sub(shared)}${aboveClone.map((p) => ` (literal ${quote(p)})`).join("")})`,
     // Signals reach only its own processes; another sandbox, even with the same rules, is out of reach (tested).
     "(deny signal)",
     "(allow signal (target same-sandbox))",
@@ -123,16 +130,18 @@ export const sandboxed = (prof, cmd, args) => [SANDBOX_EXEC, ["-p", prof, cmd, .
 // fail every one of them inside, and an open one must pass every one. Write probes (open places only) leave nothing.
 // A shared place (read, never written) gets the write probe too, which must fail while every read passes.
 // A process place is tried with kill -0: on a process started outside (dir is its pid), and on one the probe starts.
-// A rename place (dir is a folder above a closed place) is tried by renaming it and back, inside the sandbox only.
-// That would move a real folder if the rule failed, so only test:eval tries it, on a made-up home (where.home); the
-// rule is the same literal path for the owner's folders.
+// A rename place (dir is a folder above a closed place) is tried by renaming it and back, a clone place by cloning
+// it whole into the probe's scratch folder, inside the sandbox only. Either would move or copy a real folder if its
+// rule failed, so only test:eval tries them, on a made-up home (where.home); the rules name the owner's folders the
+// same way.
 // mode: r (read), w (read and write), s (connect to the socket at dir), k (signal the process dir, or its own when
-// dir is "own"), m (rename dir, inside only).
+// dir is "own"), m (rename dir, inside only), c (clone dir whole into $TMPDIR, inside only).
 const PROBES = `
 while [ $# -gt 0 ]; do
   id=$1 dir=$2 file=$3 mode=$4; shift 4
   if [ "$mode" = s ]; then python3 -I -c 'import socket,sys; socket.socket(socket.AF_UNIX).connect(sys.argv[1])' "$dir" >/dev/null 2>&1; echo "$id connect $?"; continue; fi
   if [ "$mode" = k ]; then if [ "$dir" = own ]; then sleep 30 & k=$!; else k=$dir; fi; kill -0 "$k" 2>/dev/null; echo "$id signal $?"; [ "$dir" = own ] && kill "$k" 2>/dev/null; continue; fi
+  if [ "$mode" = c ]; then if [ -n "$EVAL_PROBE_INSIDE" ]; then t="$TMPDIR/.eval-clone-$$"; python3 -I -c 'import ctypes,sys; sys.exit(ctypes.CDLL(None).clonefile(sys.argv[1].encode(), sys.argv[2].encode(), 0) != 0)' "$dir" "$t" 2>/dev/null; c=$?; rm -rf "$t"; echo "$id clone $c"; else [ -d "$dir" ]; echo "$id clone $?"; fi; continue; fi
   if [ "$mode" = m ]; then if [ -n "$EVAL_PROBE_INSIDE" ]; then mv "$dir" "$dir.eval-probe" 2>/dev/null && { mv "$dir.eval-probe" "$dir"; echo "$id rename 0"; } || echo "$id rename 1"; else [ -d "$dir" ] && [ -w "$(dirname "$dir")" ]; echo "$id rename $?"; fi; continue; fi
   if [ "$mode" = w ]; then mkdir -p "$dir" && f="$dir/.eval-probe-$$" && echo x > "$f" && rm -f "$f"; echo "$id write $?"; fi
   if [ -n "$file" ]; then cat -- "$file" >/dev/null 2>&1; echo "$id cat $?"; fi
@@ -176,9 +185,11 @@ export function probePlaces(where, fence, { copy, tmp, others = [], caseDir, rec
   const shared = (where.shared ?? []).filter(([, p]) => existsSync(p) && statSync(p).isDirectory())
     .map(([name, dir]) => ({ name: `${name} ${dir}`, dir, expect: "read-only", write: true }));
   const renames = (where.home ? fence.above ?? [] : []).filter((p) => existsSync(p)).map((dir) => ({ name: `renaming a folder above a closed place ${dir}`, dir, expect: "denied", rename: true }));
+  const clones = (where.home ? [...(fence.aboveClone ?? []).filter((p) => within(p, realish(where.home))), ...fence.deny] : [])
+    .filter((p) => existsSync(p) && statSync(p).isDirectory()).map((dir) => ({ name: `cloning a closed place or a folder above one ${dir}`, dir, expect: "denied", clone: true }));
   const signals = [{ name: "a process started outside the sandbox", dir: "", expect: "denied", signal: true },
     { name: "a process it starts itself", dir: "own", expect: "open", signal: true }];
-  return [...denied, ...sockets, ...shared, ...renames, ...signals, ...open];
+  return [...denied, ...sockets, ...shared, ...renames, ...clones, ...signals, ...open];
 }
 
 // A small file inside a folder, for cat and python to open (searched outside the sandbox, two levels deep).
@@ -205,15 +216,15 @@ function serve(path) {
   });
 }
 
-// places: [{ name, dir, file?, expect: "denied" | "open" | "read-only", write?, socket?, signal?, rename? }]. Returns each place with its probes'
+// places: [{ name, dir, file?, expect: "denied" | "open" | "read-only", write?, socket?, signal?, rename?, clone? }]. Returns each place with its probes'
 // results (outside → inside exit codes) and whether it held; ok is true when every place held and each had a probe
 // that counted.
 export async function probe(prof, places, { cwd, env }) {
   // A process for the outside-signal probe, stopped afterwards.
   const target = places.some((p) => p.signal && p.dir !== "own") ? spawn("/bin/sleep", ["600"], { stdio: "ignore" }) : null;
   places = places.map((p) => (p.signal && p.dir !== "own" ? { ...p, dir: String(target.pid) } : p));
-  const mode = (p) => (p.socket ? "s" : p.signal ? "k" : p.rename ? "m" : p.write ? "w" : "r");
-  const args = places.flatMap((p, i) => [`p${i}`, p.dir, p.socket || p.signal || p.rename ? "" : p.file ?? sampleFile(p.dir), mode(p)]);
+  const mode = (p) => (p.socket ? "s" : p.signal ? "k" : p.rename ? "m" : p.clone ? "c" : p.write ? "w" : "r");
+  const args = places.flatMap((p, i) => [`p${i}`, p.dir, p.socket || p.signal || p.rename || p.clone ? "" : p.file ?? sampleFile(p.dir), mode(p)]);
   const served = await Promise.all(places.filter((p) => p.socket).map(async (p) => [p.dir, await serve(p.dir)]));
   let outside, inside;
   try {
@@ -240,7 +251,7 @@ export async function probe(prof, places, { cwd, env }) {
 // One line per place: what was tried, and what happened inside the sandbox.
 export function probeLines(r) {
   const lines = r.results.map((p) => {
-    const shown = p.tried.map((t) => `${t.probe} ${t.outside !== 0 ? "n/a" : t.inside === 0 ? "read" : "refused"}`.replace(/^(write|connect|signal|rename) read$/, "$1 ok")).join(", ");
+    const shown = p.tried.map((t) => `${t.probe} ${t.outside !== 0 ? "n/a" : t.inside === 0 ? "read" : "refused"}`.replace(/^(write|connect|signal|rename|clone) read$/, "$1 ok")).join(", ");
     const wrote = p.tried.some((t) => t.probe === "write" && t.outside === 0 && t.inside === 0);
     const verdict = !p.counted ? "NOT CHECKED (no probe works even outside)" : p.held ? (p.expect === "open" ? "open" : p.expect)
       : p.expect === "denied" ? "LEAK" : p.expect === "read-only" && wrote ? "WRITABLE" : "BLOCKED";
