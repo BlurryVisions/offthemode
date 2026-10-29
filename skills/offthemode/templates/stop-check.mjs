@@ -40,7 +40,7 @@ const CLAIMS = [
   /(?:^|[.!][ \t]+)[*_]*(?:done|fixed|finished|verified|all set|all done)[*_]*[ \t]*(?:[.!(—–]|$)/im,
   /\b(?:tests?|checks?|evals?|suite)[ \t]+(?:all[ \t]+|now[ \t]+|still[ \t]+)?pass(?:es|ed)?\b/i,
 ];
-const CHECKPOINT = /\b(?:for your review|stopping here|stop here|stopped here|waiting (?:for|on) (?:you|your)|before I (?:go on|continue|start|build)|your (?:call|pick|go|yes)|say (?:yes|go|the word))\b/i;
+const CHECKPOINT = /\b(?:(?:for|await|awaiting) your review|so you can review|(?:stopping|stop|stopped|pausing|pause|paused) (?:here|there)|stop(?:ped|ping)? (?:after|at) (?:step|phase|piece|part|stage|round|item)\b|waiting (?:for|on) (?:you|your)|before I (?:go on|continue|start|build)|your (?:call|pick|go|yes)|say (?:yes|go|the word))\b/i;
 
 /** "claim" when the reply says the work is done, "checkpoint" when it also stops for the owner, else "none". */
 export function readReply(text) {
@@ -190,6 +190,9 @@ async function runAll(commands, root, seconds) {
 
 // ---------- the owner's own words ----------
 // A quote counts as the owner's when one of their own chat messages holds it (not the AI's, not a tool's output).
+// Claude Code also files a workflow's or subagent's report, a reminder and a command's output as user lines, and those
+// carry the AI's words, so they never count.
+const NOT_SAID = /<(task-notification|system-reminder|bash-stdout|bash-stderr|local-command-stdout|local-command-stderr)>[\s\S]*?<\/\1>/g;
 async function inOwnerMessages(keys, files) {
   const found = new Set();
   const probes = keys.map((k) => ({ k, probe: k.split(/[^a-z0-9]+/).sort((a, b) => b.length - a.length)[0] || k }));
@@ -203,9 +206,9 @@ async function inOwnerMessages(keys, files) {
       if (!open.length) continue;
       let e;
       try { e = JSON.parse(line); } catch { continue; }
-      if (e.type !== "user" || e.isSidechain || e.isMeta) continue;
+      if (e.type !== "user" || e.isSidechain || e.isMeta || (e.origin?.kind && e.origin.kind !== "human")) continue;
       const c = e.message?.content;
-      const text = typeof c === "string" ? c : Array.isArray(c) ? c.filter((b) => b?.type === "text").map((b) => b.text).join("\n") : "";
+      const text = (typeof c === "string" ? c : Array.isArray(c) ? c.filter((b) => b?.type === "text").map((b) => b.text).join("\n") : "").replace(NOT_SAID, " ");
       if (text.includes(MARK)) continue;
       const said = norm(text);
       for (const p of open) if (said.includes(p.k)) found.add(p.k);
@@ -366,7 +369,7 @@ async function main() {
   const sha = git(["rev-parse", "--short", "HEAD"], root)?.trim(), branch = git(["branch", "--show-current"], root)?.trim();
   const dirty = sha && git(["status", "--porcelain"], root)?.trim() ? " with uncommitted changes" : "";
   const where = sha ? `${branch || "a detached HEAD"} at ${sha}${dirty}` : root;
-  const owner = report(results, ctx, where, hook ? ", because your AI said the work is done" : "");
+  const owner = report(results, ctx, where, !hook ? "" : reply === "claim" ? ", because your AI said the work is done" : ", because your AI's reply says some work is done");
   if (!hook) {
     writeFileSync(file, JSON.stringify(state));
     console.log(owner);

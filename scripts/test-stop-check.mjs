@@ -85,7 +85,10 @@ function parts() {
   for (const t of [PLAN, "It isn't finished yet: the review is still running.", "Save the file, then tell me **\"done\"**.", "Each item has a done-when: a test by name.", "Spotify's built-in Last.fm link sends your plays.", "Once it's fixed, I'll push it and tell you.", "STATE.md was updated."]) {
     expect(readReply(t) === "none", `readReply · not a claim: ${t}`, readReply(t));
   }
-  for (const t of [CHECKPOINT, "Setup is finished and pushed. Shall I start step 1?"]) expect(readReply(t) === "checkpoint", `readReply · a checkpoint: ${t}`, readReply(t));
+  // The last two are owner checkpoints the backtest found sent back (core-checks/backtest.md, scenario d).
+  for (const t of [CHECKPOINT, "Setup is finished and pushed. Shall I start step 1?", "Step 2 is done. As you asked, I stopped after step 2 so you can review it.", "Step 2 is done. Per your instructions, I'm pausing here for review."]) {
+    expect(readReply(t) === "checkpoint", `readReply · a checkpoint: ${t}`, readReply(t));
+  }
 
   const cmds = parseCommands("## Commands (x)\ncheck `npm run check` · full check `npm run check && npm run build` · run `npm run dev` · rule checks `npm run check:bonus` (reads saved answers; `npm run fetch:mb` refreshes them) · screen checks `npx playwright test e2e/fix.spec.ts` · evals `none`\n\n## Done means verified\n");
   expect(JSON.stringify(cmds.map((c) => [c.kind, c.cmd, c.plain])) === JSON.stringify([["check", "npm run check", true], ["rule", "npm run check:bonus", true], ["screen", "npx playwright test e2e/fix.spec.ts", true]]),
@@ -135,7 +138,8 @@ async function failingCheck() {
   expect(h.back.includes("failed (exit 2)"), "...and the same new numbers on a later claim do send back once", show(h));
   edit(dir, "fail.txt", "3");
   h = await hook(dir, { last_assistant_message: CHECKPOINT });
-  expect(!h.back && h.shown.includes("failed (exit 3") && h.shown.includes("stopped for your answer"), "a reply that stops for the owner (a checkpoint) is shown new numbers, never sent back", show(h));
+  expect(!h.back && h.shown.includes("failed (exit 3") && h.shown.includes("stopped for your answer") && h.shown.includes("your AI's reply says some work is done"),
+    "a reply that stops for the owner (a checkpoint) is shown new numbers, never sent back, and isn't called a claim of done", show(h));
   edit(dir, "notes.txt", "a fourth change");
   h = await hook(dir, { background_tasks: [{ id: "a", type: "workflow", status: "running" }] });
   expect(h.out === null, "a claim while a workflow is still running waits for it: nothing runs", show(h));
@@ -155,6 +159,11 @@ async function ruleChecks() {
     { type: "user", message: { role: "user", content: `look, ${OWNER}. keep them on their edition` } },
     { type: "assistant", message: { role: "assistant", content: [{ type: "text", text: `I'll write "${REWORDED}" into PRODUCT.md.` }] } },
     { type: "user", message: { role: "user", content: [{ type: "tool_result", content: `PRODUCT.md: ${REWORDED}` }] } },
+    // A workflow's report and a reminder are filed as user lines too (the lasscrobits run's reworded rule came back this
+    // way). One is caught by its origin, one by its tags, so each guard is needed.
+    { type: "user", origin: { kind: "task-notification" }, promptSource: "system", message: { role: "user", content: `Result: PRODUCT.md now says "${REWORDED}".` } },
+    { type: "user", message: { role: "user", content: `<task-notification>\n<result>PRODUCT.md: "${REWORDED}"</result>\n</task-notification>` } },
+    { type: "user", origin: { kind: "human" }, message: { role: "user", content: `<system-reminder>PRODUCT.md: ${REWORDED}</system-reminder>\ngo on` } },
   ].map((e) => JSON.stringify(e)).join("\n") + "\n");
   const words = project("words", { commands: "check `node pass.mjs` · rule checks `node rule.mjs`", product: ownerLine(OWNER) });
   edit(words, "rule.json", JSON.stringify({ quote: REWORDED, broke: 0, judged: 5, of: 5, unit: "moves" }));
