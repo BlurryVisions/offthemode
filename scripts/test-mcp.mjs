@@ -71,6 +71,11 @@ for (const name of ["offthemode", "reassess", "revisit-comments", "revisit-gloss
 
 const tpl = (await rpc("tools/call", { name: "get_template", arguments: { name: "RULES.md" } })).content[0].text;
 expect(tpl.startsWith("RULES ·"), "tools/call get_template RULES.md");
+// The stop check ships as text through the same tool, so the server stays read-only; setup writes it to .offthemode/.
+const stop = (await rpc("tools/call", { name: "get_template", arguments: { name: "stop-check.mjs" } })).content[0].text;
+expect(stop.startsWith("// Off the Mode · the stop check.") && stop.includes('// SETTINGS {"hooks":{"Stop":'), "tools/call get_template stop-check.mjs · the script with its settings block");
+const stopRes = await rpc("resources/read", { uri: "offthemode://templates/stop-check.mjs" });
+expect(stopRes.contents?.[0]?.mimeType === "text/javascript" && stopRes.contents[0].text === stop, "resources/read stop-check.mjs · text/javascript, same text");
 
 const index = (await rpc("tools/call", { name: "get_method", arguments: {} })).content[0].text;
 const firstSlug = index.match(/^- ([a-z0-9-]+) ·/m)?.[1];

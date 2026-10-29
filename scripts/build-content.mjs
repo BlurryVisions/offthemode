@@ -41,9 +41,25 @@ function parseFrontmatter(src, file) {
 }
 
 const templates = Object.fromEntries(
-  readdirSync(join(ROOT, "content/templates")).filter((f) => f.endsWith(".md")).sort()
+  readdirSync(join(ROOT, "content/templates")).filter((f) => /\.(md|mjs)$/.test(f)).sort()
     .map((f) => [f, read(`content/templates/${f}`)]),
 );
+// A script template (the stop check) runs on the user's machine as Claude Code's Stop hook. The server only hands it
+// out as text, so a broken or networked script must fail here, never on someone's machine.
+const SCRIPT_NETWORK = [/\bfrom\s*["'](?:node:)?(?:http2?|https|net|tls|dgram|dns)(?:\/[\w/]*)?["']/, /\bimport\s*\(/, /\brequire\s*\(/, /\bfetch\s*\(/, /\bWebSocket\b/];
+for (const [name, text] of Object.entries(templates)) {
+  if (!name.endsWith(".mjs")) continue;
+  try {
+    execFileSync(process.execPath, ["--check", join(ROOT, "content/templates", name)], { stdio: "pipe" });
+  } catch (e) {
+    const why = String(e.stderr).split("\n").find((l) => /Error/.test(l)) ?? String(e.stderr).trim().split("\n")[0];
+    fail(`templates/${name}: doesn't parse (node --check): ${why}`);
+  }
+  for (const re of SCRIPT_NETWORK) {
+    const hit = text.match(re);
+    if (hit) fail(`templates/${name}: holds a network call or a module loaded at run time (${hit[0]}); the stop check makes no network call`);
+  }
+}
 
 const commands = readdirSync(join(ROOT, "content/commands")).filter((f) => f.endsWith(".md")).sort().map((f) => {
   const { data, body } = parseFrontmatter(read(`content/commands/${f}`), f);

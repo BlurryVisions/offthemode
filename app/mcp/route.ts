@@ -3,6 +3,8 @@ import { z } from "zod";
 import { commands, templates, sheets, renderCommand, sheetText, INSTRUCTIONS } from "@/lib/content";
 
 const templateNames = Object.keys(templates) as [string, ...string[]];
+// stop-check.mjs is a script, not a note: setup writes it to .offthemode/ and Claude Code runs it as a Stop hook.
+const isScript = (name: string) => name.endsWith(".mjs");
 const sheetSlugs = sheets.map((s) => s.slug) as [string, ...string[]];
 
 const handler = createMcpHandler(
@@ -42,7 +44,7 @@ const handler = createMcpHandler(
       "get_template",
       {
         title: "Get an Off the Mode template",
-        description: `Returns one of the templates: the project's .offthemode/ files, ME.md for ~/.offthemode/ (the user's usual setup), and UPDATES.md (the lines the templates replaced, for updating a project set up earlier): ${templateNames.join(", ")}.`,
+        description: `Returns one of the templates: the project's .offthemode/ files, ME.md for ~/.offthemode/ (the user's usual setup), UPDATES.md (the lines the templates replaced, for updating a project set up earlier), and stop-check.mjs (the script that runs the project's checks when the AI says the work is done): ${templateNames.join(", ")}.`,
         inputSchema: z.object({ name: z.enum(templateNames) }),
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
@@ -80,11 +82,15 @@ const handler = createMcpHandler(
     );
 
     for (const name of templateNames) {
+      const mimeType = isScript(name) ? "text/javascript" : "text/markdown";
+      const description = name === "UPDATES.md" ? "The lines the templates replaced, newest first"
+        : isScript(name) ? `The .offthemode/${name} script, which runs the project's checks when the AI says the work is done`
+        : `The .offthemode/${name} template`;
       server.registerResource(
         `template-${name}`,
         `offthemode://templates/${name}`,
-        { title: `Template · ${name}`, description: name === "UPDATES.md" ? "The lines the templates replaced, newest first" : `The .offthemode/${name} template`, mimeType: "text/markdown" },
-        async (uri: URL) => ({ contents: [{ uri: uri.href, mimeType: "text/markdown", text: templates[name] ?? "" }] }),
+        { title: `Template · ${name}`, description, mimeType },
+        async (uri: URL) => ({ contents: [{ uri: uri.href, mimeType, text: templates[name] ?? "" }] }),
       );
     }
     for (const s of sheets) {

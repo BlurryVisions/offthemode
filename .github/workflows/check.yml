@@ -23,3 +23,5 @@ jobs:
       - run: npm run test:view
       - run: node scripts/build-content.mjs --check --committed
       - run: npx tsc --noEmit
+      # The stop check (content/templates/stop-check.mjs) run as Claude Code runs it, in throwaway git projects.
+      - run: npm run test:stop-check
