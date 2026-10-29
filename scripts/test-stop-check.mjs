@@ -1,7 +1,7 @@
 // Tests the stop check (content/templates/stop-check.mjs) the way Claude Code runs it: a Stop hook input on stdin, in
 // throwaway git projects whose RULES.md names small check scripts. Prints only what failed, then one summary line.
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, appendFileSync, existsSync, readdirSync, statSync, copyFileSync, rmSync } from "node:fs";
-import { join, dirname, relative } from "node:path";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, appendFileSync, existsSync, readdirSync, statSync, copyFileSync, rmSync, realpathSync } from "node:fs";
+import { join, dirname, relative, basename } from "node:path";
 import { tmpdir } from "node:os";
 import { spawn, execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -10,12 +10,14 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SCRIPT = join(ROOT, "content/templates/stop-check.mjs");
 const SOURCE = readFileSync(SCRIPT, "utf8");
-const { readReply, parseCommands, parseLines, productRules } = await import(SCRIPT);
+const { readReply, parseCommands, parseLines, productRules, productScreens, budget } = await import(SCRIPT);
 const BASE = mkdtempSync(join(tmpdir(), "otm-stop-check-"));
 const OUT = join(BASE, "outside");
 mkdirSync(OUT);
 let passed = 0;
-const failed = [];
+const failed = [], pidFiles = [];
+const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms));
+const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
 const expect = (ok, what, detail = "") => (ok ? passed++ : failed.push(`FAIL ${what}${detail ? `\n     ${detail}` : ""}`));
 
 const DONE = "Done. The fix is live and all 12 tests pass.";
@@ -35,17 +37,19 @@ const CHECKS = {
   "rule.mjs": "import { readFileSync } from 'node:fs'; const r = JSON.parse(readFileSync('rule.json', 'utf8')); console.log(`RULE \"${r.quote}\": broke ${r.broke} · judged ${r.judged} of ${r.of} ${r.unit}`); process.exit(r.broke ? 1 : 0);",
   "rule.json": JSON.stringify({ quote: OWNER, broke: 0, judged: 5, of: 5, unit: "moves" }),
   "screen.mjs": "console.log('SCREEN \"/fix\": wrong 2 · checked 8 of 10 rows'); process.exit(1);",
+  "lab.mjs": "console.log('SCREEN \"/lab/fix/[state]\": wrong 0 · checked 10 of 10 rows');",
   "hang.mjs": `${here} import { spawn } from 'node:child_process'; const kid = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' }); appendFileSync(tag + '.pids', process.pid + ' ' + kid.pid); setInterval(() => {}, 1000);`,
 };
 
 const git = (dir, ...args) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", ...args], { cwd: dir, stdio: "ignore" });
-function project(name, { commands, product = "", budgets = "" }) {
+function project(name, { commands, product = "", budgets = "", noGit = false }) {
   const dir = join(BASE, name);
   mkdirSync(join(dir, ".offthemode"), { recursive: true });
   writeFileSync(join(dir, ".offthemode/RULES.md"), `RULES · ${name}\n\n## Budgets\n\`\`\`json\n{ ${budgets} }\n\`\`\`\n\n## Commands (fill once the toolchain exists)\n${commands}\n\n## Done means verified\nChecks pass.\n`);
   writeFileSync(join(dir, ".offthemode/PRODUCT.md"), `PRODUCT · ${name}\n\n## Refusals and tie-breakers\n${product}\n`);
   for (const [f, text] of Object.entries(CHECKS)) writeFileSync(join(dir, f), text);
   copyFileSync(SCRIPT, join(dir, ".offthemode/stop-check.mjs"));
+  if (noGit) return dir;
   git(dir, "init", "-q");
   git(dir, "add", "-A");
   git(dir, "commit", "-qm", "start");
@@ -53,7 +57,11 @@ function project(name, { commands, product = "", budgets = "" }) {
 }
 const ownerLine = (quote, unit = "moves") => `- Owner's rule (2026-10-27): "${quote}" · counted in ${unit} · rule check \`node rule.mjs\``;
 const edit = (dir, f, text) => writeFileSync(join(dir, f), text);
-const ran = (dir, what = "count") => (existsSync(join(OUT, `${dir.split("/").pop()}.${what}`)) ? readFileSync(join(OUT, `${dir.split("/").pop()}.${what}`), "utf8") : "");
+const ran = (dir, what = "count") => {
+  const f = join(OUT, `${basename(dir)}.${what}`);
+  if (what === "pids") pidFiles.push(f);
+  return existsSync(f) ? readFileSync(f, "utf8") : "";
+};
 const stateFile = (dir) => join(dir, ".git/offthemode-stop.json");
 
 function node(args, cwd, input) {
@@ -70,7 +78,7 @@ function node(args, cwd, input) {
 }
 async function hook(dir, input = {}) {
   const started = Date.now();
-  const r = await node([join(dir, ".offthemode/stop-check.mjs")], dir, JSON.stringify({ hook_event_name: "Stop", cwd: dir, stop_hook_active: false, last_assistant_message: DONE, ...input }));
+  const r = await node([join(dir, ".offthemode/stop-check.mjs")], dir, JSON.stringify({ hook_event_name: "Stop", session_id: "s1", cwd: dir, stop_hook_active: false, last_assistant_message: DONE, ...input }));
   let out = null;
   try { out = r.stdout.trim() ? JSON.parse(r.stdout) : null; } catch { out = { raw: r.stdout, stderr: r.stderr }; }
   return { out, ms: Date.now() - started, back: out?.hookSpecificOutput?.additionalContext ?? "", shown: out?.systemMessage ?? "" };
@@ -85,8 +93,12 @@ function parts() {
   for (const t of [PLAN, "It isn't finished yet: the review is still running.", "Save the file, then tell me **\"done\"**.", "Each item has a done-when: a test by name.", "Spotify's built-in Last.fm link sends your plays.", "Once it's fixed, I'll push it and tell you.", "STATE.md was updated."]) {
     expect(readReply(t) === "none", `readReply · not a claim: ${t}`, readReply(t));
   }
-  // The last two are owner checkpoints the backtest found sent back (core-checks/backtest.md, scenario d).
-  for (const t of [CHECKPOINT, "Setup is finished and pushed. Shall I start step 1?", "Step 2 is done. As you asked, I stopped after step 2 so you can review it.", "Step 2 is done. Per your instructions, I'm pausing here for review."]) {
+  // Owner checkpoints and replies that wait. Two the backtest found sent back (core-checks/backtest.md, scenario d); the
+  // rest are shapes of the real replies wrongly read as claims in the hand-labelled set (core-checks/fixes/labels.txt),
+  // reworded, since the real ones hold the owners' project text.
+  for (const t of [CHECKPOINT, "Setup is finished and pushed. Shall I start step 1?", "Step 2 is done. As you asked, I stopped after step 2 so you can review it.", "Step 2 is done. Per your instructions, I'm pausing here for review.",
+    "Pushed (`abc1234`). I'm waiting for the deploy, then I'll run the live test.", "The data is ready. Waiting on the review and the build checks.", "Setup is done apart from the checklist. I need two answers from you.",
+    "Piece 1 is done, with all tests passing. Piece 2 is building in the background.", "All fixed, and the tests pass.\n\n**Commit and push now?** I recommend yes.", "The diagnostic is live. Please try once more, then tell me once you've tried.", "Step 2 is done. Over to you for review."]) {
     expect(readReply(t) === "checkpoint", `readReply · a checkpoint: ${t}`, readReply(t));
   }
 
@@ -113,6 +125,9 @@ function parts() {
   const seconds = Number(SOURCE.match(/^const SECONDS = (\d+);/m)?.[1]);
   expect(h?.type === "command" && h.command === "node" && h.args?.[0] === "${CLAUDE_PROJECT_DIR}/.offthemode/stop-check.mjs" && h.timeout > seconds + 60 && Object.keys(settings.hooks).join() === "Stop",
     `the settings block · one Stop hook running node on the script, its timeout (${h?.timeout} s) above the checks' time (${seconds} s)`);
+  expect(budget("## Budgets\n```json\n{ \"stop_check_seconds\": 5000 }\n```\n") === 840 && budget("") === seconds, "stop_check_seconds is capped at 840 s, under the hook's 900 s timeout, so a slow check is reported, never dropped");
+  const screens = productScreens("- Screen check: `/fix` · checked by npm run check:fix\n- Screen check: {{?route}} · checked by {{?cmd}}");
+  expect(JSON.stringify(screens) === JSON.stringify([{ route: "/fix", by: "npm run check:fix" }]), "productScreens · reads PRODUCT.md's screen check lines, never an unfilled one", JSON.stringify(screens));
   const net = SOURCE.match(/\bfrom\s*["'](?:node:)?(?:http2?|https|net|tls|dgram|dns)["']|\bimport\s*\(|\brequire\s*\(|\bfetch\s*\(|\bWebSocket\b/);
   expect(!net, "the script imports no network module and makes no network call", net?.[0]);
 }
@@ -126,10 +141,16 @@ async function failingCheck() {
   expect(h.back.includes("`node count.mjs && node fail.mjs` failed (exit 1)") && h.back.includes("1 test failed: adds up") && h.shown.includes("sent back once") && ran(dir) === "x",
     "a done claim with a failing check sends the AI back, with the failing lines", show(h));
   h = await hook(dir);
-  expect(h.out === null && ran(dir) === "x", "no file changed since the last run: nothing runs and nothing is shown", show(h));
+  expect(!h.back && ran(dir) === "x" && h.shown.includes("No file changed since") && h.shown.includes("failed (exit 1") && h.shown.includes("its run at") && h.shown.includes("Same result as when your AI was last sent back"),
+    "no file changed since the last run: the check doesn't run again, its last result is shown, and the stop goes through", show(h));
+  edit(dir, ".offthemode/STATE.md", "the notes change every reply");
+  h = await hook(dir);
+  expect(ran(dir) === "x" && h.shown.includes("No file changed since"), "a change to the notes alone doesn't run the checks again (RULES.md and PRODUCT.md do count)", show(h));
+  h = await hook(dir, { session_id: "s2" });
+  expect(h.back.includes("failed (exit 1)") && ran(dir) === "x", "a new session claiming done on the same failing result is sent back once, from the saved result", show(h));
   edit(dir, "notes.txt", "a change that fixes nothing");
   h = await hook(dir);
-  expect(!h.back && h.shown.includes("Same result as when your AI was last sent back") && ran(dir) === "xx", "the same numbers again are shown and the stop goes through", show(h));
+  expect(!h.back && h.shown.includes("Same result as when your AI was last sent back") && ran(dir) === "xx", "the same numbers again in a session are shown and the stop goes through", show(h));
   edit(dir, "fail.txt", "2");
   h = await hook(dir, { stop_hook_active: true });
   expect(!h.back && h.shown.includes("failed (exit 2") && h.shown.includes("already sent back once"), "stop_hook_active: new numbers are shown, never sent back, so it can't loop", show(h));
@@ -138,19 +159,69 @@ async function failingCheck() {
   expect(h.back.includes("failed (exit 2)"), "...and the same new numbers on a later claim do send back once", show(h));
   edit(dir, "fail.txt", "3");
   h = await hook(dir, { last_assistant_message: CHECKPOINT });
-  expect(!h.back && h.shown.includes("failed (exit 3") && h.shown.includes("stopped for your answer") && h.shown.includes("your AI's reply says some work is done"),
-    "a reply that stops for the owner (a checkpoint) is shown new numbers, never sent back, and isn't called a claim of done", show(h));
-  edit(dir, "notes.txt", "a fourth change");
+  expect(!h.back && ran(dir) === "xxxx" && h.shown.includes("only the rule checks run") && h.shown.includes("failed (exit 2") && h.shown.includes("stopped for your answer") && h.shown.includes("your AI's reply says some work is done"),
+    "a reply that stops for the owner (a checkpoint) reruns only the rule checks, shows the rest as they last ran, and is never sent back", show(h));
   h = await hook(dir, { background_tasks: [{ id: "a", type: "workflow", status: "running" }] });
   expect(h.out === null, "a claim while a workflow is still running waits for it: nothing runs", show(h));
   const now = await node([join(dir, ".offthemode/stop-check.mjs"), "--now"], dir);
   expect(now.code === 1 && now.stdout.includes("Not done yet:") && now.stdout.includes("failed (exit 3"), "--now runs the same checks by hand and exits 1 when they don't show it done", now.stdout + now.stderr);
+  h = await hook(dir);
+  expect(ran(dir) === "xxxxx" && h.shown.includes("No file changed since") && h.back.includes("failed (exit 3)"),
+    "--now saves its result, so the claim after it shows that result instead of running the check twice, and still sends back", show(h));
+}
+
+async function passThenFail() {
+  const dir = project("again", { commands: "check `node fail.mjs`" });
+  const first = await hook(dir);
+  edit(dir, "fail.txt", "0");
+  const clean = await hook(dir);
+  edit(dir, "fail.txt", "1");
+  const h = await hook(dir);
+  expect(first.back.includes("failed (exit 1)") && !clean.back && clean.shown.includes("The checks passed. No rule of yours is checked") && h.back.includes("failed (exit 1)"),
+    "fail, pass, then the same failure again: sent back again, since a clean run forgets the last send-back; with no rule named it never says \"All passed\"", show(first) + show(clean) + show(h));
+}
+
+async function otherProject() {
+  const home = project("home", { commands: "check `node count.mjs`" }), other = project("other-clone", { commands: "check `node count.mjs`" });
+  const h = await hook(home, { cwd: other });
+  expect(h.shown.includes("ran nothing") && ran(other) === "" && ran(home) === "", "when the AI works in another project with notes, none of that project's commands run", show(h));
+  const tree = join(BASE, "home-tree");
+  git(home, "worktree", "add", "-q", tree);
+  const w = await hook(home, { cwd: tree });
+  expect(ran(tree) === "x" && w.shown.includes("Off the Mode checked"), "a worktree of the same repository is checked where the AI works", show(w));
+}
+
+async function cancelled() {
+  if (process.platform === "win32") return; // no process groups on Windows; the script kills the tree only while it runs
+  await Promise.all(["SIGTERM", "SIGKILL"].map(async (sig) => {
+    const dir = project(`cancel-${sig}`, { commands: "check `node hang.mjs`" });
+    const child = spawn(process.execPath, [join(dir, ".offthemode/stop-check.mjs")], { cwd: dir, env: { ...process.env, OTM_TEST_OUT: OUT, CLAUDE_PROJECT_DIR: dir }, stdio: ["pipe", "ignore", "ignore"] });
+    child.stdin.end(JSON.stringify({ hook_event_name: "Stop", session_id: "s1", cwd: dir, last_assistant_message: DONE }));
+    for (let i = 0; i < 200 && ran(dir, "pids").split(" ").filter(Boolean).length < 2; i++) await sleep(50);
+    child.kill(sig);
+    await sleep(sig === "SIGKILL" ? 1200 : 400);
+    const pids = ran(dir, "pids").split(" ").filter(Boolean).map(Number);
+    expect(pids.length === 2 && !pids.some(alive), `a hook stopped with ${sig} mid-check (Esc, or the hook's timeout) leaves nothing of the check running`, `pids ${pids} alive ${pids.filter(alive)}`);
+  }));
+}
+
+async function cutState() {
+  const dir = project("cut", { commands: "check `node pass.mjs`" });
+  writeFileSync(stateFile(dir), '{"rules":{');
+  const h = await hook(dir), again = await hook(dir);
+  expect(h.shown.includes("couldn't be read, so it started fresh") && h.shown.includes("The checks passed") && !again.shown.includes("couldn't be read") && again.shown.includes("No file changed since"),
+    "a cut-short state file starts fresh with a note, and the next stop reads the new one", show(h) + show(again));
+  const loose = project("plain-folder", { commands: "check `node count.mjs`", noGit: true });
+  const a = await hook(loose), b = await hook(loose);
+  rmSync(join(tmpdir(), `offthemode-stop-${createHash("sha256").update(realpathSync(loose)).digest("hex").slice(0, 12)}.json`), { force: true });
+  expect(ran(loose) === "xx" && a.shown.includes("The checks passed") && b.shown.includes("The checks passed"), "outside git it works the same, and every claim runs the checks", show(a) + show(b));
 }
 
 async function ruleChecks() {
   const dir = project("rules", { commands: "check `node pass.mjs` · rule checks `node old-rule.mjs`" });
   let h = await hook(dir);
-  expect(h.back.includes("`node old-rule.mjs` printed no line in the form RULE \"<your words>\": broke B · judged J of N"), "a rule check that prints no \"judged J of N\" line is flagged (the check:bonus case)", show(h));
+  expect(h.shown.includes("`node old-rule.mjs` doesn't say how many of your cases it judged, so nothing shows your rule holds") && !h.shown.includes("judged J of N") && h.back.includes('Each rule check prints RULE "<your words>": broke B · judged J of N'),
+    "a rule check that prints no \"judged J of N\" line is flagged (the check:bonus case): plain words to the owner, the line's form only to the AI", show(h));
 
   const t = join(BASE, "transcripts");
   mkdirSync(t, { recursive: true });
@@ -180,15 +251,17 @@ async function ruleChecks() {
   edit(words, ".offthemode/PRODUCT.md", `PRODUCT · words\n\n## Refusals and tie-breakers\n${ownerLine(REWORDED)}\n`);
   edit(words, "rule.json", JSON.stringify({ quote: REWORDED, broke: 0, judged: 1690, of: 1690, unit: "moves" }));
   h = await hook(words, { transcript_path: transcript });
-  expect(h.back.includes(`Your rule "${OWNER}" (first seen`) && h.back.includes("is no longer in PRODUCT.md") && h.back.includes(`"${REWORDED}" isn't in any message you sent`),
-    "a fixer who rewords the rule in PRODUCT.md and the check together is caught: the old words are gone, the new ones aren't the owner's", show(h));
+  expect(h.back.includes(`Your rule "${OWNER}" (first seen`) && h.back.includes("is no longer in PRODUCT.md") && h.shown.includes(`"${REWORDED}" isn't in any message you sent: say the rule once in chat`) && !h.back.includes(`"${REWORDED}" isn't in any message`),
+    "a fixer who rewords the rule in PRODUCT.md and the check together is caught; words already flagged once come back as a note, not a send-back", show(h));
 }
 
 async function screensAndShapes() {
-  const dir = project("screens", { commands: "check `node pass.mjs` · screen checks `node screen.mjs` · rule checks `node rule.mjs; echo ok`" });
+  const dir = project("screens", { commands: "check `node pass.mjs` · screen checks `node screen.mjs` `node lab.mjs` · rule checks `node rule.mjs; echo ok`", product: "- Screen check: /queue · checked by node queue.mjs" });
   const h = await hook(dir);
   expect(h.back.includes('2 rows on "/fix" are wrong') && h.back.includes('2 of 10 rows on "/fix" weren\'t checked') && h.back.includes("`node rule.mjs; echo ok` didn't run: only a plain command"),
     "a screen check's wrong and unchecked rows are flagged; a command that isn't plain is shown, never run", show(h));
+  expect(h.back.includes('"/lab/fix/[state]" is a lab or gallery page') && h.back.includes("No screen check printed a SCREEN line for /queue"),
+    "a SCREEN line from a lab page is flagged, and so is a screen PRODUCT.md names that no screen check printed", show(h));
 }
 
 async function hangingCheck() {
@@ -196,10 +269,9 @@ async function hangingCheck() {
   const h = await hook(dir);
   await new Promise((ok) => setTimeout(ok, 300));
   const pids = ran(dir, "pids").split(" ").filter(Boolean).map(Number);
-  const alive = pids.filter((pid) => { try { process.kill(pid, 0); return true; } catch { return false; } });
   expect(h.ms < 8000 && h.back.includes("`node hang.mjs` didn't finish in 1 s, so it judged nothing") && h.back.includes("`node rule.mjs` didn't run: the checks used all their time"),
     `a hanging check is stopped at stop_check_seconds and reported as judging nothing (${h.ms} ms)`, show(h));
-  expect(pids.length === 2 && !alive.length, "the hung check and the process it started are both gone afterwards", `pids ${pids} alive ${alive}`);
+  expect(pids.length === 2 && !pids.some(alive), "the hung check and the process it started are both gone afterwards", `pids ${pids} alive ${pids.filter(alive)}`);
 }
 
 async function writesOnlyState() {
@@ -219,8 +291,13 @@ async function writesOnlyState() {
 }
 
 parts();
-await Promise.all([failingCheck(), ruleChecks(), screensAndShapes(), hangingCheck(), writesOnlyState()]);
-rmSync(BASE, { recursive: true, force: true });
+try {
+  await Promise.all([failingCheck(), passThenFail(), otherProject(), cancelled(), cutState(), ruleChecks(), screensAndShapes(), hangingCheck(), writesOnlyState()]);
+} finally {
+  // A check a failed test left running never outlives the test.
+  for (const pid of pidFiles.flatMap((f) => (existsSync(f) ? readFileSync(f, "utf8").split(" ").filter(Boolean).map(Number) : []))) { try { process.kill(pid, "SIGKILL"); } catch { /* gone */ } }
+  rmSync(BASE, { recursive: true, force: true });
+}
 for (const f of failed) console.error(f);
 console.log(`test-stop-check: ${passed} passed${failed.length ? `, ${failed.length} failed` : ""}`);
 process.exit(failed.length ? 1 : 0);
