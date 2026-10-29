@@ -110,8 +110,9 @@ function parts() {
 
   // The templates as setup writes them: unfilled placeholders are never run or taken for the owner's words.
   const tpl = (name) => readFileSync(join(ROOT, "content/templates", name), "utf8");
-  expect(parseCommands(tpl("RULES.md")).length === 0 && productRules(tpl("PRODUCT.md")).length === 0,
-    "templates · RULES.md §Commands and PRODUCT.md's owner's-rule line, unfilled, give no check and no rule", JSON.stringify([parseCommands(tpl("RULES.md")), productRules(tpl("PRODUCT.md"))]));
+  expect(parseCommands(tpl("RULES.md")).length === 0 && productRules(tpl("PRODUCT.md")).length === 0 && productScreens(tpl("PRODUCT.md")).length === 0,
+    "templates · RULES.md §Commands and PRODUCT.md's owner's-rule and screen check lines, unfilled, give no check, rule or screen", JSON.stringify([parseCommands(tpl("RULES.md")), productRules(tpl("PRODUCT.md"))]));
+  expect(productRules("- Owner's rules: none yet").length === 0 && productScreens("- Screen checks: none yet").length === 0, "templates · the \"none yet\" lines give no rule and no screen");
   const filled = productRules(`- Owner's rule (2026-10-12): "${OWNER}" · counted in moves · checked by npm run check:bonus`);
   expect(filled.length === 1 && filled[0].quote === OWNER && filled[0].unit === "moves", "productRules · reads the template's line once filled: the words and what it counts", JSON.stringify(filled));
 
