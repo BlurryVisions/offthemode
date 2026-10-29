@@ -109,7 +109,7 @@ export function productRules(md) {
     const line = raw.replace(/[“”]/g, '"');
     if (!/owner['’]s rule/i.test(line)) continue;
     const quote = line.match(/"(.*)"\s*(?:·|$)/)?.[1];
-    if (quote) rules.push({ key: norm(quote), quote, unit: line.match(/counted in ([^·]+?)\s*(?:·|$)/i)?.[1] ?? null });
+    if (quote && !quote.includes("{{")) rules.push({ key: norm(quote), quote, unit: line.match(/counted in ([^·]+?)\s*(?:·|$)/i)?.[1] ?? null });
   }
   return rules;
 }

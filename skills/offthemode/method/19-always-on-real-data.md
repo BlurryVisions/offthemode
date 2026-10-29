@@ -21,4 +21,4 @@ Paste the torture set below the prompt so the `edge` profile covers all of it.
 - [ ] Devanagari (it needs a taller line box), Arabic and Hebrew right to left (CSS logical properties such as `margin-inline-start`, mirrored icons), Chinese, Japanese and Korean line wrapping, mixed direction in one line; emoji built from joined sequences (families, flags, skin tones) cut with `Intl.Segmenter` so they are never split in half
 - [ ] 0, negative and huge numbers; Indian grouping (1,00,000) next to Western grouping (100,000); daylight-saving boundaries; a locale that differs from the time zone; missing, 1px-tall, 8000px-tall and broken media; `<script>` in names, zalgo text (letters stacked with combining marks), whitespace-only input, pasted rich text
 
-> **Rule:** A screen isn't designed until its screenshots have been reviewed on both the `demo` and `edge` profiles.
+> **Rule:** A screen isn't designed until its screenshots have been reviewed on your real data (the `demo` profile while there is none) and on the `edge` profile for the states real data lacks, labelled as invented. A rule checked on invented rows proves nothing about real ones.

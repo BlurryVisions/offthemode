@@ -20,6 +20,7 @@ For {{PERSON}} who {{STRUGGLE}}, {{?PROJECT_NAME}} is the {{FRAME}} that {{THE_O
 
 ## Refusals and tie-breakers
 - We will not {{REFUSAL}}, because {{REASON}}.
+- Owner's rule ({{?DATE}}): "{{THE_OWNER'S_WORDS, exactly as said}}" · counted in {{?what the real code puts out, such as moves}} · checked by {{?the rule check's command in RULES.md §Commands}}
 - {{speed}} over {{completeness}}; {{inference}} over {{configuration}}.
 
 ## Feeling (only if the product has a UI)

@@ -166,7 +166,7 @@ Show the new path, the new totals and each cut's technical consequences. Once I 
 <!-- offthemode:rules -->
 ### Working rules (for a change inside an existing product)
 - Hold every change to RULES.md as it stands. Don't rewrite it as a side effect of another task.
-- The project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) stay where they are and win on project specifics: never move or merge them. A line that contradicts the code, another rule or an Off the Mode standard, or is out of date, is shown with its fix and changed only on the user's yes, recorded in DECISIONS.md. Besides those fixes, the one auto-load line is the only addition, also on the user's yes.
+- The project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) stay where they are and win on project specifics: never move or merge them. A line that contradicts the code, another rule or an Off the Mode standard, or is out of date, is shown with its fix and changed only on the user's yes, recorded in DECISIONS.md. Besides those fixes, the only additions are the one auto-load line and, in Claude Code, the stop check's hook, each on the user's yes.
 - Before deciding anything, search DECISIONS.md, so a settled choice is not argued again.
 - A correction given once goes in STATE.md §Corrections seen once, with the date. Given a second time, propose one line for RULES.md §Project specifics with its reason, and add it on the user's yes.
 - Keep STATE.md current without asking: once at the end of any reply that modifies project files or concludes a decision, after its last edit, follow revisit-state's steps (present tense, no history, never the same line twice) and append any new decision to DECISIONS.md. While an Off the Mode command runs, it touches only what the command names, and STATE.md catches up after it. An agent another session started leaves .offthemode/ alone. The user can also type revisit-state.
@@ -325,10 +325,10 @@ Set up the standing rules for {{PROJECT_NAME}}: .offthemode/RULES.md, .offthemod
 First read the project and fill in what you can: {{?STACK}}, {{?COMMANDS}}, {{?CONVENTIONS}}. Show each thing you found with the file it came from.
 Then interview me with batched, numbered questions, each with your recommended answer and a one-line reason, in more rounds if needed. Ask only what the project can't tell you. Cover, in order: what it is and the moment of value; non-negotiables; platforms, stack and versions; the boundaries between parts and where the core sits; any area where a change is always a one-way door in this project, asked each time by its action and target; the traps of this stack, each with its replacement; the file and function size limits and the screenshot sizes (the template's defaults, for me to confirm); the exact check, lint-one-file, dev, screenshot, audit and end-to-end commands. Suggest no speed, contrast or touch-size numbers; add one to §Budgets only if I ask. Stop an area when you could predict my answer to a new question in it.
 Then draft:
-- RULES.md: every section of the template filled for this project, every standard with its reason, every ban with what to do instead, §Guides mapped to the kinds of work this project will see. §This project lists the project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) as still in force; they are never moved or merged; a line in them that is out of date or conflicts with the code, another rule or an Off the Mode standard is shown with its fix and changed only on my yes, recorded in DECISIONS.md. Besides those fixes, the auto-load line is the only addition. §Project specifics holds only what those files don't already cover, and a line stays only if it is certain to apply, is not something an AI does anyway, and is costly if missed. Delete any line you would follow correctly without being told. About 150 lines at most.
+- RULES.md: every section of the template filled for this project, every standard with its reason, every ban with what to do instead, §Guides mapped to the kinds of work this project will see. §This project lists the project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) as still in force; they are never moved or merged; a line in them that is out of date or conflicts with the code, another rule or an Off the Mode standard is shown with its fix and changed only on my yes, recorded in DECISIONS.md. Besides those fixes, the auto-load line and the stop check's hook are the only additions. §Project specifics holds only what those files don't already cover, and a line stays only if it is certain to apply, is not something an AI does anyway, and is costly if missed. Delete any line you would follow correctly without being told. About 150 lines at most.
 - STATE.md: the present, and item 1 of Next with its done-check.
 - DECISIONS.md: one entry per stack choice, with rejected alternatives and why not.
-- The auto-load line for {{TOOL}}, so RULES.md and STATE.md load every session: the only addition outside .offthemode/.
+- The auto-load line for {{TOOL}}, so RULES.md and STATE.md load every session, and in Claude Code the stop check's hook in .claude/settings.local.json: the only additions outside .offthemode/.
 Tag anything I did not confirm [hypothesis], and confirm it with me before relying on it. Show me each file and exactly what you will create or change. Write them on my yes, then tell me what you wrote.
 ```
 
@@ -367,7 +367,7 @@ A correction you give once is a moment. A correction you give twice is a missing
 
 > **Why:** A rule is a request; a check is an exit code (the pass or fail signal a script returns). Prose rules compete for attention. Checks do not.
 
-> **Pro move:** If your tool supports hooks (scripts it runs on events such as after each edit; Claude Code and Cursor do), you can run the fast check after every edit and hold back a claim of done while checks fail. Gate only an explicit claim of done, never every turn, or the gate overrides your own checkpoints such as "stop after step 2 for my review". Everything in this method works without hooks; they only make the checks automatic.
+> **Pro move:** Off the Mode's stop check holds back a claim of done while the checks in §Commands fail (see Verification Loop); in Claude Code, setup offers it as a hook, a script your tool runs on an event. Gate only an explicit claim of done, never every turn, or the gate overrides your own checkpoints such as "stop after step 2 for my review". Without hooks, `node .offthemode/stop-check.mjs --now` runs the same checks; hooks only make them automatic.
 
 ### Prune the rules
 
@@ -711,7 +711,7 @@ Your core concept lives in PRODUCT.md §Core concept, written during P1. The che
 | `revisit-checklist` | Commits since the last revisit mapped to items, the results of the cheap checks, each mark it would move with its evidence, and work that matches no item | Updates the marks, the header and the verified count |
 | `revisit-checklist <idea or change>` | The fragment it belongs in (or a new one), the job in PRODUCT.md it serves, what it disturbs, and the exact diff to the list | Applies the diff and logs one line per change |
 
-> **Rule:** An item is marked verified only with evidence the command can cite: a passing test by name, a measured number, a screenshot, a commit. "Built" and "verified" are separate marks, because the gap between them is where AI tools claim done.
+> **Rule:** An item is marked verified only with evidence the command can cite: a passing test by name, a measured number, a rule check's line (broke 0, judged N of N), a screenshot, a commit. "Built" and "verified" are separate marks, because the gap between them is where AI tools claim done.
 
 **When a fragment can be verified depends on the product.** Some fragments can be proven on their own, early: a hard interaction, a speed limit, a platform constraint. Many can't. An AI data analyst only proves itself end to end: a real question goes in, correct SQL runs, the right answer comes out, and that needs the whole chain to exist. So each fragment says `Verify: early` or `Verify: on completion`. An on-completion fragment's done-when is an end-to-end run with real inputs (for a model-driven core, the eval set passing). Neither mode is better; the checklist just records which one each fragment is.
 
@@ -823,7 +823,7 @@ RISKS · score = likelihood x impact (1-5 each). Any core risk scoring 12 or mor
 - If DESIGN.md exists, follow its principles and bans. If there is none, follow the current styles, and list any value in the touched files that bypasses the tokens.
 - One primary action per screen. Every touched screen keeps its empty, loading, error, offline and no-permission states.
 - Nothing that could sit on any other product unchanged. If the change drifts toward a stock layout or a component library's default look, stop and say so.
-- Look at every touched screen at each of screenshot_sizes (RULES.md §Budgets), light and dark, with the screenshot and audit commands in RULES.md §Commands where they exist.
+- Look at every touched screen in the real app on real data (the owner's or a copy, shots kept out of git), at each of screenshot_sizes (RULES.md §Budgets), light and dark, with the screenshot and audit commands in RULES.md §Commands where they exist. Invented rows only for a state real data can't show, labelled so. A screen that tells the owner what will happen gets a screen check (always-on-verification-loop).
 - Open the whole guide when the product has no tokens yet, to add or change a token, to set a visual direction or a signature moment, or to redesign a whole surface. Offer that as its own step; never start it inside a small change.
 <!-- /offthemode:rules -->
 
@@ -2156,7 +2156,7 @@ Change nothing until I approve each diff. When done, save where things stand wit
 
 ## Always-On · Verification Loop
 
-> **Output:** every check named once in `.offthemode/RULES.md` §Commands (fast check, full check, one-file lint, audit, screenshots, evals), `scripts/audit-ux.ts` with a journey file per core journey, an `evals/` set for a model-driven core, and an end-of-change report in which every claim has evidence.
+> **Output:** every check named once in `.offthemode/RULES.md` §Commands (fast check, full check, one-file lint, audit, screenshots, rule checks, screen checks, evals), `scripts/audit-ux.ts` with a journey file per core journey, an `evals/` set for a model-driven core, and an end-of-change report in which every claim has evidence.
 
 This is the biggest lever in the method. A model is far better at fixing an error it can read than at avoiding one it was warned about in the abstract. Give your AI signals, make it read them, and don't let it call anything done while they fail. RULES.md §Done means verified sets that standard; this guide supplies the checks behind it.
 
@@ -2173,6 +2173,7 @@ This is the biggest lever in the method. A model is far better at fixing an erro
 | UX assertions | `scripts/audit-ux.ts`: feedback time, one primary action, thumb zone, motion | Maestro flows with timing; the profiler | Per journey change, and in CI |
 | Visual | `toHaveScreenshot()` plus screenshots your AI opens and looks at | Simulator screenshots | Per UI change |
 | Evals | The eval runner, for a model-driven core | Same | When prompts, model, retrieval or the core contract change |
+| Your rules and screens | Rule checks and screen checks (below): the real code on real data, judged against a source the code doesn't compute | Same | Before anything is called done |
 | Speed | Lighthouse CI, for the speed keys the product holds | Cold start and frame timing on a low-end device | In CI |
 
 End-to-end tests drive the real app the way a person would. CI (continuous integration) is the set of checks your repository runs on every push. Lighthouse is Google's speed and accessibility audit.
@@ -2187,10 +2188,25 @@ Your AI runs what RULES.md names, so give each check one name and one exact comm
 | Full check | The fast check plus end-to-end and accessibility tests | Before a feature counts as finished |
 | One-file lint | The project's own linter on one file: `npx biome check --write` or `npx eslint --fix`, `swiftlint lint --quiet`, `ktlint`, `dart analyze` | After each edit |
 | Audit | The computed-style audit and `scripts/audit-ux.ts` | Per UI or journey change |
-| Screenshots | Every touched surface at each of screenshot_sizes in RULES.md §Budgets, light and dark | Per UI change |
+| Screenshots | Every touched surface in the real app on your real data or a copy, at each of screenshot_sizes in RULES.md §Budgets, light and dark; invented rows only for a state real data can't show, labelled so | Per UI change |
+| Rule checks | One per always or never rule you state, printing its RULE line (below) | Before anything is called done |
+| Screen checks | One per screen that says what will happen, printing its SCREEN line (below) | Per change to that screen or the code behind it |
 | Evals | The eval runner | When the core changes |
 
 Use the linter the project already has. A Biome project should never fail every edit on a hard-coded ESLint call.
+
+### Rule checks and screen checks
+
+A check your AI wrote, judged with the app's own logic, only proves the code agrees with itself. So each always or never rule you state about your data or screens gets a rule check:
+
+- Your AI quotes the rule in PRODUCT.md §Refusals and tie-breakers exactly as you said it, with the date and what the real code puts out: `- Owner's rule (2026-10-12): "never move a song onto an album it isn't on" · counted in moves · checked by npm run check:albums`.
+- The rule check runs the real code over every real case (your data or a copy, kept out of git) and judges each one against a source the code doesn't compute: an outside source, cases you marked, or the real screen. The judge never calls the app's functions that decide the rule, and history the code itself reads is not an outside source.
+- It prints `RULE "<your words>": broke B · judged J of N <what it counts>`. N counts every case the code puts out (every move, not the albums they land on), J the ones the outside source decided. Done only when B is 0 and J equals N.
+- Prove it before trusting it: run it on the code from before the change, where it must find the breaks you reported.
+- It reads saved outside answers, so it runs offline and fast; a case with no saved answer is not judged, and a separate command fetches them. When cases can't be judged, the product should get the truth, or the check fetch it. If a project rule stops that, your AI asks in its next numbered round, with the count: "your rule covers 1,690 moves; I can judge 870 today, because <rule>; my pick: let the app look up the rest".
+- A screen that tells you what will happen (a preview, a plan, a queue) gets a screen check: it starts the real app on your data or a copy, compares each row's words, count and state with what the code will do, and prints `SCREEN "<page>": wrong W · checked C of R rows`. Done only when W is 0 and C equals R.
+
+Name them in RULES.md §Commands as `rule checks` and `screen checks`. The stop check (`.offthemode/stop-check.mjs`) runs them with the fast check when your AI says it's done, and flags a rule check with no RULE line, cases not judged, or quoted words you never said.
 
 ### UX assertions
 
@@ -2324,8 +2340,8 @@ Verification you have to remember is verification that gets skipped by week two.
 
 ```prompt title="Prove It Works"
 Before you tell me this is done, prove it.
-1. Run the fast check from .offthemode/RULES.md §Commands and paste the last 20 lines. If anything fails, fix it and rerun.
-2. Run the audit and the screenshots on every surface you touched, at each of screenshot_sizes in RULES.md §Budgets, light and dark (or on the simulator). Open each screenshot and look at it.
+1. Run the fast check, rule checks and screen checks from .offthemode/RULES.md §Commands (`node .offthemode/stop-check.mjs --now` runs them all) and paste the last 20 lines, with every RULE and SCREEN line. If anything fails, breaks or is left unjudged, fix it and rerun.
+2. Run the audit and the screenshots on every surface you touched, in the real app on my real data or a copy, at each of screenshot_sizes in RULES.md §Budgets, light and dark (or on the simulator). Open each screenshot and look at it.
 3. Critique the screenshots against .offthemode/DESIGN.md: grid, type scale, spacing tokens, exactly one primary action, anything that reads as a default template. Fix, then shoot again.
 4. Exercise the unhappy paths: empty, loading, error, offline, 10x content, the largest text size.
 5. If prompts, model ids, retrieval settings or the core contract changed, run the evals. A drop past the gate in RULES.md §Budgets blocks.
@@ -2347,9 +2363,9 @@ Report findings only, most serious first. Change nothing.
 
 Models tend to favour whichever option they see first, so judging both orders cancels that bias. Bring the findings back to the building session: fix each one or rebut it with evidence. For screens, fix the losses the review names and review again; stop when a round flips no loss, then list what remains for your own taste call.
 
-> **Pro move:** If your tool supports hooks or saved commands (Claude Code does), you can run the one-file lint automatically after every edit, run the fast check before your AI stops, and save Prove It Works as a command. This is optional; pasted, the prompts do the same job.
+> **Pro move:** Off the Mode ships the stop check, `.offthemode/stop-check.mjs`. When your AI says it's done and files changed, it runs the fast check, rule checks and screen checks, shows you their lines, and sends the AI back once if they don't show the work done. In Claude Code, setup offers to run it by itself as a hook; in any tool, `node .offthemode/stop-check.mjs --now` runs it. Hooks can also run the one-file lint after every edit, and Prove It Works can be a saved command.
 
-> **Trap:** Your AI may "fix" failing tests by weakening assertions or updating snapshots, and "fix" a failing audit by marking the element exempt. Tests, snapshots and exemptions change only when the spec changes. Each change goes into DECISIONS.md with its reason, and you review every one yourself.
+> **Trap:** Your AI may "fix" failing tests by weakening assertions or updating snapshots, "fix" a failing audit by marking the element exempt, and "fix" a failing rule check by rewording your rule or counting fewer cases. Tests, snapshots, exemptions and what a rule check counts change only when the spec changes, and your quoted words only when you say new ones. Each change goes into DECISIONS.md with its reason, and you review every one yourself.
 
 ## Always-On · Words & Voice
 
@@ -2409,7 +2425,7 @@ Paste the torture set below the prompt so the `edge` profile covers all of it.
 - [ ] Devanagari (it needs a taller line box), Arabic and Hebrew right to left (CSS logical properties such as `margin-inline-start`, mirrored icons), Chinese, Japanese and Korean line wrapping, mixed direction in one line; emoji built from joined sequences (families, flags, skin tones) cut with `Intl.Segmenter` so they are never split in half
 - [ ] 0, negative and huge numbers; Indian grouping (1,00,000) next to Western grouping (100,000); daylight-saving boundaries; a locale that differs from the time zone; missing, 1px-tall, 8000px-tall and broken media; `<script>` in names, zalgo text (letters stacked with combining marks), whitespace-only input, pasted rich text
 
-> **Rule:** A screen isn't designed until its screenshots have been reviewed on both the `demo` and `edge` profiles.
+> **Rule:** A screen isn't designed until its screenshots have been reviewed on your real data (the `demo` profile while there is none) and on the `edge` profile for the states real data lacks, labelled as invented. A rule checked on invented rows proves nothing about real ones.
 
 ## Always-On · Accessibility & Performance Budgets
 

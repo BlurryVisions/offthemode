@@ -1,6 +1,6 @@
 ## Always-On · Verification Loop
 
-> **Output:** every check named once in `.offthemode/RULES.md` §Commands (fast check, full check, one-file lint, audit, screenshots, evals), `scripts/audit-ux.ts` with a journey file per core journey, an `evals/` set for a model-driven core, and an end-of-change report in which every claim has evidence.
+> **Output:** every check named once in `.offthemode/RULES.md` §Commands (fast check, full check, one-file lint, audit, screenshots, rule checks, screen checks, evals), `scripts/audit-ux.ts` with a journey file per core journey, an `evals/` set for a model-driven core, and an end-of-change report in which every claim has evidence.
 
 This is the biggest lever in the method. A model is far better at fixing an error it can read than at avoiding one it was warned about in the abstract. Give your AI signals, make it read them, and don't let it call anything done while they fail. RULES.md §Done means verified sets that standard; this guide supplies the checks behind it.
 
@@ -17,6 +17,7 @@ This is the biggest lever in the method. A model is far better at fixing an erro
 | UX assertions | `scripts/audit-ux.ts`: feedback time, one primary action, thumb zone, motion | Maestro flows with timing; the profiler | Per journey change, and in CI |
 | Visual | `toHaveScreenshot()` plus screenshots your AI opens and looks at | Simulator screenshots | Per UI change |
 | Evals | The eval runner, for a model-driven core | Same | When prompts, model, retrieval or the core contract change |
+| Your rules and screens | Rule checks and screen checks (below): the real code on real data, judged against a source the code doesn't compute | Same | Before anything is called done |
 | Speed | Lighthouse CI, for the speed keys the product holds | Cold start and frame timing on a low-end device | In CI |
 
 End-to-end tests drive the real app the way a person would. CI (continuous integration) is the set of checks your repository runs on every push. Lighthouse is Google's speed and accessibility audit.
@@ -31,10 +32,25 @@ Your AI runs what RULES.md names, so give each check one name and one exact comm
 | Full check | The fast check plus end-to-end and accessibility tests | Before a feature counts as finished |
 | One-file lint | The project's own linter on one file: `npx biome check --write` or `npx eslint --fix`, `swiftlint lint --quiet`, `ktlint`, `dart analyze` | After each edit |
 | Audit | The computed-style audit and `scripts/audit-ux.ts` | Per UI or journey change |
-| Screenshots | Every touched surface at each of screenshot_sizes in RULES.md §Budgets, light and dark | Per UI change |
+| Screenshots | Every touched surface in the real app on your real data or a copy, at each of screenshot_sizes in RULES.md §Budgets, light and dark; invented rows only for a state real data can't show, labelled so | Per UI change |
+| Rule checks | One per always or never rule you state, printing its RULE line (below) | Before anything is called done |
+| Screen checks | One per screen that says what will happen, printing its SCREEN line (below) | Per change to that screen or the code behind it |
 | Evals | The eval runner | When the core changes |
 
 Use the linter the project already has. A Biome project should never fail every edit on a hard-coded ESLint call.
+
+### Rule checks and screen checks
+
+A check your AI wrote, judged with the app's own logic, only proves the code agrees with itself. So each always or never rule you state about your data or screens gets a rule check:
+
+- Your AI quotes the rule in PRODUCT.md §Refusals and tie-breakers exactly as you said it, with the date and what the real code puts out: `- Owner's rule (2026-10-12): "never move a song onto an album it isn't on" · counted in moves · checked by npm run check:albums`.
+- The rule check runs the real code over every real case (your data or a copy, kept out of git) and judges each one against a source the code doesn't compute: an outside source, cases you marked, or the real screen. The judge never calls the app's functions that decide the rule, and history the code itself reads is not an outside source.
+- It prints `RULE "<your words>": broke B · judged J of N <what it counts>`. N counts every case the code puts out (every move, not the albums they land on), J the ones the outside source decided. Done only when B is 0 and J equals N.
+- Prove it before trusting it: run it on the code from before the change, where it must find the breaks you reported.
+- It reads saved outside answers, so it runs offline and fast; a case with no saved answer is not judged, and a separate command fetches them. When cases can't be judged, the product should get the truth, or the check fetch it. If a project rule stops that, your AI asks in its next numbered round, with the count: "your rule covers 1,690 moves; I can judge 870 today, because <rule>; my pick: let the app look up the rest".
+- A screen that tells you what will happen (a preview, a plan, a queue) gets a screen check: it starts the real app on your data or a copy, compares each row's words, count and state with what the code will do, and prints `SCREEN "<page>": wrong W · checked C of R rows`. Done only when W is 0 and C equals R.
+
+Name them in RULES.md §Commands as `rule checks` and `screen checks`. The stop check (`.offthemode/stop-check.mjs`) runs them with the fast check when your AI says it's done, and flags a rule check with no RULE line, cases not judged, or quoted words you never said.
 
 ### UX assertions
 
@@ -168,8 +184,8 @@ Verification you have to remember is verification that gets skipped by week two.
 
 ```prompt title="Prove It Works"
 Before you tell me this is done, prove it.
-1. Run the fast check from .offthemode/RULES.md §Commands and paste the last 20 lines. If anything fails, fix it and rerun.
-2. Run the audit and the screenshots on every surface you touched, at each of screenshot_sizes in RULES.md §Budgets, light and dark (or on the simulator). Open each screenshot and look at it.
+1. Run the fast check, rule checks and screen checks from .offthemode/RULES.md §Commands (`node .offthemode/stop-check.mjs --now` runs them all) and paste the last 20 lines, with every RULE and SCREEN line. If anything fails, breaks or is left unjudged, fix it and rerun.
+2. Run the audit and the screenshots on every surface you touched, in the real app on my real data or a copy, at each of screenshot_sizes in RULES.md §Budgets, light and dark (or on the simulator). Open each screenshot and look at it.
 3. Critique the screenshots against .offthemode/DESIGN.md: grid, type scale, spacing tokens, exactly one primary action, anything that reads as a default template. Fix, then shoot again.
 4. Exercise the unhappy paths: empty, loading, error, offline, 10x content, the largest text size.
 5. If prompts, model ids, retrieval settings or the core contract changed, run the evals. A drop past the gate in RULES.md §Budgets blocks.
@@ -191,6 +207,6 @@ Report findings only, most serious first. Change nothing.
 
 Models tend to favour whichever option they see first, so judging both orders cancels that bias. Bring the findings back to the building session: fix each one or rebut it with evidence. For screens, fix the losses the review names and review again; stop when a round flips no loss, then list what remains for your own taste call.
 
-> **Pro move:** If your tool supports hooks or saved commands (Claude Code does), you can run the one-file lint automatically after every edit, run the fast check before your AI stops, and save Prove It Works as a command. This is optional; pasted, the prompts do the same job.
+> **Pro move:** Off the Mode ships the stop check, `.offthemode/stop-check.mjs`. When your AI says it's done and files changed, it runs the fast check, rule checks and screen checks, shows you their lines, and sends the AI back once if they don't show the work done. In Claude Code, setup offers to run it by itself as a hook; in any tool, `node .offthemode/stop-check.mjs --now` runs it. Hooks can also run the one-file lint after every edit, and Prove It Works can be a saved command.
 
-> **Trap:** Your AI may "fix" failing tests by weakening assertions or updating snapshots, and "fix" a failing audit by marking the element exempt. Tests, snapshots and exemptions change only when the spec changes. Each change goes into DECISIONS.md with its reason, and you review every one yourself.
+> **Trap:** Your AI may "fix" failing tests by weakening assertions or updating snapshots, "fix" a failing audit by marking the element exempt, and "fix" a failing rule check by rewording your rule or counting fewer cases. Tests, snapshots, exemptions and what a rule check counts change only when the spec changes, and your quoted words only when you say new ones. Each change goes into DECISIONS.md with its reason, and you review every one yourself.

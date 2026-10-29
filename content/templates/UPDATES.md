@@ -2,6 +2,9 @@ UPDATES · lines the templates replaced, newest first · /offthemode reads this 
 
 A project's line that still reads as a Was (its words, with that project's values filled in) gets the line named after it, from the current template, filled for that project. A line that matches neither is the owner's own wording: it stays, and the update names it in one line.
 
+## 2026-10-29 · the owner's rules get rule checks, screens are checked on real data (D-031)
+- RULES.md §Done means verified · Was: "Checks pass, the thing actually ran, and UI changes were looked at on screen. "Should work" is not done: say what you verified and how." · Now: the line starting "Checks pass, the thing actually ran, and UI changes were looked at on screen in the real app"
+
 ## 2026-10-21 · every build hands off, review fresh, the main session is asked to hand off (D-029)
 - RULES.md §Efficiency · Was: "- Hand off, don't carry: an agent re-reads everything it holds on every step, so its cost grows with the square of its length. A long build runs as pieces of a few commits, in order: each builder starts from the brief and the last piece's short note (commit, files with line ranges, decisions, dead ends, open issues, check result) and ends when its check passes. Effort and thinking stay as they are." · Now: the line starting "- Hand off, don't carry"; the new line starting "- Review fresh, then only what changed" goes after it
 - RULES.md §Efficiency · Was: "- Keep sessions short: when a piece of work ends, suggest /revisit-state and a fresh session. A long session re-reads its whole history on every reply." · Now: the line starting "- Keep sessions short"

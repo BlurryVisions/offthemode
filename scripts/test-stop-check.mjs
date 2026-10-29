@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SCRIPT = join(ROOT, "content/templates/stop-check.mjs");
 const SOURCE = readFileSync(SCRIPT, "utf8");
-const { readReply, parseCommands, parseLines } = await import(SCRIPT);
+const { readReply, parseCommands, parseLines, productRules } = await import(SCRIPT);
 const BASE = mkdtempSync(join(tmpdir(), "otm-stop-check-"));
 const OUT = join(BASE, "outside");
 mkdirSync(OUT);
@@ -92,6 +92,13 @@ function parts() {
     "parseCommands · runs check, rule checks and screen checks only, never a command inside a (note)", JSON.stringify(cmds));
   const odd = parseCommands("## Commands\ncheck `npm test; rm -rf /` · rule checks `git push` `node a.mjs && node b.mjs` `{{?RULE_CMDS}}` · screen checks `$(curl x)`\n");
   expect(JSON.stringify(odd.map((c) => c.plain)) === "[false,false,true,false]", "parseCommands · only plain commands (words joined by &&) run; a placeholder is skipped", JSON.stringify(odd));
+
+  // The templates as setup writes them: unfilled placeholders are never run or taken for the owner's words.
+  const tpl = (name) => readFileSync(join(ROOT, "content/templates", name), "utf8");
+  expect(parseCommands(tpl("RULES.md")).length === 0 && productRules(tpl("PRODUCT.md")).length === 0,
+    "templates · RULES.md §Commands and PRODUCT.md's owner's-rule line, unfilled, give no check and no rule", JSON.stringify([parseCommands(tpl("RULES.md")), productRules(tpl("PRODUCT.md"))]));
+  const filled = productRules(`- Owner's rule (2026-10-12): "${OWNER}" · counted in moves · checked by npm run check:bonus`);
+  expect(filled.length === 1 && filled[0].quote === OWNER && filled[0].unit === "moves", "productRules · reads the template's line once filled: the words and what it counts", JSON.stringify(filled));
 
   const lines = parseLines(`noise\n\x1b[32mRULE "${OWNER}": broke 15 · judged 870 of 1,690 moves\x1b[0m\nRULE "x": 0 breaks across all 109 edition families\nSCREEN "/fix": wrong 0 · checked 10 of 10 rows`);
   const r = lines.rules[0];

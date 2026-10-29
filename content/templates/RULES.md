@@ -101,6 +101,7 @@ Scripts read the json below, and every other file names a key (such as max_file_
 
 ## Commands (fill once the toolchain exists; the revisit commands run these)
 check `{{?CHECK_CMD}}` · full check `{{?CHECK_FULL_CMD}}` · run `{{?DEV_CMD}}` · end-to-end `{{?E2E_CMD}}` · evals `{{?EVAL_CMD | none}}` · dead code `{{?DEADCODE_CMD}}` · audit `{{?AUDIT_CMD | none}}`
+rule checks `{{?RULE_CHECK_CMDS | none}}` · screen checks `{{?SCREEN_CHECK_CMDS | none}}` (one per rule of mine in PRODUCT.md and per screen that says what will happen, each printing its RULE or SCREEN line; the stop check runs them after check)
 
 ## Done means verified
-Checks pass, the thing actually ran, and UI changes were looked at on screen. "Should work" is not done: say what you verified and how.
+Checks pass, the thing actually ran, and UI changes were looked at on screen in the real app, on my real data when there is any. An always or never rule I state about my data or screens is quoted in PRODUCT.md with the date and gets a rule check (always-on-verification-loop guide), passing only at broke 0 and judged N of N. "Should work" is not done: say what you verified and how.
