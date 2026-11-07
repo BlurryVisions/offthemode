@@ -1,10 +1,11 @@
 // Off the Mode · the stop check. Setup copies it to .offthemode/stop-check.mjs and replaces it whole on update.
 // When your AI says the work is done, it runs the checks .offthemode/RULES.md §Commands names (check, rule checks,
 // screen checks), shows you what they found, and sends the AI back once when they don't show the work done. At a stop
-// for your review, or when no file outside .offthemode/ changed since the last full run, only the rule checks rerun and
-// the others show their last run. A reply that claims nothing runs nothing. The checks run as if you typed them in a
-// terminal, outside Claude Code's sandbox. This script makes no network call (a check it runs may), and writes only its
-// own state file (inside .git/, or in the temp folder outside git).
+// for your review, or when no file outside .offthemode/ changed since the last full run (files git ignores don't
+// count), only the rule checks rerun and the others show their last run. A reply that claims nothing runs nothing. The
+// checks run as if you typed them in a terminal, outside Claude Code's sandbox. This script makes no network call (a
+// check it runs may), and writes only its own state file (inside .git/, or in the temp folder outside git); git's own
+// filters, such as Git LFS's, may keep a copy of a changed file inside .git/, as they do on git add.
 // Run it yourself, or from any AI tool: node .offthemode/stop-check.mjs --now (exit 1 when the checks don't show it done)
 // Claude Code runs it at each stop once .claude/settings.local.json holds this block, added only on the owner's yes:
 // SETTINGS {"hooks":{"Stop":[{"hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.offthemode/stop-check.mjs"],"timeout":900,"statusMessage":"Off the Mode is checking the work"}]}]}}
@@ -114,29 +115,45 @@ export function parseLines(out) {
 }
 
 // ---------- running ----------
-const git = (args, cwd, input) => { try { return execFileSync("git", args, { cwd, input, encoding: "utf8", stdio: [input === undefined ? "ignore" : "pipe", "pipe", "ignore"], maxBuffer: 256 * 1024 * 1024 }); } catch { return null; } };
+// With no optional locks, so asking git what changed never rewrites its index.
+const git = (args, cwd, input) => { try { return execFileSync("git", args, { cwd, input, encoding: "utf8", env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" }, stdio: [input === undefined ? "ignore" : "pipe", "pipe", "ignore"], maxBuffer: 256 * 1024 * 1024 }); } catch { return null; } };
 /** A hash of what the files outside .offthemode/ hold (the notes change every reply), plus RULES.md and PRODUCT.md,
  * which say what to check: each path's mode and id as git add would store them, line-ending filters and all, never
- * git's bookkeeping, so a commit after --now changes nothing. null outside git, or when it can't be sure (git fails, a
- * file it can't read, a name with a line break, uncommitted work in a repository inside this one), and then every
- * claim runs the checks. */
+ * git's bookkeeping, so a commit after --now changes nothing. Files git ignores don't count. null outside git, or when
+ * it can't be sure (git fails; a file it can't read, a pipe, a name with a line break; uncommitted work in a
+ * repository inside this one), and then every claim runs the checks. */
 function fingerprint(root) {
-  const top = git(["rev-parse", "--show-toplevel"], root)?.trim(), paths = ["--", ":/", ":(exclude).offthemode"], ids = new Map(), files = [];
-  const listed = top && git(["ls-files", "-s", "-z", "--full-name", ...paths], root), status = top && git(["status", "--porcelain=v1", "-z", "--untracked-files=all", ...paths], root)?.split("\0");
+  const top = git(["rev-parse", "--show-toplevel"], root)?.trim(), paths = ["--", ":/", ":(exclude).offthemode"], ids = new Map(), look = new Set(), files = [];
+  const listed = top && git(["ls-files", "-s", "-v", "-z", "--full-name", ...paths], root);
+  const status = top && git(["status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignore-submodules=none", ...paths], root)?.split("\0");
   if (typeof listed !== "string" || !status) return null;
-  for (const e of listed.split("\0")) { const m = e.match(/^(\d+) (\w+) \d\t([\s\S]+)$/); if (m) ids.set(m[3], `${m[1]} ${m[2]}`); }
+  // Read from disk: each path git status names (a rename's old path follows it), and each one git was told not to
+  // look at (assume-unchanged, a lowercase tag; skip-worktree, S).
+  for (const e of listed.split("\0")) {
+    const m = e.match(/^(\S) (\d+) (\w+) \d\t([\s\S]+)$/);
+    if (m && (ids.set(m[4], `${m[2]} ${m[3]}`), /[a-zS]/.test(m[1]))) look.add(m[4]);
+  }
+  for (let i = 0; i < status.length; i++) if (status[i].length > 3) look.add(status[i].slice(3)), /[RC]/.test(status[i].slice(0, 2)) && look.add(status[++i]);
+  const keepMode = win || git(["config", "--bool", "core.fileMode"], root)?.trim() === "false"; // then git keeps the index's mode
+  // null when it's gone, or a folder in its path is now a file; any other error leaves it unsure.
+  const stat = (f) => { try { return lstatSync(f); } catch (e) { if (/^(ENOENT|ENOTDIR)$/.test(e?.code)) return null; throw e; } };
+  let linkHash;
   try {
-    for (let i = 0; i < status.length; i++) {
-      const e = status[i], code = e.slice(0, 2), p = e.slice(3), f = join(top, p);
-      if (/[RC]/.test(code)) i++; // a rename's old path comes next
-      if (e.length < 4) continue;
-      if (code.includes("D")) { ids.delete(p); continue; }
-      const s = lstatSync(f);
-      // A submodule, or a repository inside this one: the commit it is at, as git add would store it.
-      if (s.isDirectory()) { if (git(["status", "--porcelain"], f) !== "") return null; ids.set(p.replace(/\/$/, ""), `160000 ${git(["rev-parse", "HEAD"], f)?.trim()}`); }
-      else if (s.isSymbolicLink()) { const t = readlinkSync(f, "buffer"); ids.set(p, `120000 ${createHash("sha1").update(`blob ${t.length}\0`).update(t).digest("hex")}`); }
-      else if (/^"|[\r\n]/.test(p)) return null;
-      else files.push([p, win ? ids.get(p)?.split(" ")[0] ?? "100644" : s.mode & 0o100 ? "100755" : "100644"]);
+    for (const p of look) {
+      const f = join(top, p), s = stat(f);
+      if (!s) ids.delete(p);
+      else if (s.isDirectory()) {
+        // A submodule, or a repository inside this one: the commit it is at, as git add would store it. A folder that
+        // took a file's place isn't one: its files are listed on their own.
+        if (!existsSync(join(f, ".git"))) { ids.delete(p); continue; }
+        if (git(["status", "--porcelain", "--untracked-files=normal", "--ignore-submodules=none"], f) !== "") return null;
+        ids.set(p.replace(/\/$/, ""), `160000 ${git(["rev-parse", "HEAD"], f)?.trim()}`);
+      } else if (s.isSymbolicLink()) {
+        linkHash ??= git(["rev-parse", "--show-object-format"], root)?.trim() === "sha256" ? "sha256" : "sha1";
+        const t = readlinkSync(f, "buffer");
+        ids.set(p, `120000 ${createHash(linkHash).update(`blob ${t.length}\0`).update(t).digest("hex")}`);
+      } else if (!s.isFile() || /^"|[\r\n]/.test(p)) return null;
+      else files.push([p, keepMode ? ids.get(p)?.split(" ")[0] ?? "100644" : s.mode & 0o100 ? "100755" : "100644"]);
     }
   } catch { return null; }
   // No -w, so it stores nothing; with the path's filters (line endings), so the id matches the index once committed.
@@ -386,14 +403,16 @@ async function main() {
   if (!commands.length && !productRules(product).length && !productScreens(product).length) return nothingNamed(hook, state, file);
   const fp = fingerprint(root);
   const light = !hook ? "" : reply === "checkpoint" ? "At a stop for your review only the rule checks run; the others show their last run."
-    : fp !== null && fp === state.fingerprint ? `No file changed since ${clock(state.fullAt)}, so only the rule checks ran again.` : "";
+    : fp !== null && fp === state.fingerprint ? `No file changed since ${clock(state.fullAt)} (files git ignores don't count), so only the rule checks ran again.` : "";
   const results = await runAll(commands, root, budget(rules), light ? state.results ?? {} : null, fp);
   const ctx = await judge(results, product, state, hook ? input.transcript_path : null);
   ctx.notes.push(...told);
   keep(state, results, commands, light ? undefined : fingerprint(root));
   const at = where(root), why = !hook ? "" : reply === "claim" ? ", because your AI said the work is done" : ", because your AI's reply says some work is done";
   const owner = report(results, ctx, [`Off the Mode checked ${at}${why}:`, ...(light ? [light] : [])]);
-  // A line said only once is marked as said when your AI got it (--now, or a send-back), never when only you see it.
+  // A line said only once is marked as said once your AI could read it: in --now's output (yours too, when you run it:
+  // an AI tool that runs --now in a terminal looks like you, and must not see the line forever), or in a send-back as
+  // sent. A stop shown only to you marks nothing.
   const reached = (said) => { for (const [s, k, line] of ctx.once) if (said.includes(line)) s[k] ??= ctx.today; };
   if (!hook) return void (reached(owner), save(file, state), console.log(owner), (process.exitCode = ctx.issues.length ? 1 : 0));
   // Sent back once per set of numbers in a session; a clean run forgets it, so a later break goes back again.
