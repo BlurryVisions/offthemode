@@ -1,6 +1,6 @@
 // Tests the stop check (content/templates/stop-check.mjs) the way Claude Code runs it: a Stop hook input on stdin, in
 // throwaway git projects whose RULES.md names small check scripts. Prints only what failed, then one summary line.
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, appendFileSync, existsSync, readdirSync, statSync, copyFileSync, rmSync, realpathSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, appendFileSync, existsSync, readdirSync, statSync, copyFileSync, rmSync, realpathSync, chmodSync, symlinkSync } from "node:fs";
 import { join, dirname, relative, basename } from "node:path";
 import { tmpdir } from "node:os";
 import { spawn, execFileSync } from "node:child_process";
@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SCRIPT = join(ROOT, "content/templates/stop-check.mjs");
 const SOURCE = readFileSync(SCRIPT, "utf8");
-const { readReply, parseCommands, parseLines, productRules, productScreens, budget } = await import(SCRIPT);
+const { readReply, parseCommands, parseLines, productRules, productScreens, budget, norm } = await import(SCRIPT);
 const BASE = mkdtempSync(join(tmpdir(), "otm-stop-check-"));
 const OUT = join(BASE, "outside");
 mkdirSync(OUT);
@@ -37,6 +37,8 @@ const CHECKS = {
   "rule.mjs": "import { readFileSync } from 'node:fs'; const r = JSON.parse(readFileSync('rule.json', 'utf8')); console.log(`RULE \"${r.quote}\": broke ${r.broke} · judged ${r.judged} of ${r.of} ${r.unit}`); process.exit(r.broke ? 1 : 0);",
   "rule.json": JSON.stringify({ quote: OWNER, broke: 0, judged: 5, of: 5, unit: "moves" }),
   "screen.mjs": "console.log('SCREEN \"/fix\": wrong 2 · checked 8 of 10 rows'); process.exit(1);",
+  "noisy.mjs": `for (let i = 0; i < 200; i++) console.log('RULE bad line ' + i); console.log(${JSON.stringify(`RULE "${REWORDED}": broke 0 · judged 5 of 5 moves`)});`,
+  "screen-ok.mjs":"console.log('SCREEN \"/queue\": wrong 0 · checked 3 of 3 rows');",
   "lab.mjs": "console.log('SCREEN \"/lab/fix/[state]\": wrong 0 · checked 10 of 10 rows');",
   "hang.mjs": `${here} import { spawn } from 'node:child_process'; const kid = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' }); appendFileSync(tag + '.pids', process.pid + ' ' + kid.pid); setInterval(() => {}, 1000);`,
 };
@@ -256,6 +258,117 @@ async function ruleChecks() {
     "a fixer who rewords the rule in PRODUCT.md and the check together is caught; words already flagged once come back as a note, not a send-back", show(h));
 }
 
+// A fixer who rewords the rule right after a send-back does it in the turn that follows, whose stop has stop_hook_active.
+async function rewordAfterSendBack() {
+  const t = join(BASE, "transcripts-reword"), transcript_path = join(t, "session.jsonl");
+  mkdirSync(t, { recursive: true });
+  writeFileSync(transcript_path, JSON.stringify({ type: "user", message: { role: "user", content: OWNER } }) + "\n");
+  const dir = project("reword", { commands: "rule checks `node rule.mjs`", product: ownerLine(OWNER) });
+  edit(dir, "rule.json", JSON.stringify({ quote: OWNER, broke: 15, judged: 870, of: 870, unit: "moves" }));
+  const first = await hook(dir, { transcript_path });
+  edit(dir, ".offthemode/PRODUCT.md", `PRODUCT · reword\n\n## Refusals and tie-breakers\n${ownerLine(REWORDED)}\n`);
+  edit(dir, "rule.json", JSON.stringify({ quote: REWORDED, broke: 0, judged: 870, of: 870, unit: "moves" }));
+  const inTurn = await hook(dir, { transcript_path, stop_hook_active: true });
+  expect(first.back.includes("15 moves break your rule") && !inTurn.back && inTurn.shown.includes("is no longer in PRODUCT.md") && inTurn.shown.includes(`"${REWORDED}" isn't in any message you sent, so it may not be your words`),
+    "sent back, then the rule reworded in PRODUCT.md and the check in the same turn: shown to the owner, not sent back (stop_hook_active)", show(first) + show(inTurn));
+  const next = await hook(dir, { transcript_path });
+  expect(next.back.includes(`Your rule "${OWNER}" (first seen`) && next.back.includes(`"${REWORDED}" isn't in any message you sent, so it may not be your words`),
+    "...and the next claim sends the AI back with both lines, since they never reached it", show(next));
+  const after = await hook(dir, { transcript_path });
+  expect(!after.back && after.shown.includes("All passed.") && after.shown.includes("say the rule once in chat"), "...once they reached it, the reword is a note and the claim goes through", show(after));
+  // A send-back is cut to fit; a line cut off never reached the AI, so it isn't marked as said.
+  const noisy = project("reword-cut", { commands: "rule checks `node noisy.mjs`", product: ownerLine(REWORDED) });
+  const cut = await hook(noisy, { transcript_path });
+  const flagged = JSON.parse(readFileSync(stateFile(noisy), "utf8")).rules[norm(REWORDED)]?.flagged;
+  expect(cut.back.includes("(cut to fit)") && !cut.back.includes(`"${REWORDED}" isn't in any message you sent`) && flagged === undefined, "a line cut off the send-back isn't marked as said", `flagged ${flagged}`);
+}
+
+async function commitAfterNow() {
+  const dir = project("commit", { commands: "check `node count.mjs`" });
+  edit(dir, ".gitattributes", "*.txt text eol=crlf\n");
+  git(dir, "add", "-A");
+  git(dir, "commit", "-qm", "line endings");
+  edit(dir, "lines.txt", "one\r\ntwo\r\n"); // new, with line endings git's filter changes when it stores the file
+  edit(dir, "fail.txt", "0");
+  git(dir, "add", "fail.txt"); // staged before --now, as an AI often does
+  git(dir, "mv", "old-rule.mjs", "moved-rule.mjs");
+  rmSync(join(dir, "lab.mjs"));
+  if (process.platform !== "win32") symlinkSync("nowhere", join(dir, "dangling")), symlinkSync(OUT, join(dir, "to-a-folder"));
+  const now = await node([join(dir, ".offthemode/stop-check.mjs"), "--now"], dir);
+  git(dir, "add", "-A");
+  git(dir, "commit", "-qm", "work");
+  const h = await hook(dir);
+  expect(now.code === 0 && ran(dir) === "x" && h.shown.includes("No file changed since"),
+    "--now, then a commit of the same work (new, changed, staged, renamed and deleted files, links, line endings a filter changes): the claim doesn't run the checks again", now.stdout + show(h));
+  edit(dir, "lines.txt", "one\r\nthree\r\n");
+  const changed = await hook(dir);
+  expect(ran(dir) === "xx" && !changed.shown.includes("No file changed since"), "...and a real change after the commit runs them", show(changed));
+  if (process.platform === "win32") return; // Git on Windows ignores the executable bit
+  chmodSync(join(dir, "pass.mjs"), 0o755);
+  const mode = await hook(dir);
+  git(dir, "commit", "-qam", "mode");
+  const committed = await hook(dir);
+  expect(ran(dir) === "xxx" && committed.shown.includes("No file changed since"), "a change of mode alone runs them too, and its commit doesn't", show(mode) + show(committed));
+}
+
+// A repository inside the project, untracked or a submodule, counts by the commit it's at, and runs the checks while it
+// holds uncommitted work.
+async function nestedRepos() {
+  const dir = project("nested", { commands: "check `node count.mjs`" }), inner = join(dir, "vendor/lib");
+  mkdirSync(inner, { recursive: true });
+  edit(dir, "vendor/lib/a.txt", "a");
+  git(inner, "init", "-q");
+  git(inner, "add", "-A");
+  git(inner, "commit", "-qm", "a");
+  const steps = [];
+  const step = async (what, change) => { change?.(); const h = await hook(dir); steps.push(`${what}: ${ran(dir).length} ${h.shown.includes("No file changed since") ? "same" : "ran"}`); };
+  await step("first");
+  await step("untouched");
+  await step("dirty", () => edit(dir, "vendor/lib/a.txt", "b"));
+  await step("committed inside", () => git(inner, "commit", "-qam", "b"));
+  await step("untouched again");
+  await step("added as a submodule", () => { git(dir, "add", "vendor/lib"); git(dir, "commit", "-qm", "submodule"); });
+  await step("submodule dirty", () => edit(dir, "vendor/lib/a.txt", "c"));
+  await step("submodule committed", () => git(inner, "commit", "-qam", "c"));
+  await step("submodule untouched");
+  const want = ["first: 1 ran", "untouched: 1 same", "dirty: 2 ran", "committed inside: 3 ran", "untouched again: 3 same", "added as a submodule: 3 same", "submodule dirty: 4 ran", "submodule committed: 5 ran", "submodule untouched: 5 same"];
+  expect(steps.join(", ") === want.join(", "), "a repository inside the project, untracked or a submodule: unchanged, the checks don't rerun; uncommitted work or a new commit there runs them", steps.join(", "));
+}
+
+// --now's output reaches the AI, so a line said only once counts as said there.
+async function nowMarks() {
+  const dir = project("now-marks", { commands: "rule checks `node rule.mjs`", product: ownerLine(OWNER) });
+  await hook(dir);
+  edit(dir, ".offthemode/PRODUCT.md", `PRODUCT · now-marks\n\n## Refusals and tie-breakers\n${ownerLine(REWORDED)}\n`);
+  edit(dir, "rule.json", JSON.stringify({ quote: REWORDED, broke: 0, judged: 5, of: 5, unit: "moves" }));
+  const now = await node([join(dir, ".offthemode/stop-check.mjs"), "--now"], dir);
+  const h = await hook(dir);
+  expect(now.code === 1 && now.stdout.includes("is no longer in PRODUCT.md") && !h.shown.includes("is no longer in PRODUCT.md") && !h.back,
+    "a reworded rule --now showed isn't sent back again on the next claim", now.stdout + show(h));
+}
+
+async function staleAtCheckpoint() {
+  const dir = project("stale", { commands: "check `node fail.mjs` · rule checks `node rule.mjs` · screen checks `node screen-ok.mjs`", product: `${ownerLine(OWNER)}\n- Screen check: /queue · checked by node screen-ok.mjs` });
+  edit(dir, "fail.txt", "0");
+  const first = await hook(dir, { last_assistant_message: CHECKPOINT });
+  expect(first.shown.includes("The rule checks passed, but `node fail.mjs` hasn't run yet; `node screen-ok.mjs` hasn't run yet.") && !first.shown.includes("All passed") && !first.shown.includes("No screen check printed"),
+    "the first stop is a checkpoint: the checks that never ran aren't called passed, and a screen whose check hasn't run isn't flagged", show(first));
+  const claim = await hook(dir), same = await hook(dir);
+  expect(claim.shown.includes("All passed.") && same.shown.includes("No file changed since") && same.shown.includes("All passed."), "a claim runs them all; with no file changed since, their last run still counts as passed", show(claim) + show(same));
+  edit(dir, "fail.txt", "1");
+  const h = await hook(dir, { last_assistant_message: CHECKPOINT });
+  expect(h.shown.includes("before the latest changes)") && h.shown.includes("The rule checks passed, but `node fail.mjs` last ran at") && !h.shown.includes("All passed"),
+    "a checkpoint after the code changed shows the last run as from before the changes, never \"All passed\"", show(h));
+  const plain = project("stale-plain", { commands: "check `node pass.mjs`" });
+  const p = await hook(plain, { last_assistant_message: CHECKPOINT });
+  expect(p.shown.includes("No check failed, but `node pass.mjs` hasn't run yet. No rule of yours is checked") && !p.shown.includes("The checks passed"), "...and with no rule named, it never says \"The checks passed\" for a check that didn't run", show(p));
+  const loose = project("stale-loose", { commands: "check `node pass.mjs`", noGit: true });
+  await hook(loose);
+  const l = await hook(loose, { last_assistant_message: CHECKPOINT });
+  rmSync(join(tmpdir(), `offthemode-stop-${createHash("sha256").update(realpathSync(loose)).digest("hex").slice(0, 12)}.json`), { force: true });
+  expect(l.shown.includes("last ran at") && l.shown.includes("perhaps before the latest changes"), "outside git, where it can't tell, a checkpoint says the last run is perhaps from before the latest changes", show(l));
+}
+
 async function screensAndShapes() {
   const dir = project("screens", { commands: "check `node pass.mjs` · screen checks `node screen.mjs` `node lab.mjs` · rule checks `node rule.mjs; echo ok`", product: "- Screen check: /queue · checked by node queue.mjs" });
   const h = await hook(dir);
@@ -293,7 +406,7 @@ async function writesOnlyState() {
 
 parts();
 try {
-  await Promise.all([failingCheck(), passThenFail(), otherProject(), cancelled(), cutState(), ruleChecks(), screensAndShapes(), hangingCheck(), writesOnlyState()]);
+  await Promise.all([failingCheck(), passThenFail(), otherProject(), cancelled(), cutState(), ruleChecks(), rewordAfterSendBack(), nowMarks(), commitAfterNow(), nestedRepos(), staleAtCheckpoint(), screensAndShapes(), hangingCheck(), writesOnlyState()]);
 } finally {
   // A check a failed test left running never outlives the test.
   for (const pid of pidFiles.flatMap((f) => (existsSync(f) ? readFileSync(f, "utf8").split(" ").filter(Boolean).map(Number) : []))) { try { process.kill(pid, "SIGKILL"); } catch { /* gone */ } }

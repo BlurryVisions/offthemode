@@ -8,7 +8,7 @@
 // Run it yourself, or from any AI tool: node .offthemode/stop-check.mjs --now (exit 1 when the checks don't show it done)
 // Claude Code runs it at each stop once .claude/settings.local.json holds this block, added only on the owner's yes:
 // SETTINGS {"hooks":{"Stop":[{"hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.offthemode/stop-check.mjs"],"timeout":900,"statusMessage":"Off the Mode is checking the work"}]}]}}
-import { readFileSync, writeFileSync, renameSync, existsSync, statSync, readdirSync, realpathSync, createReadStream } from "node:fs";
+import { readFileSync, writeFileSync, renameSync, existsSync, lstatSync, readlinkSync, readdirSync, realpathSync, createReadStream } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { spawn, spawnSync, execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -114,19 +114,36 @@ export function parseLines(out) {
 }
 
 // ---------- running ----------
-const git = (args, cwd) => { try { return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 256 * 1024 * 1024 }); } catch { return null; } };
-/** A hash of what git sees outside .offthemode/ (the notes change every reply) plus RULES.md and PRODUCT.md, which say
- * what to check. null outside git, where every claim runs the checks. */
+const git = (args, cwd, input) => { try { return execFileSync("git", args, { cwd, input, encoding: "utf8", stdio: [input === undefined ? "ignore" : "pipe", "pipe", "ignore"], maxBuffer: 256 * 1024 * 1024 }); } catch { return null; } };
+/** A hash of what the files outside .offthemode/ hold (the notes change every reply), plus RULES.md and PRODUCT.md,
+ * which say what to check: each path's mode and id as git add would store them, line-ending filters and all, never
+ * git's bookkeeping, so a commit after --now changes nothing. null outside git, or when it can't be sure (git fails, a
+ * file it can't read, a name with a line break, uncommitted work in a repository inside this one), and then every
+ * claim runs the checks. */
 function fingerprint(root) {
-  const top = git(["rev-parse", "--show-toplevel"], root)?.trim();
-  if (!top) return null;
-  const paths = ["--", ":/", ":(exclude).offthemode"];
-  const status = git(["status", "--porcelain=v1", "-z", "--untracked-files=all", ...paths], root) ?? "";
-  const h = createHash("sha256").update(git(["ls-files", "-s", ...paths], root) ?? "").update(status);
-  h.update(git(["diff", "--binary", "--no-ext-diff", ...paths], root) ?? "");
-  for (const entry of status.split("\0").filter((e) => e.startsWith("?? "))) {
-    try { const s = statSync(join(top, entry.slice(3))); h.update(`${entry}:${s.size}:${s.mtimeMs}`); } catch { /* gone since */ }
-  }
+  const top = git(["rev-parse", "--show-toplevel"], root)?.trim(), paths = ["--", ":/", ":(exclude).offthemode"], ids = new Map(), files = [];
+  const listed = top && git(["ls-files", "-s", "-z", "--full-name", ...paths], root), status = top && git(["status", "--porcelain=v1", "-z", "--untracked-files=all", ...paths], root)?.split("\0");
+  if (typeof listed !== "string" || !status) return null;
+  for (const e of listed.split("\0")) { const m = e.match(/^(\d+) (\w+) \d\t([\s\S]+)$/); if (m) ids.set(m[3], `${m[1]} ${m[2]}`); }
+  try {
+    for (let i = 0; i < status.length; i++) {
+      const e = status[i], code = e.slice(0, 2), p = e.slice(3), f = join(top, p);
+      if (/[RC]/.test(code)) i++; // a rename's old path comes next
+      if (e.length < 4) continue;
+      if (code.includes("D")) { ids.delete(p); continue; }
+      const s = lstatSync(f);
+      // A submodule, or a repository inside this one: the commit it is at, as git add would store it.
+      if (s.isDirectory()) { if (git(["status", "--porcelain"], f) !== "") return null; ids.set(p.replace(/\/$/, ""), `160000 ${git(["rev-parse", "HEAD"], f)?.trim()}`); }
+      else if (s.isSymbolicLink()) { const t = readlinkSync(f, "buffer"); ids.set(p, `120000 ${createHash("sha1").update(`blob ${t.length}\0`).update(t).digest("hex")}`); }
+      else if (/^"|[\r\n]/.test(p)) return null;
+      else files.push([p, win ? ids.get(p)?.split(" ")[0] ?? "100644" : s.mode & 0o100 ? "100755" : "100644"]);
+    }
+  } catch { return null; }
+  // No -w, so it stores nothing; with the path's filters (line endings), so the id matches the index once committed.
+  const hashed = files.length ? git(["hash-object", "--stdin-paths"], top, files.map(([p]) => p).join("\n"))?.trim().split("\n") : [];
+  if (hashed?.length !== files.length) return null;
+  files.forEach(([p, mode], i) => ids.set(p, `${mode} ${hashed[i]}`));
+  const h = createHash("sha256").update([...ids].sort(([a], [b]) => (a < b ? -1 : 1)).map(([p, id]) => `${p}\0${id}\n`).join(""));
   for (const f of ["RULES.md", "PRODUCT.md"]) h.update(read(join(root, ".offthemode", f)) ?? "");
   return h.digest("hex");
 }
@@ -158,11 +175,11 @@ function run(cmd, cwd, ms) {
 }
 
 /** Runs the checks in order within the budget. With saved results (a light stop), only rule checks run again. */
-async function runAll(commands, root, seconds, saved) {
+async function runAll(commands, root, seconds, saved, fp) {
   const deadline = Date.now() + seconds * 1000, results = [];
   for (const c of commands) {
-    const left = deadline - Date.now();
-    if (saved && c.kind !== "rule") results.push(saved[c.cmd] ? { c, ...saved[c.cmd], reused: true } : { c, skipped: "later" });
+    const left = deadline - Date.now(), old = saved?.[c.cmd];
+    if (saved && c.kind !== "rule") results.push(old ? { c, ...old, reused: true, before: fp === null ? "perhaps before" : old.fp !== fp ? "before" : "" } : { c, skipped: "later" });
     else if (!c.plain || left <= 0) results.push({ c, skipped: c.plain ? "time" : "shape", at: Date.now() });
     else { const r = await run(c.cmd, root, left); results.push({ c, ...r, left, ...parseLines(r.out), at: Date.now() }); }
   }
@@ -248,25 +265,25 @@ function judgeResult(r, ctx) {
   }
 }
 
-async function judge(results, product, state, transcript, reached) {
+async function judge(results, product, state, transcript) {
   const today = new Date().toISOString().slice(0, 10);
   const pins = productRules(product);
-  const ctx = { issues: [], notes: [], pins, quoted: new Set([...quotesIn(product), ...pins.map((p) => p.key)]), state, today, printed: new Set(), shown: new Set() };
+  const ctx = { issues: [], notes: [], once: [], pins, quoted: new Set([...quotesIn(product), ...pins.map((p) => p.key)]), state, today, printed: new Set(), shown: new Set() };
   for (const p of pins) (state.rules[p.key] ??= { quote: p.quote, first: today, unit: p.unit ?? "", n: 0, broke: 0 }).inProduct = true;
   for (const r of results) judgeResult(r, ctx);
   for (const p of pins) if (!ctx.printed.has(p.key)) ctx.issues.push(`No rule check printed a RULE line for your rule "${p.quote}".`);
-  for (const s of productScreens(product)) if (!ctx.shown.has(s.route)) ctx.issues.push(`No screen check printed a SCREEN line for ${s.route}, a screen that tells you what will happen.`);
+  const unrun = results.some((r) => r.c.kind === "screen" && r.skipped === "later");
+  for (const s of productScreens(product)) if (!ctx.shown.has(s.route) && !unrun) ctx.issues.push(`No screen check printed a SCREEN line for ${s.route}, a screen that tells you what will happen.`);
   for (const s of Object.values(state.rules).filter((s) => s.inProduct && !s.gone && !ctx.quoted.has(norm(s.quote)))) {
     ctx.issues.push(`Your rule "${s.quote}" (first seen ${s.first}) is no longer in PRODUCT.md.`);
-    s.gone = today;
+    ctx.once.push([s, "gone", ctx.issues.at(-1)]);
   }
   const keys = [...new Set([...pins.map((p) => p.key), ...ctx.printed])];
   await checkOwnerWords(keys, state, transcript);
-  // An issue once it reaches your AI, then a note: a rule said in another tool, or in a deleted transcript, is never found.
+  // An issue until it reaches your AI, then a note: a rule said in another tool, or in a deleted transcript, is never found.
   for (const s of keys.map((k) => state.rules[k]).filter((s) => s.owner === false)) {
     if (s.flagged) ctx.notes.push(`"${s.quote}" isn't in any message you sent: say the rule once in chat to confirm it.`);
-    else ctx.issues.push(`"${s.quote}" isn't in any message you sent, so it may not be your words.`);
-    if (reached) s.flagged ??= today;
+    else ctx.issues.push(`"${s.quote}" isn't in any message you sent, so it may not be your words.`), ctx.once.push([s, "flagged", ctx.issues.at(-1)]);
   }
   ctx.ruled = pins.length > 0 || results.some((r) => r.c.kind === "rule");
   return ctx;
@@ -279,7 +296,7 @@ const emit = (o) => process.stdout.write(JSON.stringify(o));
 const SKIPPED = { later: "not run yet: it runs when your AI says it's done", shape: "didn't run (not one plain command)", time: "didn't run (no time left)" };
 function status(r) {
   if (r.skipped || r.timedOut) return SKIPPED[r.skipped] ?? `didn't finish in ${Math.round(r.left / 1000)} s`;
-  const s = `${Math.round(r.ms / 1000)} s${r.reused ? `, its run at ${clock(r.at)}` : ""}`;
+  const s = `${Math.round(r.ms / 1000)} s${r.reused ? `, its run at ${clock(r.at)}${r.before ? `, ${r.before} the latest changes` : ""}` : ""}`;
   return r.code === 0 ? `passed (${s})` : `failed (exit ${r.code}, ${s})`;
 }
 function report(results, ctx, head) {
@@ -289,7 +306,10 @@ function report(results, ctx, head) {
     for (const x of [...(r.rules ?? []), ...(r.screens ?? [])]) lines.push(`  ${x.line}`);
   }
   if (!results.length) lines.push("- RULES.md §Commands names no check, rule check or screen check.");
-  lines.push(...(ctx.issues.length ? ["Not done yet:", ...ctx.issues.map((i) => `- ${i}`)] : [ctx.ruled ? "All passed." : "The checks passed. No rule of yours is checked: PRODUCT.md quotes none."]));
+  // Never "passed" for a check that didn't run on these changes.
+  const old = results.filter((r) => r.before || r.skipped === "later").map((r) => `\`${r.c.cmd}\` ${r.before ? `last ran at ${clock(r.at)}, ${r.before} the latest changes` : "hasn't run yet"}`);
+  const passed = old.length ? `${ctx.ruled ? "The rule checks passed" : "No check failed"}, but ${old.join("; ")}.` : ctx.ruled ? "All passed." : "The checks passed.";
+  lines.push(...(ctx.issues.length ? ["Not done yet:", ...ctx.issues.map((i) => `- ${i}`)] : [ctx.ruled ? passed : `${passed} No rule of yours is checked: PRODUCT.md quotes none.`]));
   if (ctx.notes.length) lines.push("Also:", ...ctx.notes.map((n) => `- ${n}`));
   return lines.join("\n");
 }
@@ -331,7 +351,7 @@ const save = (file, state, tmp = `${file}.${process.pid}.tmp`) => { writeFileSyn
 /** Remembers each check's last result, which a light stop shows, and after a full run the fingerprint and its time. */
 function keep(state, results, commands, fp) {
   const fresh = Object.fromEntries(results.filter((r) => !r.reused && r.skipped !== "later").map((r) => [r.c.cmd,
-    { code: r.code, timedOut: r.timedOut, ms: r.ms, left: r.left, skipped: r.skipped, out: tail(r.out ?? ""), rules: r.rules, screens: r.screens, malformed: r.malformed, at: r.at }]));
+    { code: r.code, timedOut: r.timedOut, ms: r.ms, left: r.left, skipped: r.skipped, out: tail(r.out ?? ""), rules: r.rules, screens: r.screens, malformed: r.malformed, at: r.at, fp }]));
   state.results = Object.fromEntries(commands.map((c) => [c.cmd, fresh[c.cmd] ?? state.results?.[c.cmd]]).filter(([, v]) => v));
   if (fp !== undefined) Object.assign(state, { fingerprint: fp, fullAt: Date.now() });
 }
@@ -367,25 +387,27 @@ async function main() {
   const fp = fingerprint(root);
   const light = !hook ? "" : reply === "checkpoint" ? "At a stop for your review only the rule checks run; the others show their last run."
     : fp !== null && fp === state.fingerprint ? `No file changed since ${clock(state.fullAt)}, so only the rule checks ran again.` : "";
-  const results = await runAll(commands, root, budget(rules), light ? state.results ?? {} : null);
-  const ctx = await judge(results, product, state, hook ? input.transcript_path : null, reply !== "checkpoint");
+  const results = await runAll(commands, root, budget(rules), light ? state.results ?? {} : null, fp);
+  const ctx = await judge(results, product, state, hook ? input.transcript_path : null);
   ctx.notes.push(...told);
   keep(state, results, commands, light ? undefined : fingerprint(root));
   const at = where(root), why = !hook ? "" : reply === "claim" ? ", because your AI said the work is done" : ", because your AI's reply says some work is done";
   const owner = report(results, ctx, [`Off the Mode checked ${at}${why}:`, ...(light ? [light] : [])]);
-  if (!hook) return void (save(file, state), console.log(owner), (process.exitCode = ctx.issues.length ? 1 : 0));
+  // A line said only once is marked as said when your AI got it (--now, or a send-back), never when only you see it.
+  const reached = (said) => { for (const [s, k, line] of ctx.once) if (said.includes(line)) s[k] ??= ctx.today; };
+  if (!hook) return void (reached(owner), save(file, state), console.log(owner), (process.exitCode = ctx.issues.length ? 1 : 0));
   // Sent back once per set of numbers in a session; a clean run forgets it, so a later break goes back again.
   const numbers = createHash("sha256").update(ctx.issues.join("\n")).digest("hex"), session = input.session_id ?? "none";
   const sent = state.sentBack?.constructor === Object ? state.sentBack : {};
-  const back = ctx.issues.length > 0 && !input.stop_hook_active && reply === "claim" && sent[session] !== numbers;
+  const back = ctx.issues.length > 0 && !input.stop_hook_active && reply === "claim" && sent[session] !== numbers, said = back ? sendBack(results, ctx, at) : "";
   const outcome = !ctx.issues.length ? "" : back ? "Your AI was sent back once to fix this or tell you plainly what isn't done."
     : input.stop_hook_active ? "Your AI was already sent back once this turn, so it stops here."
     : reply === "checkpoint" ? "Your AI stopped for your answer, so it wasn't sent back."
     : "Same result as when your AI was last sent back, so it stops here.";
-  if (!ctx.issues.length) delete state.sentBack; else if (back) state.sentBack = { ...Object.fromEntries(Object.entries(sent).slice(-4)), [session]: numbers };
+  if (!ctx.issues.length) delete state.sentBack; else if (back) reached(said), (state.sentBack = { ...Object.fromEntries(Object.entries(sent).slice(-4)), [session]: numbers });
   save(file, state);
   const out = { systemMessage: cap([owner, outcome].filter(Boolean).join("\n")) };
-  if (back) out.hookSpecificOutput = { hookEventName: "Stop", additionalContext: sendBack(results, ctx, at) };
+  if (back) out.hookSpecificOutput = { hookEventName: "Stop", additionalContext: said };
   emit(out);
 }
 
