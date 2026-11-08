@@ -17,6 +17,11 @@ let passed = 0;
 const failed = [], pidFiles = [];
 export const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms));
 export const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
+/** The pids still alive after waiting up to ms for them to end: a busy machine is slow to end and reap a process. */
+export async function survivors(pids, ms = 10000) {
+  for (const end = Date.now() + ms; pids.some(alive) && Date.now() < end; ) await sleep(100);
+  return pids.filter(alive);
+}
 export const expect = (ok, what, detail = "") => (ok ? passed++ : failed.push(`FAIL ${what}${detail ? `\n     ${detail}` : ""}`));
 
 export const DONE = "Done. The fix is live and all 12 tests pass.";
@@ -39,7 +44,12 @@ const CHECKS = {
   "noisy.mjs": `for (let i = 0; i < 200; i++) console.log('RULE bad line ' + i); console.log(${JSON.stringify(`RULE "${REWORDED}": broke 0 · judged 5 of 5 moves`)});`,
   "screen-ok.mjs": "console.log('SCREEN \"/queue\": wrong 0 · checked 3 of 3 rows');",
   "lab.mjs": "console.log('SCREEN \"/lab/fix/[state]\": wrong 0 · checked 10 of 10 rows');",
-  "hang.mjs": `${here} import { spawn } from 'node:child_process'; const kid = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' }); appendFileSync(tag + '.pids', process.pid + ' ' + kid.pid); setInterval(() => {}, 1000);`,
+  // A hung check, a process it started, and one it started in a group of its own, as Playwright starts a browser.
+  "hang.mjs": `${here} import { spawn } from 'node:child_process'; const run = (detached) => spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore', detached }); const kid = run(false), far = run(true); appendFileSync(tag + '.pids', process.pid + ' ' + kid.pid + ' ' + far.pid + ' '); setInterval(() => {}, 1000);`,
+  // A hung check that tidies up when asked to stop, as Playwright closes its browser and removes its temp profile.
+  "tidy.mjs": `${here} process.on('SIGTERM', () => { appendFileSync(tag + '.tidy', 'x'); process.exit(0); }); setInterval(() => {}, 1000);`,
+  // A check that passes and leaves two processes running, one of them deaf to SIGTERM; it ends once both are listening.
+  "leave.mjs": `${here} import { spawn } from 'node:child_process'; const run = (code) => spawn(process.execPath, ['-e', code + "require('fs').appendFileSync(process.argv[1], process.pid + ' '); setInterval(() => {}, 1000);", tag + '.pids'], { stdio: 'ignore' }).unref(); run(''); run("process.on('SIGTERM', () => {}); "); const listening = () => { try { return readFileSync(tag + '.pids', 'utf8').split(' ').filter(Boolean).length; } catch { return 0; } }; const wait = () => (listening() < 2 ? setTimeout(wait, 20) : process.exit(0)); wait();`,
 };
 
 export const git = (dir, ...args) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "-c", "advice.addEmbeddedRepo=false", ...args], { cwd: dir, stdio: "ignore" });
@@ -95,14 +105,12 @@ export async function hook(dir, input = {}, env = {}) {
 export const now = (dir, env) => node([join(dir, ".offthemode/stop-check.mjs"), "--now"], dir, undefined, env);
 export const show = (h) => JSON.stringify(h.out).slice(0, 600);
 
-/** Runs the cases side by side, ends what a failed one left running, removes the projects, and prints the result. */
+/** Runs the cases side by side, ends what a failed one left running, removes the projects, and prints the result. A
+ * case that throws fails by name, and a folder that won't go is named, never hiding the failures. */
 export async function finish(name, cases) {
-  try {
-    await Promise.all(cases.map((c) => c()));
-  } finally {
-    for (const pid of pidFiles.flatMap((f) => (existsSync(f) ? readFileSync(f, "utf8").split(" ").filter(Boolean).map(Number) : []))) { try { process.kill(pid, "SIGKILL"); } catch { /* gone */ } }
-    rmSync(BASE, { recursive: true, force: true });
-  }
+  await Promise.all(cases.map((c) => c().catch((e) => failed.push(`FAIL ${c.name} threw: ${e?.stack ?? e}`))));
+  for (const pid of pidFiles.flatMap((f) => (existsSync(f) ? readFileSync(f, "utf8").split(" ").filter(Boolean).map(Number) : []))) { try { process.kill(pid, "SIGKILL"); } catch { /* gone */ } }
+  try { rmSync(BASE, { recursive: true, force: true }); } catch (e) { console.error(`left ${BASE}: ${e.message}`); }
   for (const f of failed) console.error(f);
   console.log(`${name}: ${passed} passed${failed.length ? `, ${failed.length} failed` : ""}`);
   process.exit(failed.length ? 1 : 0);

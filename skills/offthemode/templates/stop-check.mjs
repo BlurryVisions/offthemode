@@ -1,20 +1,21 @@
 // Off the Mode · the stop check. Setup copies it to .offthemode/stop-check.mjs and replaces it whole on update.
 // When your AI says the work is done, it runs the checks .offthemode/RULES.md §Commands names (check, rule checks,
 // screen checks), shows you what they found, and sends the AI back once when they don't show the work done. At a stop
-// for your review, or when no file changed since the last full run (.offthemode/STATE.md and files git ignores don't
-// count), only the rule checks and the checks that run git rerun; the others show their last run. A reply that claims
-// nothing runs nothing. The checks run as if you typed them in a terminal, outside Claude Code's sandbox. This script
-// makes no network call (a check it runs may), and writes only its own state file (inside .git/; in the temp folder
-// outside git, or where .git/ can't be written); git's own filters, such as Git LFS's, may keep a copy of a changed
-// file inside .git/, as they do on git add. A filter that drops part of a file as git stores it, such as nbstripout's
-// for notebook outputs, hides a change to that part.
+// for your review, or when no file changed since the last full run (Off the Mode's records, such as STATE.md, and files
+// git ignores don't count), only the rule checks rerun, and a check whose command calls git once anything git sees has
+// changed; the others show their last run. A reply that claims nothing runs nothing. The checks run as if you typed
+// them in a terminal (on Windows, cmd.exe, not Git Bash), outside Claude Code's sandbox. This script makes no network
+// call (a check it runs may), and writes only its own state file (inside .git/; in the temp folder outside git, or
+// where .git/ can't be written); git's own filters, such as Git LFS's, may keep a copy of a changed file inside .git/,
+// as they do on git add. A filter that drops part of a file as git stores it, such as nbstripout's for notebook
+// outputs, hides a change to that part.
 // Run it yourself, or from any AI tool: node .offthemode/stop-check.mjs --now (exit 1 when the checks don't show it done)
 // Claude Code runs it at each stop once .claude/settings.local.json holds this block, added only on the owner's yes:
 // SETTINGS {"hooks":{"Stop":[{"hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.offthemode/stop-check.mjs"],"timeout":900,"statusMessage":"Off the Mode is checking the work"}]}]}}
-import { readFileSync, writeFileSync, renameSync, existsSync, lstatSync, readlinkSync, readdirSync, realpathSync, accessSync, constants, createReadStream } from "node:fs";
+import { readFileSync, writeFileSync, renameSync, rmSync, existsSync, statSync, lstatSync, readlinkSync, readdirSync, realpathSync, accessSync, constants, createReadStream } from "node:fs";
 import { join, dirname, resolve, relative, isAbsolute } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
@@ -25,9 +26,12 @@ import { fileURLToPath } from "node:url";
 const SECONDS = 480;
 const MOST = 840;
 const KINDS = { check: "check", "rule check": "rule", "rule checks": "rule", "screen check": "screen", "screen checks": "screen" };
-// Only plain commands run by themselves: words joined by &&, nothing a shell would expand, redirect or chain.
-const PLAIN = /^[\w@%+=:,./-]+(?: +[\w@%+=:,./-]+)*$/;
-const NEVER = /^(?:rm|rmdir|del|sudo|curl|wget|ssh|scp|vercel|netlify)\b|^git (?:push|pull|fetch|clone|reset|clean|checkout|switch|restore|commit|merge|rebase|stash|rm|mv|tag|branch)\b|^(?:npm|pnpm|yarn) (?:publish|unpublish|deprecate)\b/;
+// Only plain commands run by themselves: words joined by &&, nothing a shell would expand (cmd.exe expands %NAME%),
+// redirect or chain. Never a push, delete or deploy: at any word, since env, cmd /c or npx runs the word after it; in
+// any letter case, since macOS and Windows find Git as git; with a path or .exe; or with git's options before its command.
+const PLAIN = /^[\w@+=:,./-]+(?: +[\w@+=:,./-]+)*$/;
+const NEVER = /^(?:\S*[\\/])?(?:(?:rm|rmdir|rd|del|erase|remove-item|rimraf|sudo|curl|wget|ssh|scp|vercel|netlify)(?:\.exe|\.cmd)?(?: |$)|git(?:\.exe)? (?:-\S+ (?:[^-\s]\S* )?)*?(?:push|pull|fetch|clone|reset|clean|checkout|switch|restore|commit|merge|rebase|stash|rm|mv|tag|branch)\b|(?:npm|pnpm|yarn)(?:\.cmd)? (?:publish|unpublish|deprecate)\b)/i;
+const denied = (part, words = part.split(/ +/)) => words.some((_, i) => NEVER.test(words.slice(i).join(" ")));
 const N = String.raw`(\d[\d,]*)`;
 const RULE_LINE = new RegExp(String.raw`^RULE\s+"(.*)"\s*:\s*broke\s+${N}\s*[·|]\s*judged\s+${N}\s+of\s+${N}\s+(\S.*?)\s*$`);
 const SCREEN_LINE = new RegExp(String.raw`^SCREEN\s+"(.*)"\s*:\s*wrong\s+${N}\s*[·|]\s*checked\s+${N}\s+of\s+${N}\s+(\S.*?)\s*$`);
@@ -35,8 +39,11 @@ const RULE_FORM = `RULE "<your words>": broke B · judged J of N <what it counts
 const SCREEN_FORM = `SCREEN "<route>": wrong W · checked C of R rows`;
 // A page made to show states with invented rows, not the screen the owner uses.
 const LAB = /(?:^|\/)(?:labs?|gallery|states|specimens?|storybook|playground)(?:\/|$)/i;
-// Run at every stop, even with no file changed: a rule check, and a check that runs git, whose answer a commit changes.
+// Run again at a stop with no file changed: a rule check, and a check whose command calls git, whose answer a commit
+// changes (it runs again once anything git sees has changed).
 const always = (c) => c.kind === "rule" || /(?:^|&&)\s*git\s/.test(c.cmd);
+// Off the Mode's records, which its commands write at a reply's end and no check reads: a change to them isn't one.
+const RECORDS = ["STATE", "DECISIONS", "CHECKLIST", "REASSESS"];
 const MARK = "Off the Mode's stop check";
 
 // ---------- reading the reply ----------
@@ -93,7 +100,7 @@ function segments(line) {
 }
 /** The checks RULES.md §Commands names, in order: [{ kind, cmd, plain }]. */
 export const parseCommands = (rulesMd) => section(rulesMd, "Commands").flatMap(segments).filter((s) => KINDS[s.label]).flatMap(({ label, cmds }) =>
-  cmds.filter((cmd) => cmd && !/^none$|^not set|\{\{/i.test(cmd)).map((cmd) => ({ kind: KINDS[label], cmd, plain: cmd.split("&&").every((p) => PLAIN.test(p.trim()) && !NEVER.test(p.trim())) })));
+  cmds.filter((cmd) => cmd && !/^none$|^not set|\{\{/i.test(cmd)).map((cmd) => ({ kind: KINDS[label], cmd, plain: cmd.split("&&").every((p) => PLAIN.test(p.trim()) && !denied(p.trim())) })));
 export function budget(rulesMd) {
   const json = section(rulesMd, "Budgets").join("\n").match(/```json\s*([\s\S]*?)```/)?.[1];
   try { const s = JSON.parse(json).stop_check_seconds; return s > 0 ? Math.min(s, MOST) : SECONDS; } catch { return SECONDS; }
@@ -121,37 +128,58 @@ export function parseLines(out) {
 
 // ---------- running ----------
 // With no optional locks, so asking git what changed never rewrites its index; with pathspec magic on, whatever the
-// environment says; in English. strict: null when git couldn't open a folder or file, which git status says only on stderr.
+// environment says; in English. strict (the repository's top): null when git couldn't open a folder or file, which git
+// status says only on stderr, unless it is a folder you can't enter either, so no check of yours sees into it.
+const shut = (top, line, d = /^warning: could not open directory '(.*)': Permission denied$/.exec(line)?.[1]) => { if (d) try { accessSync(join(top, d), constants.X_OK); } catch { return true; } return false; };
 const git = (args, cwd, { input, strict } = {}) => {
   const r = spawnSync("git", args, { cwd, input, encoding: "utf8", env: { ...process.env, GIT_OPTIONAL_LOCKS: "0", GIT_LITERAL_PATHSPECS: "0", LC_ALL: "C" }, stdio: [input === undefined ? "ignore" : "pipe", "pipe", "pipe"], maxBuffer: 256 * 1024 * 1024 });
-  return r.status === 0 && !(strict && /^(?!warning: unable to access).*(?:could not open|Permission denied)/m.test(r.stderr)) ? r.stdout : null;
+  return r.status === 0 && !(strict && r.stderr.split("\n").some((l) => /could not open|Permission denied/.test(l) && !/^warning: unable to access/.test(l) && !shut(strict, l))) ? r.stdout : null;
 };
+// A real path spelled as on disk; where Node can't (on musl libc, as in Alpine, without /proc), as given.
+const real = (p) => { try { return realpathSync.native(p); } catch { return realpathSync(p); } };
 /** A hash of what the project's files hold: each path's mode and id as git add would store them, line-ending filters
- * and all, never git's bookkeeping, so a commit after --now changes nothing. .offthemode/STATE.md (it changes every
+ * and all, never git's bookkeeping, so a commit after --now changes nothing. Off the Mode's records (they change every
  * reply) and files git ignores don't count; RULES.md and PRODUCT.md, which say what to check, always do. A repository
- * inside this one counts by its commit and, the same way, its files. null outside git, or when it can't be sure (git
- * fails or can't open a folder; a file it can't read, a pipe, a name with a line break; a link out of the repository;
- * more than 5,000 files or 128 MB to read), and then every claim runs the checks. outer: the top repository's folder. */
+ * inside this one counts the same way, by its files, so a commit there changes nothing either. null outside git, or
+ * when it can't be sure (git fails or can't open a folder you can enter; a file it can't read, a pipe, a name with a
+ * line break or in bytes that aren't UTF-8; a link out of the repository; more than 5,000 files or 128 MB to read), and
+ * then every claim runs the checks. outer: the top repository's folder. */
+let lastIds, lastListed; // what the last fingerprint of the project read: each path's id, and git's index
 function fingerprint(root, outer) {
-  const [top, pre] = git(["rev-parse", "--show-toplevel", "--show-prefix"], root)?.split(/\r?\n/) ?? [];
-  const paths = ["--", ":/", ...(outer ? [] : [":(exclude).offthemode/STATE.md"])], ids = new Map(), look = new Set(), files = [];
-  const listed = top && (!outer || resolve(top) === resolve(root)) && git(["ls-files", "-s", "-v", "-z", "--full-name", ...paths], root)?.split("\0");
-  // With ignoreCase off, a rename that only changes a letter's case shows as a new name. Submodules are left out: each
-  // one is read below, the same way as this repository.
-  const status = listed && git(["-c", "core.ignoreCase=false", "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignore-submodules=all", ...paths], root, { strict: true })?.split("\0");
-  if (!status) return null;
+  const [top, pre, cdup] = git(["rev-parse", "--show-toplevel", "--show-prefix", "--show-cdup"], root)?.split(/\r?\n/) ?? [];
+  const paths = ["--", ":/", ...(outer ? [] : RECORDS.map((n) => `:(top,exclude,glob)**/.offthemode/${n}.md`))], ids = new Map(), look = new Set(), files = [];
+  // A repository inside is read from its own top only, which git names however the folder is spelled (NFD, letter case).
+  const listed = top && (!outer || cdup === "") && git(["ls-files", "-s", "-v", "-z", "--full-name", ...paths], root)?.split("\0");
+  // With the owner's settings, so ignore lines match as their git matches them. Submodules are left out: each one is
+  // read below, the same way as this repository. Where git ignores letter case, a rename that changes only a letter's
+  // case shows nowhere: git asked with case on lists the new name, new or ignored.
+  const status = listed && git(["status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignore-submodules=all", ...paths], root, { strict: top })?.split("\0");
+  const config = status && (git(["config", "--bool", "--get-regexp", "^core\\.(filemode|ignorecase)$"], root) ?? "");
+  const cased = status && (!/^core\.ignorecase true$/m.test(config) ? [] : git(["-c", "core.ignoreCase=false", "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignored=matching", "--ignore-submodules=all", ...paths], root, { strict: top })?.split("\0"));
+  if (!cased) return null;
   // Read from disk: each path git was told not to look at (assume-unchanged, a lowercase tag; skip-worktree, S), each
-  // repository inside this one (git status asks it with its own settings), and each path git status names, with a
-  // rename's old path while the index still holds it.
+  // repository inside this one (git status asks it with its own settings), and each path git status names that the
+  // index holds or that is new. A path gone from the index (a rename's old name, with or without rename detection)
+  // isn't, since a disk that ignores case finds the new name under it.
   for (const e of listed) {
     const m = e.match(/^(\S) (\d+) (\w+) \d\t([\s\S]+)$/);
     if (m && (ids.set(m[4], `${m[2]} ${m[3]}`), /[a-zS]/.test(m[1]) || m[2] === "160000")) look.add(m[4]);
   }
-  for (let i = 0; i < status.length; i++) if (status[i].length > 3) look.add(status[i].slice(3)), /[RC]/.test(status[i].slice(0, 2)) && ids.has(status[++i]) && look.add(status[i]);
+  for (let i = 0; i < status.length; i++) {
+    const xy = status[i].slice(0, 2), p = status[i].slice(3);
+    if (p && (ids.has(p) || xy === "??")) look.add(p);
+    if (/[RC]/.test(xy) && ids.has(status[++i])) look.add(status[i]);
+  }
+  // A name only letter case tells from a tracked file or folder is that one renamed: it counts by name, unread, since
+  // what it holds is read under the tracked name.
+  const lower = new Set(cased.length ? [...ids.keys()].flatMap((p) => p.toLowerCase().split("/").map((_, i, a) => a.slice(0, i + 1).join("/"))) : []);
+  for (const e of cased) { const n = e.slice(3).replace(/\/$/, ""); if (/^(?:\?\?|!!) /.test(e) && !ids.has(n) && lower.has(n.toLowerCase())) ids.set(n, "case"); }
+  // A name in bytes that aren't UTF-8 (on Linux) reads back changed, so the file can't be found by it.
+  if ([...look].some((p) => p.includes("\uFFFD"))) return null;
   // A project in a repository above it that neither tracks nor shows any of its files is outside git.
   if (pre && ![...ids.keys(), ...look].some((p) => p.startsWith(pre))) return null;
   // With core.fileMode off, git status hides a mode change, which a check that runs the file still sees.
-  const modeOff = !win && git(["config", "--bool", "core.fileMode"], root)?.trim() === "false";
+  const modeOff = !win && /^core\.filemode false$/m.test(config);
   // null when it's gone, or a folder in its path is now a file; any other error leaves it unsure.
   const stat = (f) => { try { return lstatSync(f); } catch (e) { if (/^(ENOENT|ENOTDIR)$/.test(e?.code)) return null; throw e; } };
   let linkHash, bytes = 0;
@@ -165,7 +193,7 @@ function fingerprint(root, outer) {
         if (!existsSync(join(f, ".git"))) { if (/^160000 /.test(ids.get(p)) && readdirSync(f).length) return null; ids.delete(p); continue; }
         const inner = fingerprint(f, outer ?? top);
         if (!inner) return null;
-        ids.set(p.replace(/\/$/, ""), `160000 ${git(["rev-parse", "HEAD"], f)?.trim()} ${inner}`);
+        ids.set(p.replace(/\/$/, ""), `160000 ${inner}`);
       } else if (s.isSymbolicLink()) {
         linkHash ??= git(["rev-parse", "--show-object-format"], root)?.trim() === "sha256" ? "sha256" : "sha1";
         const t = readlinkSync(f, "buffer");
@@ -176,8 +204,8 @@ function fingerprint(root, outer) {
     if (modeOff) for (const [p, id] of ids) if (!look.has(p) && /^100/.test(id)) { const s = stat(join(top, p)); if (s?.isFile()) ids.set(p, `${s.mode & 0o100 ? "100755" : "100644"}${id.slice(6)}`); }
     // What a link points to out of the repository can change with no file here changing. Both real paths are spelled as
     // on disk (native), whatever spelling the link was made with.
-    const home = realpathSync.native(outer ?? top), out = (t, r = relative(home, t)) => isAbsolute(r) || /^\.\.(?:[\\/]|$)/.test(r);
-    for (const [p, id] of ids) if (/^120000 /.test(id)) { const f = join(top, p); let t; try { t = realpathSync.native(f); } catch { t = resolve(dirname(f), readlinkSync(f, "utf8")); } if (out(t)) return null; }
+    const home = real(outer ?? top), out = (t, r = relative(home, t)) => isAbsolute(r) || /^\.\.(?:[\\/]|$)/.test(r);
+    for (const [p, id] of ids) if (/^120000 /.test(id)) { const f = join(top, p); let t; try { t = real(f); } catch { t = resolve(dirname(f), readlinkSync(f, "utf8")); } if (out(t)) return null; }
   } catch { return null; }
   if (files.length > 5000 || bytes > 128 * 2 ** 20) return null; // reading more would slow every stop
   // No -w, so it stores nothing; with the path's filters (line endings), so the id matches the index once committed.
@@ -185,42 +213,62 @@ function fingerprint(root, outer) {
   if (hashed?.length !== files.length) return null;
   files.forEach(([p, mode], i) => ids.set(p, `${mode} ${hashed[i]}`));
   const h = createHash("sha256").update([...ids].sort(([a], [b]) => (a < b ? -1 : 1)).map(([p, id]) => `${p}\0${id}\n`).join(""));
-  if (!outer) h.update(JSON.stringify(["RULES.md", "PRODUCT.md"].map((f) => read(join(root, ".offthemode", f)))));
+  if (!outer) h.update(JSON.stringify(["RULES.md", "PRODUCT.md"].map((f) => read(join(root, ".offthemode", f))))), (lastIds = ids), (lastListed = listed);
   return h.digest("hex");
 }
 
-// Each check runs in its own process group, so a dev server or browser it starts goes with it. When this script is
-// stopped (Esc, or the hook's timeout), the signal handlers at the bottom end those groups; if killed outright, a watcher.
-const win = process.platform === "win32", running = new Set();
-const killGroup = (pid, signal = "SIGKILL") => { try { if (win) spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"]); else process.kill(-pid, signal); } catch { /* gone */ } };
-const WATCH = "const [h, g] = process.argv.slice(1).map(Number); setInterval(() => { try { process.kill(h, 0); } catch { try { process.kill(-g, 'SIGKILL'); } catch {} process.exit(); } }, 500);";
+// Each check runs in its own process group (on Windows, under its own shell), so a dev server or browser it starts goes
+// with it. A check is stopped with SIGTERM, so it can close what it opened (Playwright closes its browser and removes
+// its temp profile), then SIGKILL to what is left 2 s later; at its time, with each group a process under it made, as
+// a tool may start a browser in a group of its own. If this script is stopped or killed (Esc, the hook's timeout), the
+// check's watcher (this script run with --watch) stops it. Windows has no SIGTERM: taskkill ends the tree outright;
+// once Windows has ended the check's shell with a killed script, the watcher ends the shell's orphans, found by the
+// parent each one names. What a check leaves running when it ends is stopped too, except on Windows.
+const win = process.platform === "win32", GRACE = 2000;
+const rows = (cmd, args) => (spawnSync(cmd, args, { encoding: "utf8", windowsHide: true }).stdout ?? "").trim().split(/\r?\n/).map((l) => l.trim().split(/\s+/).map(Number));
+// Never group 0 or 1, which a misread row could give: they mean this script's own group, and every process.
+const signal = (g, sig) => { try { return g > 1 && process.kill(-g, sig); } catch { return false; } };
+const taskkill = (p) => spawnSync("taskkill", ["/pid", String(p), "/T", "/F"], { windowsHide: true }).status === 0;
+/** Stops the check whose shell is pid, and what it started; tree: also the groups made under it, and on Windows the
+ * shell's orphans once it has ended. Resolves once they are gone. */
+async function stop(pid, tree = true) {
+  if (win) return void (tree && !taskkill(pid) && rows("powershell", ["-NoProfile", "-Command", `(Get-CimInstance Win32_Process -Filter 'ParentProcessId=${pid}').ProcessId`]).forEach(([p]) => p && taskkill(p)));
+  const groups = new Set([pid]), under = new Set([pid]), all = tree ? rows("ps", ["-A", "-o", "pid=,ppid=,pgid="]) : [];
+  for (let more = true; more; ) { more = false; for (const [p, pp, g] of all) if (under.has(pp) && !under.has(p)) under.add(p), groups.add(g), (more = true); }
+  if (![...groups].filter((g) => signal(g, "SIGTERM")).length) return;
+  for (const end = Date.now() + GRACE; [...groups].some((g) => signal(g, 0)) && Date.now() < end; ) await new Promise((ok) => setTimeout(ok, 100));
+  for (const g of groups) signal(g, "SIGKILL");
+}
 function run(cmd, cwd, ms) {
   return new Promise((done) => {
     const started = Date.now(), child = spawn(cmd, { cwd, shell: true, detached: !win, windowsHide: true, stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" } });
-    const watcher = win || !child.pid ? null : spawn(process.execPath, ["-e", WATCH, String(process.pid), String(child.pid)], { detached: true, stdio: "ignore" });
-    if (child.pid) running.add(child.pid), watcher?.unref();
+    // A watcher that can't start (at the process limit) costs only the cleanup after a kill.
+    const watcher = child.pid ? spawn(process.execPath, [fileURLToPath(import.meta.url), "--watch", String(process.pid), String(child.pid)], { detached: true, stdio: "ignore", windowsHide: true }).on("error", () => {}) : null;
+    watcher?.unref();
     let out = "", timedOut = false, ended = false;
     const take = (d) => { out += d; if (out.length > 400_000) out = out.slice(-200_000); };
     for (const s of [child.stdout, child.stderr]) s.on("data", take);
     const end = (code) => {
       if (ended) return;
-      ended = true, clearTimeout(timer), running.delete(child.pid), watcher?.kill();
+      ended = true, clearTimeout(timer), watcher?.kill();
       for (const s of [child.stdout, child.stderr]) s.destroy();
       done({ code: timedOut ? null : code, out, timedOut, ms: Date.now() - started });
     };
-    const timer = setTimeout(() => { timedOut = true; killGroup(child.pid); }, ms);
+    const timer = setTimeout(() => { timedOut = true; stop(child.pid); }, ms);
     child.on("error", (e) => { out += String(e.message); end(127); });
     child.on("close", (code) => end(code ?? 1));
-    child.on("exit", (code) => { killGroup(child.pid, "SIGTERM"); setTimeout(() => end(code ?? 1), 2000).unref(); });
+    // What it left running is stopped; a process in another group may hold its output open, so it ends regardless.
+    child.on("exit", (code) => { stop(child.pid, false); setTimeout(() => end(code ?? 1), GRACE + 500).unref(); });
   });
 }
 
-/** Runs the checks in order within the budget. With saved results (a light stop), only those always() runs run again. */
-async function runAll(commands, root, seconds, saved, fp) {
+/** Runs the checks in order within the budget. With saved results (a light stop), only the checks again() picks run
+ * again; a run kept as unsure is perhaps from before the latest changes. */
+async function runAll(commands, root, seconds, saved, fp, again) {
   const deadline = Date.now() + seconds * 1000, results = [];
   for (const c of commands) {
     const left = deadline - Date.now(), old = saved?.[c.cmd];
-    if (saved && !always(c)) results.push(old ? { c, ...old, reused: true, before: fp === null ? "perhaps before" : old.fp !== fp ? "before" : "" } : { c, skipped: "later" });
+    if (saved && !again(c)) results.push(old ? { c, ...old, reused: true, before: fp === null || old.fp === null ? "perhaps before" : old.fp !== fp ? "before" : "" } : { c, skipped: "later" });
     else if (!c.plain || left <= 0) results.push({ c, skipped: c.plain ? "time" : "shape", at: Date.now() });
     else { const r = await run(c.cmd, root, left); results.push({ c, ...r, left, ...parseLines(r.out), at: Date.now() }); }
   }
@@ -306,7 +354,7 @@ function judgeResult(r, ctx) {
   }
 }
 
-async function judge(results, product, state, transcript) {
+async function judge(results, product, state, transcript, branch = "") {
   const today = new Date().toISOString().slice(0, 10);
   const pins = productRules(product);
   const ctx = { issues: [], notes: [], once: [], pins, quoted: new Set([...quotesIn(product), ...pins.map((p) => p.key)]), state, today, printed: new Set(), shown: new Set() };
@@ -315,13 +363,18 @@ async function judge(results, product, state, transcript) {
   for (const p of pins) if (!ctx.printed.has(p.key)) ctx.issues.push(`No rule check printed a RULE line for your rule "${p.quote}".`);
   const unrun = results.some((r) => r.c.kind === "screen" && r.skipped === "later");
   for (const s of productScreens(product)) if (!ctx.shown.has(s.route) && !unrun) ctx.issues.push(`No screen check printed a SCREEN line for ${s.route}, a screen that tells you what will happen.`);
-  // Words back in PRODUCT.md aren't gone, so a later removal is told again.
-  for (const s of Object.values(state.rules)) if (ctx.quoted.has(norm(s.quote))) delete s.gone;
-  for (const s of Object.values(state.rules).filter((s) => s.inProduct && !s.gone && !ctx.quoted.has(norm(s.quote)))) {
-    // Words found in no message of the owner's (an AI's reword) are told once, as a note: the AI isn't sent to put them back.
-    if (s.owner === false) { ctx.notes.push(`"${s.quote}", which isn't in any message you sent, is no longer in PRODUCT.md.`); s.gone = ctx.today; continue; }
+  // Words back in PRODUCT.md aren't gone, so a later removal is told again; marked per branch, since switching to a
+  // branch made before the words removes nothing. back: words seen out of PRODUCT.md at an earlier stop are in it again.
+  const gone = `gone ${branch}`, all = Object.values(state.rules);
+  const back = all.some((s) => (s.out || s.gone || s[gone]) && ctx.quoted.has(norm(s.quote)));
+  for (const s of all) if (ctx.quoted.has(norm(s.quote))) delete s.gone, delete s[gone], delete s.out; else if (s.inProduct) s.out = 1;
+  for (const s of all.filter((s) => s.inProduct && !s[gone] && !ctx.quoted.has(norm(s.quote)))) {
+    // Words found in no message of the owner's that leave as other words come back (an AI's reword undone) are told once,
+    // as a note: the AI isn't sent to put them back. Any other removal is an issue: a rule said in another tool, or in a
+    // deleted transcript, is never found.
+    if (s.owner === false && back) { ctx.notes.push(`"${s.quote}", which isn't in any message you sent, is no longer in PRODUCT.md.`); s[gone] = ctx.today; continue; }
     ctx.issues.push(`Your rule "${s.quote}" (first seen ${s.first}) is no longer in PRODUCT.md.`);
-    ctx.once.push([s, "gone", ctx.issues.at(-1)]);
+    ctx.once.push([s, gone, ctx.issues.at(-1)]);
   }
   const keys = [...new Set([...pins.map((p) => p.key), ...ctx.printed])];
   await checkOwnerWords(keys, state, transcript);
@@ -331,6 +384,9 @@ async function judge(results, product, state, transcript) {
     else ctx.issues.push(`"${s.quote}" isn't in any message you sent, so it may not be your words.`), ctx.once.push([s, "flagged", ctx.issues.at(-1)]);
   }
   ctx.ruled = pins.length > 0 || results.some((r) => r.c.kind === "rule");
+  // Lines said only once go first, so a list cut to fit doesn't push one off, and the same failure isn't sent back for it.
+  const once = new Set(ctx.once.map(([, , l]) => l));
+  ctx.issues.sort((x, y) => once.has(y) - once.has(x));
   return ctx;
 }
 
@@ -381,31 +437,42 @@ function projectRoot(input) {
   const here = input.cwd ? findRoot(input.cwd) : null;
   if (!here || here === home) return { root: home };
   // native: the spelling on disk, as git prints it, whatever spelling the path came in.
-  const common = (d) => { const p = d && git(["rev-parse", "--git-common-dir"], d)?.trim(); try { return p ? realpathSync.native(resolve(d, p)) : null; } catch { return null; } };
+  const common = (d) => { const p = d && git(["rev-parse", "--git-common-dir"], d)?.trim(); try { return p ? real(resolve(d, p)) : null; } catch { return null; } };
   const repo = common(here);
   return repo && repo === common(home) ? { root: here } : { root: home, away: here };
 }
 const short = (s) => createHash("sha256").update(s).digest("hex").slice(0, 12);
-// One per project, so a second project in the same repository keeps its own; in the temp folder outside git, or where
-// .git/ can't be written (an AI tool's sandbox).
+const mtime = (f) => statSync(f, { throwIfNoEntry: false })?.mtimeMs ?? 0;
+// Where the state goes, first choice first: one file per project, so a second project in the same repository keeps its
+// own, in .git/; in the temp folder outside git, where .git/ can't be written (an AI tool's sandbox), or once a save to
+// .git/ failed though it looked writable (on Windows, access() doesn't read ACLs) and went there instead.
 function statePath(root) {
   const [pre, p] = git(["rev-parse", "--show-prefix", "--git-path", "offthemode-stop.json"], root)?.split(/\r?\n/) ?? [];
-  const f = p && resolve(root, pre ? p.replace(/\.json$/, `-${short(pre)}.json`) : p);
-  try { accessSync(dirname(f), constants.W_OK); return f; } catch { return join(tmpdir(), `offthemode-stop-${short(root)}.json`); }
+  const f = p && resolve(root, pre ? p.replace(/\.json$/, `-${short(pre)}.json`) : p), spare = join(tmpdir(), `offthemode-stop-${short(root)}.json`);
+  try { accessSync(dirname(f), constants.W_OK); return mtime(spare) > mtime(f) ? [spare] : [f, spare]; } catch { return [spare]; }
 }
-// An empty or cut-short file starts fresh, with a note, instead of stopping every later check.
+// An empty or cut-short file starts fresh, with a note, instead of stopping every later check; so does one another
+// user left under its name in a temp folder all users share (Linux's /tmp), which this script never trusts.
 const told = [];
 function loadState(file) {
-  try { const s = JSON.parse(read(file) ?? "{}"); if (s?.constructor === Object && (s.rules ?? {}).constructor === Object) return { rules: {}, ...s }; } catch { /* below */ }
+  try {
+    if (process.getuid && (statSync(file, { throwIfNoEntry: false })?.uid ?? process.getuid()) !== process.getuid()) throw 0;
+    const s = JSON.parse(read(file) ?? "{}");
+    if (s?.constructor === Object && (s.rules ?? {}).constructor === Object) return { rules: {}, ...s };
+  } catch { /* below */ }
   return told.push("Its saved state couldn't be read, so it started fresh."), { rules: {} };
 }
-// Written whole, then renamed into place, so a stop cut off mid-write or a second session never reads half a file.
-// Where it can't be written, the result is still shown.
-const save = (file, state, tmp = `${file}.${process.pid}.tmp`) => { try { writeFileSync(tmp, JSON.stringify(state)); renameSync(tmp, file); } catch { /* not kept */ } };
-/** Remembers each check's last result, which a light stop shows, and after a full run the fingerprint and its time. */
-function keep(state, results, commands, fp) {
+// Written whole under a name no one can guess, readable by its owner alone, then renamed into place, so a stop cut off
+// mid-write or a second session never reads half a file. Where it can't be written, the result is still shown.
+const save = (files, state) => files.some((f) => {
+  const tmp = `${f}.${randomUUID()}.tmp`;
+  try { writeFileSync(tmp, JSON.stringify(state), { mode: 0o600, flag: "wx" }); renameSync(tmp, f); return true; } catch { try { rmSync(tmp, { force: true }); } catch { /* none */ } return false; }
+});
+/** Remembers each check's last result, which a light stop shows, with the files (a run at a light stop: as they were
+ * then) and what git saw; after a full run, the fingerprint and its time. */
+function keep(state, results, commands, fp, gitNow, now) {
   const fresh = Object.fromEntries(results.filter((r) => !r.reused && r.skipped !== "later").map((r) => [r.c.cmd,
-    { code: r.code, timedOut: r.timedOut, ms: r.ms, left: r.left, skipped: r.skipped, out: tail(r.out ?? ""), rules: r.rules, screens: r.screens, malformed: r.malformed, at: r.at, fp }]));
+    { code: r.code, timedOut: r.timedOut, ms: r.ms, left: r.left, skipped: r.skipped, out: tail(r.out ?? ""), rules: r.rules, screens: r.screens, malformed: r.malformed, at: r.at, fp: fp === undefined ? now : fp, git: gitNow }]));
   state.results = Object.fromEntries(commands.map((c) => [c.cmd, fresh[c.cmd] ?? state.results?.[c.cmd]]).filter(([, v]) => v));
   if (fp !== undefined) Object.assign(state, { fingerprint: fp, fullAt: Date.now() });
 }
@@ -422,10 +489,10 @@ const inFlight = (tasks) => (tasks ?? []).some((t) => /subagent|workflow|teammat
 function where(root, sha = git(["rev-parse", "--short", "HEAD"], root)?.trim()) {
   return sha ? `${git(["branch", "--show-current"], root)?.trim() || "a detached HEAD"} at ${sha}${git(["status", "--porcelain"], root)?.trim() ? " with uncommitted changes" : ""}` : root;
 }
-function nothingNamed(hook, state, file) {
+function nothingNamed(hook, state, files) {
   const say = `${MARK} found nothing to run: RULES.md §Commands names no check, rule check or screen check.`;
   if (!hook) return console.log(say);
-  if (!state.toldNothing) { save(file, { ...state, toldNothing: true }); emit({ systemMessage: say }); }
+  if (!state.toldNothing) { save(files, { ...state, toldNothing: true }); emit({ systemMessage: say }); }
 }
 
 async function main() {
@@ -436,24 +503,36 @@ async function main() {
   if (away) return emit({ systemMessage: `${MARK} ran nothing: your AI is working in ${away}, which isn't this project.` });
   if (!root) return hook ? undefined : console.log("No .offthemode/RULES.md here or above it, so there is nothing to check.");
   const rules = read(join(root, ".offthemode", "RULES.md")) ?? "", product = read(join(root, ".offthemode", "PRODUCT.md")) ?? "";
-  const file = statePath(root), state = loadState(file), commands = parseCommands(rules);
-  if (!commands.length && !productRules(product).length && !productScreens(product).length) return nothingNamed(hook, state, file);
-  const fp = fingerprint(root);
-  const again = [commands.some((c) => c.kind === "rule") && "the rule checks", commands.some((c) => c.kind !== "rule" && always(c)) && "the checks that run git"].filter(Boolean).join(" and ");
-  const light = !hook ? "" : reply === "checkpoint" ? `At a stop for your review ${again ? `only ${again} run; the others show` : "the checks show"} their last run.`
-    : fp !== null && fp === state.fingerprint ? `No file changed since ${clock(state.fullAt)} (.offthemode/STATE.md and files git ignores don't count), so ${again ? `only ${again} ran again` : "the checks show their last run"}.` : "";
-  const results = await runAll(commands, root, budget(rules), light ? state.results ?? {} : null, fp);
-  const ctx = await judge(results, product, state, hook ? input.transcript_path : null);
+  const files = statePath(root), state = loadState(files[0]), commands = parseCommands(rules);
+  if (!commands.length && !productRules(product).length && !productScreens(product).length) return nothingNamed(hook, state, files);
+  const fp = fingerprint(root), seen = lastIds;
+  // What a check whose command calls git sees besides the files: HEAD, every ref, and git's index.
+  const gitNow = fp && commands.some((c) => c.kind !== "rule" && always(c)) ? short(JSON.stringify([fp, git(["rev-parse", "HEAD", "--all"], root), git(["symbolic-ref", "-q", "HEAD"], root), lastListed])) : undefined;
+  // What a light stop runs again: the rule checks, and a check that calls git once anything it sees has changed.
+  const again = (c) => c.kind === "rule" || (always(c) && (gitNow === undefined || state.results?.[c.cmd]?.git !== gitNow));
+  const rerun = commands.filter((c) => c.plain && again(c));
+  const named = [rerun.some((c) => c.kind === "rule") && "the rule checks", rerun.some((c) => c.kind !== "rule") && "the checks that call git"].filter(Boolean).join(" and ");
+  const what = (verb) => (!named ? "the checks show their last run" : rerun.length < commands.length ? `only ${named} ${verb}; the others show their last run` : `${named} ${verb}`);
+  const light = !hook ? "" : reply === "checkpoint" ? `At a stop for your review ${what("run again")}.`
+    : fp !== null && fp === state.fingerprint ? `No file changed since ${clock(state.fullAt)} (${RECORDS.map((n) => `${n}.md`).join(", ")} and files git ignores don't count), so ${what("ran again")}.` : "";
+  const results = await runAll(commands, root, budget(rules), light ? state.results ?? {} : null, fp, again);
+  const ctx = await judge(results, product, state, hook ? input.transcript_path : null, git(["branch", "--show-current"], root)?.trim());
   ctx.notes.push(...told);
-  // Kept only if no file changed while the checks ran: a check may have read a file before it changed.
-  keep(state, results, commands, light ? undefined : fingerprint(root) === fp ? fp : null);
+  // Kept only if no file changed while the checks ran (a check may have read a file before it changed), or the same
+  // files changed as in the last full run: the checks' own output, such as a report stamped with the time.
+  const after = light ? undefined : fingerprint(root);
+  const changed = fp && after && after !== fp ? [...new Set([...seen.keys(), ...lastIds.keys()])].filter((p) => seen.get(p) !== lastIds.get(p)).sort() : [];
+  const wrote = changed.length ? short(changed.join("\n")) : undefined, kept = light ? undefined : after === fp || (wrote && wrote === state.wrote) ? after : null;
+  if (kept === null && changed.length) ctx.notes.push(`${changed.slice(0, 3).map((p) => `\`${p}\``).join(", ")}${changed.length > 3 ? ` and ${fmt(changed.length - 3)} more` : ""} changed while the checks ran, so the next claim runs them again. If a check writes it, it can go in .gitignore.`);
+  keep(state, results, commands, kept, gitNow, fp);
+  if (!light) state.wrote = wrote;
   const at = where(root), why = !hook ? "" : reply === "claim" ? ", because your AI said the work is done" : ", because your AI's reply says some work is done";
   const owner = report(results, ctx, [`Off the Mode checked ${at}${why}:`, ...(light ? [light] : [])]);
   // A line said only once is marked as said once your AI could read it: in --now's output (yours too, when you run it:
   // an AI tool that runs --now in a terminal looks like you, and must not see the line forever), or in a send-back as
   // sent. A stop shown only to you marks nothing.
   const reached = (said) => { for (const [s, k, line] of ctx.once) if (said.includes(line)) s[k] ??= ctx.today; };
-  if (!hook) return void (reached(owner), save(file, state), console.log(owner), (process.exitCode = ctx.issues.length ? 1 : 0));
+  if (!hook) return void (reached(owner), save(files, state), console.log(owner), (process.exitCode = ctx.issues.length ? 1 : 0));
   // Sent back once per set of numbers in a session; a clean run forgets it, so a later break goes back again.
   const numbers = (issues) => createHash("sha256").update(issues.join("\n")).digest("hex"), session = input.session_id ?? "none";
   const sent = state.sentBack?.constructor === Object ? state.sentBack : {};
@@ -465,7 +544,7 @@ async function main() {
   // Kept without the lines said once, which the next stop no longer has, so the same failure isn't sent back twice.
   if (!ctx.issues.length) delete state.sentBack;
   else if (back) reached(said), (state.sentBack = { ...Object.fromEntries(Object.entries(sent).slice(-4)), [session]: numbers(ctx.issues.filter((i) => !ctx.once.some(([s, k, l]) => l === i && s[k]))) });
-  save(file, state);
+  save(files, state);
   const out = { systemMessage: cap([owner, outcome].filter(Boolean).join("\n")) };
   if (back) out.hookSpecificOutput = { hookEventName: "Stop", additionalContext: said };
   emit(out);
@@ -473,8 +552,11 @@ async function main() {
 
 // Run as a script, not imported (the tests import it). Compared as real paths: macOS's temp folder is a symlink.
 const isMain = () => { try { return realpathSync(process.argv[1]) === fileURLToPath(import.meta.url); } catch { return false; } };
-if (isMain()) {
-  for (const sig of ["SIGTERM", "SIGINT", "SIGHUP"]) process.on(sig, () => { for (const pid of running) killGroup(pid); process.exit(1); });
+if (isMain() && process.argv[2] === "--watch") {
+  // A check's watcher: once this script is gone (stopped, or killed outright), it stops the check.
+  const [h, pid] = process.argv.slice(3).map(Number);
+  const t = setInterval(() => { try { process.kill(h, 0); } catch { clearInterval(t); stop(pid).then(() => process.exit()); } }, 500);
+} else if (isMain()) {
   main().catch((e) => {
     const say = `${MARK} couldn't run, so nothing was checked: ${e?.message ?? e}`;
     if (process.argv.includes("--now") || process.stdin.isTTY) { console.error(say); process.exitCode = 2; } else emit({ systemMessage: say });

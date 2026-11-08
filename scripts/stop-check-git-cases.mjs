@@ -3,7 +3,7 @@
 import { mkdirSync, rmSync, chmodSync, symlinkSync, copyFileSync, renameSync, existsSync, readFileSync, writeFileSync, truncateSync } from "node:fs";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
-import { BASE, project, edit, ran, hook, now, expect, git, show, ownerLine, OWNER } from "./stop-check-harness.mjs";
+import { BASE, project, edit, ran, hook, now, expect, git, show, ownerLine, OWNER, CHECKPOINT } from "./stop-check-harness.mjs";
 
 const posix = process.platform !== "win32";
 const reused = (h) => h.shown.includes("No file changed since");
@@ -50,8 +50,8 @@ async function subfolder() {
   expect(record === "committed from the top: 1 same, a change outside the project's folder: 2 ran", "a project in a subfolder of its repository: a commit after --now reuses the run; a change anywhere in the repository runs the checks", record);
 }
 
-// A repository inside the project, untracked or a submodule, counts by the commit it's at, and runs the checks while it
-// holds uncommitted work, whatever the owner's git settings say to hide.
+// A repository inside the project, untracked or a submodule, counts by its files, whatever the owner's git settings say
+// to hide: a change there runs the checks, a commit there after the run changes nothing, as in the project itself.
 async function nestedRepos() {
   const dir = project("nested", { commands: "check `node count.mjs`" }), inner = join(dir, "vendor/lib");
   mkdirSync(inner, { recursive: true });
@@ -70,9 +70,10 @@ async function nestedRepos() {
     ["submodule edited", () => edit(dir, "vendor/lib/a.txt", "c")],
     ["submodule committed", () => git(inner, "commit", "-qam", "c")],
     ["submodule untouched"],
+    ["the commit before checked out inside", () => git(inner, "checkout", "-q", "HEAD~1")],
   ]);
-  const want = "first: 1 ran, untouched: 1 same, edited inside: 2 ran, committed inside: 3 ran, a new file inside: 4 ran, removed again: 5 ran, untouched again: 5 same, added as a submodule: 5 same, submodule edited: 6 ran, submodule committed: 7 ran, submodule untouched: 7 same";
-  expect(record === want, "a repository inside the project, untracked or a submodule, whatever the git settings: unchanged, the claim reuses the run; uncommitted work or a new commit there runs the checks", record);
+  const want = "first: 1 ran, untouched: 1 same, edited inside: 2 ran, committed inside: 2 same, a new file inside: 3 ran, removed again: 4 ran, untouched again: 4 same, added as a submodule: 4 same, submodule edited: 5 ran, submodule committed: 5 same, submodule untouched: 5 same, the commit before checked out inside: 6 ran";
+  expect(record === want, "a repository inside the project, untracked or a submodule, whatever the git settings: unchanged or only committed, the claim reuses the run; a change to its files, uncommitted or checked out, runs the checks", record);
 }
 
 async function shapes() {
@@ -162,9 +163,23 @@ async function unreadable() {
   chmodSync(lib, 0o755);
   expect(record === "first: 1 ran, again: 2 ran" && !crashed && closed === "first: 1 ran, a file edited in a folder git then can't enter: 2 ran",
     "a changed file it can't read, or in a folder git can't enter, leaves it unsure: no crash, and every claim runs the checks", `${record} | ${closed}`);
+  // A folder you can't enter (another user's database folder, mode 700; 000 here) hides nothing a check of yours could
+  // read. One you can enter but git can't list may hold a file a check reads by name.
+  const db = project("unopenable", { commands: "check `node count.mjs`" }), pg = join(db, "pgdata");
+  mkdirSync(pg), edit(db, "pgdata/PG_VERSION", "16"), chmodSync(pg, 0);
+  const locked = await steps(db, [["first"], ["nothing changed"]]);
+  chmodSync(pg, 0o755);
+  const hid = project("unlistable", { commands: "check `node count.mjs && node conf.mjs`" }), conf = join(hid, "conf");
+  edit(hid, "conf.mjs", "import { readFileSync } from 'node:fs'; process.exit(JSON.parse(readFileSync('conf/settings.json', 'utf8')).a === 1 ? 0 : 1);"), commit(hid, "conf");
+  mkdirSync(conf), edit(hid, "conf/settings.json", '{"a":1}'), chmodSync(conf, 0o100);
+  const listless = await steps(hid, [["first"], ["a file changed in a folder git can't list", () => edit(hid, "conf/settings.json", '{"a":2}')]]);
+  chmodSync(conf, 0o755);
+  expect(locked === "first: 1 ran, nothing changed: 1 same" && listless === "first: 1 ran, a file changed in a folder git can't list: 2 ran",
+    "a folder you can't enter changes nothing a check sees, so a claim reuses the run; a file changed in one you can enter but git can't list runs the checks", `${locked} | ${listless}`);
 }
 
-// git status fails on a submodule whose repository is gone, while git ls-files still works.
+// git fails inside a submodule whose repository is gone, and git status fails on a typo in git's settings, while git
+// ls-files still works.
 async function gitFails() {
   const dir = project("git-fails", { commands: "check `node count.mjs`" }), inner = join(dir, "vendor/lib");
   mkdirSync(inner, { recursive: true });
@@ -175,7 +190,10 @@ async function gitFails() {
   rmSync(join(inner, ".git"), { recursive: true, force: true });
   edit(dir, "vendor/lib/.git", "gitdir: ../nowhere\n");
   const record = await steps(dir, [["first"], ["nothing changed"]]);
-  expect(record === "first: 1 ran, nothing changed: 2 ran", "when git status fails it is unsure, never \"nothing changed\": every claim runs the checks", record);
+  const typo = project("status-fails", { commands: "check `node count.mjs`" });
+  git(typo, "config", "status.renames", "ture"); // git status: "fatal: bad boolean config value"; git ls-files still works
+  const failed = await steps(typo, [["first"], ["nothing changed"]]);
+  expect(record === "first: 1 ran, nothing changed: 2 ran" && failed === "first: 1 ran, nothing changed: 2 ran", "when git fails, inside a submodule whose repository is gone or as git status in the project, it is unsure, never \"nothing changed\": every claim runs the checks", `${record} | ${failed}`);
 }
 
 // The notes a check reads count (the method's check-bans.sh reads DESIGN.md); STATE.md, which changes every reply,
@@ -185,8 +203,9 @@ async function notesCount() {
   const record = await steps(dir, [["first"], ["STATE.md edited", () => edit(dir, ".offthemode/STATE.md", "where things stand")], ["DESIGN.md edited", () => edit(dir, ".offthemode/DESIGN.md", "### Unbans\n")]]);
   edit(out, ".gitignore", ".offthemode/\n"), git(out, "rm", "-rq", "--cached", ".offthemode"), commit(out, "notes kept out of git");
   const rules = readFileSync(join(out, ".offthemode/RULES.md"), "utf8"), product = readFileSync(join(out, ".offthemode/PRODUCT.md"), "utf8");
-  const moved = await steps(out, [["first", () => edit(out, ".offthemode/RULES.md", `${rules}x\n`)], ["a line moved from RULES.md to PRODUCT.md", () => { edit(out, ".offthemode/RULES.md", rules); edit(out, ".offthemode/PRODUCT.md", `x\n${product}`); }]]);
-  expect(record === "first: 1 ran, STATE.md edited: 1 same, DESIGN.md edited: 2 ran" && moved === "first: 1 ran, a line moved from RULES.md to PRODUCT.md: 2 ran",
+  const moved = await steps(out, [["first"], ["RULES.md edited", () => edit(out, ".offthemode/RULES.md", `${rules}x\n`)], ["PRODUCT.md edited", () => edit(out, ".offthemode/PRODUCT.md", `${product}y\n`)],
+    ["a line moved from RULES.md to PRODUCT.md", () => { edit(out, ".offthemode/RULES.md", rules); edit(out, ".offthemode/PRODUCT.md", `x\n${product}y\n`); }]]);
+  expect(record === "first: 1 ran, STATE.md edited: 1 same, DESIGN.md edited: 2 ran" && moved === "first: 1 ran, RULES.md edited: 2 ran, PRODUCT.md edited: 3 ran, a line moved from RULES.md to PRODUCT.md: 4 ran",
     "a note a check reads counts as a change, STATE.md doesn't, and RULES.md and PRODUCT.md count even when git ignores .offthemode/", `${record} | ${moved}`);
 }
 
@@ -202,14 +221,85 @@ async function changedWhileRunning() {
 // On a disk that ignores letter case (macOS's and Windows' default), a rename that changes only a letter's case.
 async function caseRename() {
   const dir = project("case", { commands: "check `node count.mjs`" });
-  edit(dir, "Button.txt", "b"), edit(dir, "Other.txt", "o"), commit(dir, "names");
+  edit(dir, "Button.txt", "b"), edit(dir, "Other.txt", "o"), edit(dir, "Third.txt", "t"), commit(dir, "names");
   if (!existsSync(join(dir, "button.txt"))) return; // a disk that tells case apart: git sees the rename itself
   const record = await steps(dir, [["first"], ["Button.txt renamed button.txt", () => renameSync(join(dir, "Button.txt"), join(dir, "button.txt"))]]);
   git(dir, "mv", "Other.txt", "other.txt");
   await now(dir);
   const committed = await steps(dir, [["git mv Other.txt other.txt, --now, then committed", () => commit(dir)]]);
-  expect(record === "first: 1 ran, Button.txt renamed button.txt: 2 ran" && committed === "git mv Other.txt other.txt, --now, then committed: 3 same",
-    "a rename that changes only a letter's case runs the checks, and committed after --now it reuses the run", `${record} | ${committed}`);
+  // With rename detection off, git status shows the old name as deleted, and the disk still finds it under the new one.
+  git(dir, "config", "status.renames", "false"), git(dir, "mv", "Third.txt", "third.txt");
+  await now(dir);
+  const plain = await steps(dir, [["rename detection off: git mv Third.txt third.txt, --now, then committed", () => commit(dir)]]);
+  expect(record === "first: 1 ran, Button.txt renamed button.txt: 2 ran" && committed === "git mv Other.txt other.txt, --now, then committed: 3 same" && plain === "rename detection off: git mv Third.txt third.txt, --now, then committed: 4 same",
+    "a rename that changes only a letter's case runs the checks, and committed after --now it reuses the run, with rename detection on or off", `${record} | ${committed} | ${plain}`);
+}
+
+// Files git ignores don't count, and on a disk that ignores letter case git matches its ignore patterns in any case.
+async function ignoredInAnyCase() {
+  const dir = project("ignore-case", { commands: "check `node count.mjs`" });
+  edit(dir, ".gitignore", "*.log\nBuild/\nconfig/*\n!config/Example.json\n"), edit(dir, "Keep.log", "k"), git(dir, "add", "-f", "Keep.log"), commit(dir, "ignore");
+  if (!existsSync(join(dir, ".GITIGNORE"))) return; // a disk that tells case apart
+  const record = await steps(dir, [["first"], ["Debug.LOG and build/out.js written", () => { edit(dir, "Debug.LOG", "x"); mkdirSync(join(dir, "build")); edit(dir, "build/out.js", "y"); }],
+    ["Debug.LOG edited", () => edit(dir, "Debug.LOG", "z")], ["config/example.json written", () => { mkdirSync(join(dir, "config")); edit(dir, "config/example.json", "{}"); }], ["config/example.json edited", () => edit(dir, "config/example.json", '{ "bad": true }')],
+    ["a file git doesn't ignore", () => edit(dir, "new.txt", "n")], ["tracked Keep.log renamed keep.LOG", () => renameSync(join(dir, "Keep.log"), join(dir, "keep.LOG"))]]);
+  expect(record === "first: 1 ran, Debug.LOG and build/out.js written: 1 same, Debug.LOG edited: 1 same, config/example.json written: 2 ran, config/example.json edited: 3 ran, a file git doesn't ignore: 4 ran, tracked Keep.log renamed keep.LOG: 5 ran",
+    "ignore lines count as the owner's git reads them, in any letter case: a file one ignores doesn't count, one a \"!\" line keeps does, and a tracked one renamed in case only still does", record);
+}
+
+// Case renames git can't see into a name an ignore line holds, for a file and a folder; and a big folder renamed in case.
+async function caseIntoIgnored() {
+  const dir = project("case-ignored", { commands: "check `node count.mjs`" });
+  mkdirSync(join(dir, "Build")), edit(dir, "Build/x.c", "c"), edit(dir, "Notes.md", "n"), edit(dir, ".gitignore", "notes.md\nbuild/\n");
+  git(dir, "add", "-A"), git(dir, "add", "-f", "Notes.md", "Build/x.c"), git(dir, "commit", "-qm", "names");
+  if (!existsSync(join(dir, "notes.md"))) return; // a disk that tells case apart: git sees the rename itself
+  const record = await steps(dir, [["first"], ["Notes.md renamed notes.md, a name .gitignore holds", () => renameSync(join(dir, "Notes.md"), join(dir, "notes.md"))],
+    ["Build renamed build, likewise", () => renameSync(join(dir, "Build"), join(dir, "build"))], ["no change"]]);
+  const big = project("case-folder", { commands: "check `node count.mjs`" });
+  mkdirSync(join(big, "Many")); for (let i = 0; i <= 5000; i++) writeFileSync(join(big, "Many", `${i}.txt`), String(i)); commit(big, "many");
+  const many = await steps(big, [["first"], ["Many renamed many", () => renameSync(join(big, "Many"), join(big, "many"))], ["untouched"], ["many/7.txt edited", () => edit(big, "many/7.txt", "changed")], ["untouched"]]);
+  expect(record === "first: 1 ran, Notes.md renamed notes.md, a name .gitignore holds: 2 ran, Build renamed build, likewise: 3 ran, no change: 3 same" && many === "first: 1 ran, Many renamed many: 2 ran, untouched: 2 same, many/7.txt edited: 3 ran, untouched: 3 same",
+    "a case rename into a name an ignore line holds runs the checks, for a file and a folder; a big folder renamed in case runs them once, then reuses the run", `${record} | ${many}`);
+}
+
+// A repository inside the project whose folder the disk spells otherwise than git: an accented name in NFD, as macOS's
+// Finder writes it, while git status gives NFC; and a submodule whose folder was renamed only in case.
+async function spelledOtherwise() {
+  const dir = project("spelled", { commands: "check `node count.mjs`" }), inner = join(dir, "vendor", "cafe\u0301");
+  mkdirSync(inner, { recursive: true }), edit(inner, "a.txt", "a"), git(inner, "init", "-q"), commit(inner, "a");
+  const record = await steps(dir, [["first"], ["untouched"], ["edited inside", () => edit(inner, "a.txt", "b")], ["untouched again"]]);
+  const sub = project("cased", { commands: "check `node count.mjs`" }), lib = join(sub, "Lib");
+  mkdirSync(lib), edit(lib, "a.txt", "a"), git(lib, "init", "-q"), commit(lib, "a"), commit(sub, "Lib");
+  const renamed = !existsSync(join(sub, "lib")) ? "" : await steps(sub, [["first"], ["renamed lib", () => renameSync(lib, join(sub, "lib"))], ["untouched"]]);
+  expect(record === "first: 1 ran, untouched: 1 same, edited inside: 2 ran, untouched again: 2 same" && ["", "first: 1 ran, renamed lib: 2 ran, untouched: 2 same"].includes(renamed),
+    "a repository inside the project whose folder name the disk spells otherwise (NFD, or a case-only rename): unchanged, the claim reuses the run", `${record} | ${renamed}`);
+}
+
+// The records Off the Mode's commands write at a reply's end don't count: revisit-state saves DECISIONS.md after --now,
+// /revisit-checklist edits CHECKLIST.md, /reassess writes REASSESS.md, here and in another project of the repository.
+// GLOSSARY.md does count: its Terms are the names the code is held to, which a check may read.
+async function recordsDontCount() {
+  const dir = project("records", { commands: "check `node count.mjs`", inside: "records-repo" }), other = project("other", { commands: "check `node pass.mjs`", inside: "records-repo" });
+  edit(dir, "a.txt", "1");
+  const record = await steps(dir, [
+    ["--now, then DECISIONS.md saved", async () => { await now(dir); edit(dir, ".offthemode/DECISIONS.md", "### D-001 · a over b\n"); commit(dir); }],
+    ["CHECKLIST.md edited", () => edit(dir, ".offthemode/CHECKLIST.md", "- [v] F1.1\n")],
+    ["REASSESS.md written", () => edit(dir, ".offthemode/REASSESS.md", "REASSESS · on course\n")],
+    ["the other project's STATE.md and DECISIONS.md", () => { edit(other, ".offthemode/STATE.md", "x\n"); edit(other, ".offthemode/DECISIONS.md", "x\n"); }],
+    ["GLOSSARY.md edited", () => edit(dir, ".offthemode/GLOSSARY.md", "| Playlist | mixtape |\n")],
+  ]);
+  expect(record === "--now, then DECISIONS.md saved: 1 same, CHECKLIST.md edited: 1 same, REASSESS.md written: 1 same, the other project's STATE.md and DECISIONS.md: 1 same, GLOSSARY.md edited: 2 ran",
+    "the records Off the Mode's commands write don't run the checks again, in any project of the repository; GLOSSARY.md does", record);
+}
+
+// A name git prints in bytes that aren't UTF-8 (Latin-1, on a Linux disk) can't be found as read: it leaves it unsure.
+async function oddBytes() {
+  if (process.platform !== "linux") return; // macOS and Windows keep names as Unicode
+  const dir = project("odd-bytes", { commands: "check `node count.mjs`" });
+  const odd = Buffer.concat([Buffer.from(join(dir, "c")), Buffer.from([0xe9]), Buffer.from(".txt")]); // "cé.txt" in Latin-1
+  writeFileSync(odd, "a"), commit(dir, "odd");
+  const record = await steps(dir, [["first"], ["cé.txt edited", () => writeFileSync(odd, "b")], ["cé.txt edited again", () => writeFileSync(odd, "c")]]);
+  expect(record === "first: 1 ran, cé.txt edited: 2 ran, cé.txt edited again: 3 ran", "each edit to a file whose name isn't UTF-8 runs the checks", record);
 }
 
 // Repositories inside repositories count by their commit and their files at any depth, whatever their own git hides.
@@ -230,12 +320,32 @@ async function deepRepos() {
   expect(record === want, "repositories two deep: a change at any depth runs the checks, whatever their settings hide; junk in one costs one run, not every run", record);
 }
 
+// A check that writes a report stamped with the time, as coverage reports are: the same file changes in each run, the
+// checks' own output, so once two runs in a row change only it, a claim with nothing changed since reuses the run.
+async function stampedOutput() {
+  const dir = project("stamped", { commands: "check `node count.mjs && node stamp.mjs`" });
+  edit(dir, "stamp.mjs", "import { mkdirSync, writeFileSync } from 'node:fs'; mkdirSync('coverage', { recursive: true }); writeFileSync('coverage/index.html', `generated at ${Date.now()} ${Math.random()}`);"), commit(dir, "a check that stamps");
+  const record = await steps(dir, [["first"], ["it stamped the report again"], ["nothing changed"], ["nothing changed"]]);
+  expect(record === "first: 1 ran, it stamped the report again: 2 ran, nothing changed: 2 same, nothing changed: 2 same",
+    "a check that stamps its report with the time: after two runs that change only that file, a claim with nothing changed reuses the run", record);
+  const unsure = project("while-running-checkpoint", { commands: "check `node write.mjs`" });
+  edit(unsure, "write.mjs", "import { writeFileSync } from 'node:fs'; writeFileSync('made.txt', 'made at ' + Date.now());"), commit(unsure, "a check that writes");
+  const first = await hook(unsure), h = await hook(unsure, { last_assistant_message: CHECKPOINT });
+  expect(first.shown.includes("`made.txt` changed while the checks ran, so the next claim runs them again") && h.shown.includes("its run at") && h.shown.includes("perhaps before the latest changes") && !h.shown.includes("The checks passed"),
+    "a run during which a file changed says which, and a checkpoint after it calls it perhaps from before the latest changes, not surely", show(first) + show(h));
+}
+
 async function linkOutside() {
   if (!posix) return;
   const dir = project("link-out", { commands: "check `node count.mjs`" }), shared = join(BASE, "shared-lib");
   mkdirSync(shared), edit(shared, "cfg.txt", "ok"), symlinkSync(shared, join(dir, "shared")), commit(dir, "a link out");
   const record = await steps(dir, [["first"], ["the file it points to edited", () => edit(shared, "cfg.txt", "BAD")]]);
-  expect(record === "first: 1 ran, the file it points to edited: 2 ran", "a link out of the repository leaves it unsure, since what it points to can change with no file here changing", record);
+  // In a repository inside the project, out means out of the outermost repository: a link to the project's own files is in.
+  const nested = project("link-out-inner", { commands: "check `node count.mjs`" }), lib = join(nested, "vendor/lib");
+  mkdirSync(lib, { recursive: true }), symlinkSync("../../pass.mjs", join(lib, "up.mjs")), git(lib, "init", "-q"), commit(lib, "a link into the project");
+  const inner = await steps(nested, [["first"], ["untouched"], ["a link out added there", () => symlinkSync(join(shared, "cfg.txt"), join(lib, "cfg.txt"))], ["the file it points to edited", () => edit(shared, "cfg.txt", "WORSE")]]);
+  expect(record === "first: 1 ran, the file it points to edited: 2 ran" && inner === "first: 1 ran, untouched: 1 same, a link out added there: 2 ran, the file it points to edited: 3 ran",
+    "a link out of the repository, here or in a repository inside it, leaves it unsure, since what it points to can change with no file here changing; a link from inside to the project's own files doesn't", `${record} | ${inner}`);
 }
 
 // A check that runs git reads what a commit changes, so it runs again at a stop with no file changed.
@@ -245,8 +355,21 @@ async function gitCheck() {
   const n = await now(dir);
   commit(dir);
   const h = await hook(dir);
-  expect(n.code === 1 && ran(dir) === "xx" && h.shown.includes("so only the checks that run git ran again") && h.shown.includes("passed (") && !h.shown.includes("its run at") && !h.back,
+  expect(n.code === 1 && ran(dir) === "xx" && h.shown.includes("so the checks that call git ran again") && h.shown.includes("passed (") && !h.shown.includes("its run at") && !h.back,
     "a check that runs git (git diff --exit-code) fails on --now, then after a commit runs again and passes, with no file changed", show(h));
+  const same = await hook(dir);
+  expect(ran(dir) === "xx" && same.shown.includes("so the checks show their last run.") && same.shown.includes("its run at") && !same.shown.includes("before the latest changes"), "...and with nothing git sees changed since, it isn't run again", show(same));
+  // What a git check sees besides the files counts too: what is staged, every ref, and whether HEAD is on a branch.
+  const sees = async (name, cmd, before, change) => { const d = project(name, { commands: `check \`node count.mjs && ${cmd}\`` }); before?.(d); await hook(d); change(d); const s = await hook(d); return `${ran(d).length} ${s.shown.includes("passed (") ? "passed" : "failed"}`; };
+  const staged = await sees("git-sees-index", "git diff --exit-code", (d) => edit(d, "pass.mjs", "changed"), (d) => git(d, "add", "-A"));
+  const refs = await sees("git-sees-refs", "git rev-parse --verify -q refs/heads/done", null, (d) => git(d, "branch", "done"));
+  const head = await sees("git-sees-head", "git symbolic-ref -q HEAD", null, (d) => git(d, "checkout", "-q", "--detach"));
+  expect(staged === "2 passed" && refs === "2 passed" && head === "2 failed", "with no file changed, a git check runs again once what is staged, a ref, or the branch HEAD is on has changed", `${staged} | ${refs} | ${head}`);
+  // A git check that is not one plain command never runs, so the line doesn't say it ran again.
+  const odd = project("git-check-odd", { commands: "check `node count.mjs` `git diff --exit-code | cat`" });
+  await hook(odd), git(odd, "commit", "--allow-empty", "-qm", "what git sees changes, no file does");
+  const o = await hook(odd);
+  expect(o.shown.includes("so the checks show their last run.") && o.shown.includes("didn't run (not one plain command)"), "a git check that is not one plain command is not said to run again, even once what git sees has changed", show(o));
 }
 
 async function trailingSpace() {
@@ -294,4 +417,4 @@ async function twoProjects() {
     "a rule never seen to fail comes with a plain note on when to trust its check", show(first));
 }
 
-export const gitCases = [commitAfterNow, subfolder, nestedRepos, shapes, gitsOwnView, conflict, modes, unreadable, gitFails, notesCount, changedWhileRunning, caseRename, deepRepos, linkOutside, gitCheck, trailingSpace, tooMuch, parentIgnores, literalPathspecs, twoProjects];
+export const gitCases = [commitAfterNow, subfolder, nestedRepos, shapes, gitsOwnView, conflict, modes, unreadable, gitFails, notesCount, changedWhileRunning, caseRename, deepRepos, linkOutside, gitCheck, trailingSpace, tooMuch, parentIgnores, literalPathspecs, twoProjects, ignoredInAnyCase, oddBytes, stampedOutput, caseIntoIgnored, spelledOtherwise, recordsDontCount];
