@@ -375,6 +375,7 @@ async function tidyStop() {
 
 // What a check leaves running when it ends is stopped too, even a process deaf to the first request.
 async function leftovers() {
+  if (process.platform === "win32") return; // what a check leaves running when it ends stays on Windows (the script says so)
   const dir = project("leftover", { commands: "check `node leave.mjs`" });
   const h = await hook(dir);
   const pids = ran(dir, "pids").split(" ").filter(Boolean).map(Number), left = await survivors(pids, 5000);

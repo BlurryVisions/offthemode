@@ -154,7 +154,7 @@ function fingerprint(root, outer) {
   // read below, the same way as this repository. Where git ignores letter case, a rename that changes only a letter's
   // case shows nowhere: git asked with case on lists the new name, new or ignored.
   const status = listed && git(["status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignore-submodules=all", ...paths], root, { strict: top })?.split("\0");
-  const config = status && (git(["config", "--bool", "--get-regexp", "^core\\.(filemode|ignorecase)$"], root) ?? "");
+  const config = status && (win ? "core.ignorecase true" : git(["config", "--bool", "--get-regexp", "^core\\.(filemode|ignorecase)$"], root) ?? ""); // Git for Windows always ignores case
   const cased = status && (!/^core\.ignorecase true$/m.test(config) ? [] : git(["-c", "core.ignoreCase=false", "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignored=matching", "--ignore-submodules=all", ...paths], root, { strict: top })?.split("\0"));
   if (!cased) return null;
   // Read from disk: each path git was told not to look at (assume-unchanged, a lowercase tag; skip-worktree, S), each
@@ -220,37 +220,47 @@ function fingerprint(root, outer) {
 // Each check runs in its own process group (on Windows, under its own shell), so a dev server or browser it starts goes
 // with it. A check is stopped with SIGTERM, so it can close what it opened (Playwright closes its browser and removes
 // its temp profile), then SIGKILL to what is left 2 s later; at its time, with each group a process under it made, as
-// a tool may start a browser in a group of its own. If this script is stopped or killed (Esc, the hook's timeout), the
-// check's watcher (this script run with --watch) stops it. Windows has no SIGTERM: taskkill ends the tree outright;
-// once Windows has ended the check's shell with a killed script, the watcher ends the shell's orphans, found by the
-// parent each one names. What a check leaves running when it ends is stopped too, except on Windows.
+// a tool may start a browser in a group of its own. A watcher, this script run once per stop with --watch, is told each
+// check as it runs: if this script is stopped or killed (Esc, the hook's timeout), the watcher's input ends and it stops
+// that check. Windows has no SIGTERM: taskkill ends the tree outright; when this script is killed, Windows ends the
+// check's shell with it, and the watcher ends what the shell started in the check's time, found by the parent each
+// process names. What a check leaves running when it ends is stopped too, except on Windows.
 const win = process.platform === "win32", GRACE = 2000;
 const rows = (cmd, args) => (spawnSync(cmd, args, { encoding: "utf8", windowsHide: true }).stdout ?? "").trim().split(/\r?\n/).map((l) => l.trim().split(/\s+/).map(Number));
 // Never group 0 or 1, which a misread row could give: they mean this script's own group, and every process.
 const signal = (g, sig) => { try { return g > 1 && process.kill(-g, sig); } catch { return false; } };
-const taskkill = (p) => spawnSync("taskkill", ["/pid", String(p), "/T", "/F"], { windowsHide: true }).status === 0;
-/** Stops the check whose shell is pid, and what it started; tree: also the groups made under it, and on Windows the
- * shell's orphans once it has ended. Resolves once they are gone. */
+const taskkill = (p) => spawnSync("taskkill", ["/pid", String(p), "/T", "/F"], { windowsHide: true });
+/** Stops the check whose shell is pid, and what it started; tree: also the groups made under it. Resolves once they are gone. */
 async function stop(pid, tree = true) {
-  if (win) return void (tree && !taskkill(pid) && rows("powershell", ["-NoProfile", "-Command", `(Get-CimInstance Win32_Process -Filter 'ParentProcessId=${pid}').ProcessId`]).forEach(([p]) => p && taskkill(p)));
+  if (win) return void (tree && taskkill(pid));
   const groups = new Set([pid]), under = new Set([pid]), all = tree ? rows("ps", ["-A", "-o", "pid=,ppid=,pgid="]) : [];
   for (let more = true; more; ) { more = false; for (const [p, pp, g] of all) if (under.has(pp) && !under.has(p)) under.add(p), groups.add(g), (more = true); }
   if (![...groups].filter((g) => signal(g, "SIGTERM")).length) return;
   for (const end = Date.now() + GRACE; [...groups].some((g) => signal(g, 0)) && Date.now() < end; ) await new Promise((ok) => setTimeout(ok, 100));
   for (const g of groups) signal(g, "SIGKILL");
 }
+// On Windows, once the shell has ended: what it started in the check's time (from, to), never the shell's own pid, which
+// Windows may already have given another process.
+const orphans = (pid, from, to) => rows("powershell", ["-NoProfile", "-Command", `$f = [DateTimeOffset]::FromUnixTimeMilliseconds(${from}).LocalDateTime; $t = [DateTimeOffset]::FromUnixTimeMilliseconds(${to}).LocalDateTime; (Get-CimInstance Win32_Process -Filter 'ParentProcessId=${pid}' | ? { $_.CreationDate -ge $f -and $_.CreationDate -le $t }).ProcessId`]).forEach(([p]) => p && taskkill(p));
+let watcher;
+// Tells the watcher the check running now ("pid start"), or none (0). One that can't start (at the process limit) costs
+// only the cleanup after a kill; neither it nor its input keeps this script running.
+const watch = (line) => {
+  try {
+    if (!watcher) (watcher = spawn(process.execPath, [fileURLToPath(import.meta.url), "--watch"], { detached: true, stdio: ["pipe", "ignore", "ignore"], windowsHide: true }).on("error", () => {})).unref(), watcher.stdin.on("error", () => {}).unref?.();
+    watcher.stdin.write(`${line}\n`);
+  } catch { /* no watcher */ }
+};
 function run(cmd, cwd, ms) {
   return new Promise((done) => {
     const started = Date.now(), child = spawn(cmd, { cwd, shell: true, detached: !win, windowsHide: true, stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" } });
-    // A watcher that can't start (at the process limit) costs only the cleanup after a kill.
-    const watcher = child.pid ? spawn(process.execPath, [fileURLToPath(import.meta.url), "--watch", String(process.pid), String(child.pid)], { detached: true, stdio: "ignore", windowsHide: true }).on("error", () => {}) : null;
-    watcher?.unref();
+    if (child.pid) watch(`${child.pid} ${started}`);
     let out = "", timedOut = false, ended = false;
     const take = (d) => { out += d; if (out.length > 400_000) out = out.slice(-200_000); };
     for (const s of [child.stdout, child.stderr]) s.on("data", take);
     const end = (code) => {
       if (ended) return;
-      ended = true, clearTimeout(timer), watcher?.kill();
+      ended = true, clearTimeout(timer), watch(0);
       for (const s of [child.stdout, child.stderr]) s.destroy();
       done({ code: timedOut ? null : code, out, timedOut, ms: Date.now() - started });
     };
@@ -486,8 +496,8 @@ async function readInput() {
   return got && text.trim() ? JSON.parse(text) : null;
 }
 const inFlight = (tasks) => (tasks ?? []).some((t) => /subagent|workflow|teammate|cloud/i.test(t?.type ?? "") && !/complete|done|fail|kill|stop|cancel|error/i.test(t?.status ?? ""));
-function where(root, sha = git(["rev-parse", "--short", "HEAD"], root)?.trim()) {
-  return sha ? `${git(["branch", "--show-current"], root)?.trim() || "a detached HEAD"} at ${sha}${git(["status", "--porcelain"], root)?.trim() ? " with uncommitted changes" : ""}` : root;
+function where(root, branch, sha = git(["rev-parse", "--short", "HEAD"], root)?.trim()) {
+  return sha ? `${branch || "a detached HEAD"} at ${sha}${git(["status", "--porcelain"], root)?.trim() ? " with uncommitted changes" : ""}` : root;
 }
 function nothingNamed(hook, state, files) {
   const say = `${MARK} found nothing to run: RULES.md §Commands names no check, rule check or screen check.`;
@@ -516,7 +526,7 @@ async function main() {
   const light = !hook ? "" : reply === "checkpoint" ? `At a stop for your review ${what("run again")}.`
     : fp !== null && fp === state.fingerprint ? `No file changed since ${clock(state.fullAt)} (${RECORDS.map((n) => `${n}.md`).join(", ")} and files git ignores don't count), so ${what("ran again")}.` : "";
   const results = await runAll(commands, root, budget(rules), light ? state.results ?? {} : null, fp, again);
-  const ctx = await judge(results, product, state, hook ? input.transcript_path : null, git(["branch", "--show-current"], root)?.trim());
+  const branch = git(["branch", "--show-current"], root)?.trim(), ctx = await judge(results, product, state, hook ? input.transcript_path : null, branch);
   ctx.notes.push(...told);
   // Kept only if no file changed while the checks ran (a check may have read a file before it changed), or the same
   // files changed as in the last full run: the checks' own output, such as a report stamped with the time.
@@ -526,7 +536,7 @@ async function main() {
   if (kept === null && changed.length) ctx.notes.push(`${changed.slice(0, 3).map((p) => `\`${p}\``).join(", ")}${changed.length > 3 ? ` and ${fmt(changed.length - 3)} more` : ""} changed while the checks ran, so the next claim runs them again. If a check writes it, it can go in .gitignore.`);
   keep(state, results, commands, kept, gitNow, fp);
   if (!light) state.wrote = wrote;
-  const at = where(root), why = !hook ? "" : reply === "claim" ? ", because your AI said the work is done" : ", because your AI's reply says some work is done";
+  const at = where(root, branch), why = !hook ? "" : reply === "claim" ? ", because your AI said the work is done" : ", because your AI's reply says some work is done";
   const owner = report(results, ctx, [`Off the Mode checked ${at}${why}:`, ...(light ? [light] : [])]);
   // A line said only once is marked as said once your AI could read it: in --now's output (yours too, when you run it:
   // an AI tool that runs --now in a terminal looks like you, and must not see the line forever), or in a send-back as
@@ -553,9 +563,14 @@ async function main() {
 // Run as a script, not imported (the tests import it). Compared as real paths: macOS's temp folder is a symlink.
 const isMain = () => { try { return realpathSync(process.argv[1]) === fileURLToPath(import.meta.url); } catch { return false; } };
 if (isMain() && process.argv[2] === "--watch") {
-  // A check's watcher: once this script is gone (stopped, or killed outright), it stops the check.
-  const [h, pid] = process.argv.slice(3).map(Number);
-  const t = setInterval(() => { try { process.kill(h, 0); } catch { clearInterval(t); stop(pid).then(() => process.exit()); } }, 500);
+  // A stop's watcher: told each check as it runs; once this script is gone (stopped, or killed outright), its input ends,
+  // even before the script is reaped, and it stops the check that was running.
+  let now = [0];
+  createInterface({ input: process.stdin }).on("line", (l) => (now = l.split(" ").map(Number))).on("close", async () => {
+    const [pid, from] = now;
+    if (pid) await (win ? orphans(pid, from - 2000, Date.now()) : stop(pid));
+    process.exit();
+  });
 } else if (isMain()) {
   main().catch((e) => {
     const say = `${MARK} couldn't run, so nothing was checked: ${e?.message ?? e}`;
