@@ -85,11 +85,17 @@ export function node(args, cwd, input, env = {}) {
     const file = join(BASE, `input-${++inputs}.json`);
     writeFileSync(file, input ?? "");
     const fd = openSync(file, "r");
-    const child = spawn(process.execPath, args, { cwd, env: { ...process.env, OTM_TEST_OUT: OUT, CLAUDE_PROJECT_DIR: cwd, ...env }, stdio: [fd, "pipe", "pipe"] });
+    const win = process.platform === "win32", child = spawn(process.execPath, args, { cwd, env: { ...process.env, OTM_TEST_OUT: OUT, CLAUDE_PROJECT_DIR: cwd, ...env }, stdio: [fd, "pipe", "pipe"], detached: !win });
     closeSync(fd); // the child has its own copy
     let stdout = "", stderr = "";
-    // A hook that hangs fails its test instead of hanging the check.
-    const timer = setTimeout(() => { stderr += "killed after 30 s"; child.kill("SIGKILL"); }, 30000);
+    // A hook that hangs fails its test instead of hanging the check, and on macOS and Linux what it started (a git call
+    // stuck on a pipe) goes with it. Judged a turn later, once exits that came in are read: the cases' git calls and
+    // writes here hold up this timer, and a hook that ended meanwhile isn't hung.
+    const timer = setTimeout(() => setImmediate(() => {
+      if (child.exitCode !== null || child.signalCode !== null) return;
+      stderr += "killed after 30 s";
+      try { if (win) child.kill("SIGKILL"); else process.kill(-child.pid, "SIGKILL"); } catch { /* gone */ }
+    }), 30000);
     child.stdout.on("data", (d) => { stdout += d; });
     child.stderr.on("data", (d) => { stderr += d; });
     child.on("close", (code) => { clearTimeout(timer); ok({ code, stdout, stderr }); });

@@ -3,7 +3,7 @@
 import { mkdirSync, rmSync, chmodSync, symlinkSync, copyFileSync, renameSync, existsSync, readFileSync, writeFileSync, truncateSync } from "node:fs";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
-import { BASE, project, edit, ran, hook, now, expect, git, show, ownerLine, OWNER, CHECKPOINT } from "./stop-check-harness.mjs";
+import { BASE, OUT, sleep, project, edit, ran, hook, now, expect, git, show, ownerLine, OWNER, CHECKPOINT } from "./stop-check-harness.mjs";
 
 const posix = process.platform !== "win32";
 const reused = (h) => h.shown.includes("No file changed since");
@@ -169,7 +169,8 @@ async function unreadable() {
   mkdirSync(pg), edit(db, "pgdata/PG_VERSION", "16"), chmodSync(pg, 0);
   const locked = await steps(db, [["first"], ["nothing changed"]]);
   chmodSync(pg, 0o755);
-  const hid = project("unlistable", { commands: "check `node count.mjs && node conf.mjs`" }), conf = join(hid, "conf");
+  // In a subfolder of its repository, since git names the folder from the repository's top.
+  const hid = project("unlistable", { commands: "check `node count.mjs && node conf.mjs`", inside: "unlistable-repo" }), conf = join(hid, "conf");
   edit(hid, "conf.mjs", "import { readFileSync } from 'node:fs'; process.exit(JSON.parse(readFileSync('conf/settings.json', 'utf8')).a === 1 ? 0 : 1);"), commit(hid, "conf");
   mkdirSync(conf), edit(hid, "conf/settings.json", '{"a":1}'), chmodSync(conf, 0o100);
   const listless = await steps(hid, [["first"], ["a file changed in a folder git can't list", () => edit(hid, "conf/settings.json", '{"a":2}')]]);
@@ -321,19 +322,88 @@ async function deepRepos() {
   expect(record === want, "repositories two deep: a change at any depth runs the checks, whatever their settings hide; junk in one costs one run, not every run", record);
 }
 
-// A check that writes a report stamped with the time, as coverage reports are: the same file changes in each run, the
-// checks' own output, so once two runs in a row change only it, a claim with nothing changed since reuses the run.
+// A check that writes a report stamped with the time, as coverage reports are: the same file changes in each run, which
+// can't be told from an edit made while the checks ran, so each claim runs them again and names the file, with the
+// remedy; once it is in .gitignore, a claim with nothing changed reuses the run.
 async function stampedOutput() {
   const dir = project("stamped", { commands: "check `node count.mjs && node stamp.mjs`" });
   edit(dir, "stamp.mjs", "import { mkdirSync, writeFileSync } from 'node:fs'; mkdirSync('coverage', { recursive: true }); writeFileSync('coverage/index.html', `generated at ${Date.now()} ${Math.random()}`);"), commit(dir, "a check that stamps");
-  const record = await steps(dir, [["first"], ["it stamped the report again"], ["nothing changed"], ["nothing changed"]]);
-  expect(record === "first: 1 ran, it stamped the report again: 2 ran, nothing changed: 2 same, nothing changed: 2 same",
-    "a check that stamps its report with the time: after two runs that change only that file, a claim with nothing changed reuses the run", record);
+  const one = await steps(dir, [["first"]]), again = await hook(dir), twice = ran(dir).length;
+  const rest = await steps(dir, [["coverage/ put in .gitignore", () => edit(dir, ".gitignore", "coverage/\n")], ["nothing changed"]]);
+  expect(one === "first: 1 ran" && twice === 2 && !reused(again) && again.shown.includes("`coverage/index.html` changed while the checks ran") && again.shown.includes("If a check writes it, it can go in .gitignore.") && rest === "coverage/ put in .gitignore: 3 ran, nothing changed: 3 same",
+    "a check that stamps a report git doesn't ignore: each claim runs the checks again and names the file, with the remedy; once it is ignored, a claim with nothing changed reuses the run", `${one} | ${show(again)} | ${rest}`);
   const unsure = project("while-running-checkpoint", { commands: "check `node write.mjs`" });
   edit(unsure, "write.mjs", "import { writeFileSync } from 'node:fs'; writeFileSync('made.txt', 'made at ' + Date.now());"), commit(unsure, "a check that writes");
   const first = await hook(unsure), h = await hook(unsure, { last_assistant_message: CHECKPOINT });
   expect(first.shown.includes("`made.txt` changed while the checks ran, so the next claim runs them again") && h.shown.includes("its run at") && h.shown.includes("perhaps before the latest changes") && !h.shown.includes("The checks passed"),
     "a run during which a file changed says which, and a checkpoint after it calls it perhaps from before the latest changes, not surely", show(first) + show(h));
+  edit(unsure, "app.js", "the AI's later change");
+  const later = await hook(unsure, { last_assistant_message: CHECKPOINT });
+  expect(later.shown.includes("its run at") && later.shown.includes(", before the latest changes") && !later.shown.includes("perhaps"),
+    "...and once a file changed after that run, a checkpoint says it is surely from before the latest changes", show(later));
+}
+
+// A file someone else edits while the checks run (the owner's editor, a watcher), in two full runs in a row: the check
+// read it before each edit, so it isn't the checks' own output, and the next claim runs them again. (a) the AI edits
+// the file between the two runs; (b) nothing touches it between them.
+async function editedWhileRunning() {
+  const shape = async (name, between) => {
+    const dir = project(name, { commands: "check `node slow.mjs`" }), mark = (f) => join(OUT, `${name}.${f}`);
+    // Reads value.txt, says so, and waits until it is told the file was edited (10 s at most); passes on "good...".
+    edit(dir, "slow.mjs", `import { readFileSync, writeFileSync, existsSync } from 'node:fs'; import { join } from 'node:path'; const at = (f) => join(process.env.OTM_TEST_OUT, '${name}.' + f), v = readFileSync('value.txt', 'utf8').trim(); writeFileSync(at('read'), v); for (const end = Date.now() + 10000; Date.now() < end && !existsSync(at('edited')); ) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20); process.exit(v.startsWith('good') ? 0 : 1);`);
+    edit(dir, "value.txt", "good\n"), commit(dir, "a check that reads value.txt");
+    // Claims done; once the check has read value.txt, someone else writes `during` to it. With none, nobody edits.
+    const claim = async (during) => {
+      rmSync(mark("read"), { force: true }), rmSync(mark("edited"), { force: true });
+      if (during === undefined) writeFileSync(mark("edited"), "1");
+      const h = hook(dir);
+      if (during !== undefined) {
+        for (const end = Date.now() + 20000; !existsSync(mark("read")) && Date.now() < end; ) await sleep(10);
+        edit(dir, "value.txt", during), writeFileSync(mark("edited"), "1");
+      }
+      return h;
+    };
+    await claim("good, edited\n");
+    between(dir);
+    await claim("bad\n");
+    return claim();
+  };
+  const [a, b] = await Promise.all([shape("edited-between", (dir) => edit(dir, "value.txt", "good\n")), shape("edited-only-while", (dir) => edit(dir, "other.txt", "the AI's work"))]);
+  expect(!reused(a) && a.shown.includes("failed"), "a file someone else edits while the checks run, in two runs in a row, and the AI edits between them: the next claim runs the checks again", show(a));
+  expect(!reused(b) && b.shown.includes("failed"), "a file someone else edits while the checks run, in two runs in a row, and nothing touches between them: the next claim runs the checks again", show(b));
+}
+
+// The note on a file changed while the checks ran offers .gitignore only for a check's output: never for a source file
+// a formatter in the check rewrote, nor a repository inside.
+async function changedNoteAdvice() {
+  const fmt = project("formatted", { commands: "check `node fmt.mjs`" });
+  mkdirSync(join(fmt, "src")), edit(fmt, "src/keep.js", "k\n");
+  edit(fmt, "fmt.mjs", "import { readFileSync, writeFileSync, readdirSync } from 'node:fs'; for (const f of readdirSync('src')) { const p = 'src/' + f, t = readFileSync(p, 'utf8'); if (!t.endsWith('\\n')) writeFileSync(p, t + '\\n'); }");
+  commit(fmt, "a formatter in the check"), edit(fmt, "src/new.js", "n"); // the AI's new file, unformatted, not added
+  const vendor = project("vendored", { commands: "check `node build.mjs`" }), lib = join(vendor, "vendor/lib");
+  edit(vendor, "build.mjs", "import { writeFileSync } from 'node:fs'; writeFileSync('vendor/lib/lib.o', String(Math.random()));"), commit(vendor, "a check that builds in vendor/lib");
+  mkdirSync(lib, { recursive: true }), edit(lib, "lib.c", "int x;"), git(lib, "init", "-q"), commit(lib, "a clone the project doesn't track");
+  const made = project("made-two", { commands: "check `node two.mjs`" });
+  edit(made, "two.mjs", "import { writeFileSync } from 'node:fs'; for (const n of ['a', 'b']) writeFileSync(`out-${n}.txt`, String(Math.random()));"), commit(made, "a check that makes two files");
+  const f = await hook(fmt), v = await hook(vendor), m = await hook(made);
+  expect(f.shown.includes("`src/new.js` changed while the checks ran") && !f.shown.includes(".gitignore") && v.shown.includes("`vendor/lib` changed while the checks ran") && !v.shown.includes(".gitignore")
+    && m.shown.includes("`out-a.txt`, `out-b.txt` changed while the checks ran, so the next claim runs them again. If a check writes them, they can go in .gitignore."),
+    "the note offers .gitignore only for a check's output: never for a source file a formatter rewrote or a repository inside", show(f) + show(v) + show(m));
+}
+
+// A repository copied from a disk that ignores letter case to one that tells case apart keeps core.ignorecase true, and
+// the owner's git hides a name only letter case tells from a tracked one: button.txt beside Button.txt, or a folder
+// renamed Src to src. There each is a file of its own, and each edit to it counts, unless an ignore line holds it.
+async function caseCopied() {
+  const dir = project("case-copied", { commands: "check `node count.mjs`" });
+  mkdirSync(join(dir, "Src")), edit(dir, "Src/a.txt", "a"), edit(dir, "Button.txt", "b"), edit(dir, "Notes.md", "n"), edit(dir, ".gitignore", "notes.md\n");
+  git(dir, "add", "-f", "Notes.md"), commit(dir, "names"), git(dir, "config", "core.ignorecase", "true");
+  edit(dir, "button.txt", "x"), edit(dir, "notes.md", "1");
+  if (readFileSync(join(dir, "Button.txt"), "utf8") !== "b") return; // a disk that ignores case: button.txt is Button.txt
+  const record = await steps(dir, [["first"], ["button.txt edited", () => edit(dir, "button.txt", "y")], ["notes.md, which an ignore line holds, edited", () => edit(dir, "notes.md", "2")],
+    ["Src renamed src", () => renameSync(join(dir, "Src"), join(dir, "src"))], ["src/a.txt edited", () => edit(dir, "src/a.txt", "changed")], ["untouched"]]);
+  expect(record === "first: 1 ran, button.txt edited: 2 ran, notes.md, which an ignore line holds, edited: 2 same, Src renamed src: 3 ran, src/a.txt edited: 4 ran, untouched: 4 same",
+    "with core.ignorecase true on a disk that tells case apart, a name only letter case tells from a tracked one is read, unless an ignore line holds it: each edit runs the checks", record);
 }
 
 async function linkOutside() {
@@ -360,12 +430,24 @@ async function gitCheck() {
     "a check that runs git (git diff --exit-code) fails on --now, then after a commit runs again and passes, with no file changed", show(h));
   const same = await hook(dir);
   expect(ran(dir) === "xx" && same.shown.includes("so the checks show their last run.") && same.shown.includes("its run at") && !same.shown.includes("before the latest changes"), "...and with nothing git sees changed since, it isn't run again", show(same));
-  // What a git check sees besides the files counts too: what is staged, every ref, and whether HEAD is on a branch.
-  const sees = async (name, cmd, before, change) => { const d = project(name, { commands: `check \`node count.mjs && ${cmd}\`` }); before?.(d); await hook(d); change(d); const s = await hook(d); return `${ran(d).length} ${s.shown.includes("passed (") ? "passed" : "failed"}`; };
+  // What a git check sees counts: the files (at a stop for review), what is staged, every ref, and whether HEAD is on a branch.
+  const sees = async (name, cmd, before, change, input = {}) => { const d = project(name, { commands: `check \`node count.mjs && ${cmd}\`` }); before?.(d); await hook(d); change(d); const s = await hook(d, input); return `${ran(d).length} ${s.shown.includes("passed (") ? "passed" : "failed"}`; };
+  const files = await sees("git-sees-files", "git diff --exit-code", null, (d) => edit(d, "pass.mjs", "changed"), { last_assistant_message: CHECKPOINT });
   const staged = await sees("git-sees-index", "git diff --exit-code", (d) => edit(d, "pass.mjs", "changed"), (d) => git(d, "add", "-A"));
   const refs = await sees("git-sees-refs", "git rev-parse --verify -q refs/heads/done", null, (d) => git(d, "branch", "done"));
   const head = await sees("git-sees-head", "git symbolic-ref -q HEAD", null, (d) => git(d, "checkout", "-q", "--detach"));
-  expect(staged === "2 passed" && refs === "2 passed" && head === "2 failed", "with no file changed, a git check runs again once what is staged, a ref, or the branch HEAD is on has changed", `${staged} | ${refs} | ${head}`);
+  expect(files === "2 failed" && staged === "2 passed" && refs === "2 passed" && head === "2 failed", "a git check runs again at a stop for review once a file has changed, nothing staged, and with no file changed once what is staged, a ref, or the branch HEAD is on has changed", `${files} | ${staged} | ${refs} | ${head}`);
+  // Off the Mode's records aren't a change for the other checks, but a git check sees them: edited, or staged.
+  const tracked = (d) => { edit(d, ".offthemode/STATE.md", "where things stand\n"); edit(d, ".offthemode/DECISIONS.md", "### D-001\n"); commit(d, "records"); };
+  const record = await sees("git-sees-record", "git diff --exit-code", tracked, (d) => edit(d, ".offthemode/STATE.md", "saved at a reply's end\n"));
+  const recordStaged = await sees("git-sees-record-staged", "git diff --exit-code", (d) => { tracked(d); edit(d, ".offthemode/DECISIONS.md", "### D-002\n"); }, (d) => git(d, "add", "-A"));
+  expect(record === "2 failed" && recordStaged === "2 passed", "a git check runs again once a record it sees has changed, on disk or staged, though no file counts as changed", `${record} | ${recordStaged}`);
+  // What git sees in a repository inside counts too: its HEAD, which git diff compares with the commit the project
+  // records, and its index, which a check run there reads; neither changes a file.
+  const lib = (d) => { const l = join(d, "vendor/lib"); mkdirSync(l, { recursive: true }), edit(l, "a.txt", "a"), git(l, "init", "-q"), commit(l, "a"), commit(d, "the library as a submodule"); return l; };
+  const innerHead = await sees("git-sees-inner-head", "git diff --exit-code", lib, (d) => git(join(d, "vendor/lib"), "commit", "--amend", "-qm", "a, reworded"));
+  const innerIndex = await sees("git-sees-inner-index", "git -C vendor/lib diff --exit-code", (d) => edit(lib(d), "a.txt", "b"), (d) => git(join(d, "vendor/lib"), "add", "-A"));
+  expect(innerHead === "2 failed" && innerIndex === "2 passed", "with no file changed, a git check runs again once a repository inside has a new HEAD (an amended message) or a new index (staged there)", `${innerHead} | ${innerIndex}`);
   // A git check that is not one plain command never runs, so the line doesn't say it ran again.
   const odd = project("git-check-odd", { commands: "check `node count.mjs` `git diff --exit-code | cat`" });
   await hook(odd), git(odd, "commit", "--allow-empty", "-qm", "what git sees changes, no file does");
@@ -418,4 +500,4 @@ async function twoProjects() {
     "a rule never seen to fail comes with a plain note on when to trust its check", show(first));
 }
 
-export const gitCases = [commitAfterNow, subfolder, nestedRepos, shapes, gitsOwnView, conflict, modes, unreadable, gitFails, notesCount, changedWhileRunning, caseRename, deepRepos, linkOutside, gitCheck, trailingSpace, tooMuch, parentIgnores, literalPathspecs, twoProjects, ignoredInAnyCase, oddBytes, stampedOutput, caseIntoIgnored, spelledOtherwise, recordsDontCount];
+export const gitCases = [commitAfterNow, subfolder, nestedRepos, shapes, gitsOwnView, conflict, modes, unreadable, gitFails, notesCount, changedWhileRunning, caseRename, deepRepos, linkOutside, gitCheck, trailingSpace, tooMuch, parentIgnores, literalPathspecs, twoProjects, ignoredInAnyCase, oddBytes, stampedOutput, caseIntoIgnored, spelledOtherwise, recordsDontCount, editedWhileRunning, changedNoteAdvice, caseCopied];

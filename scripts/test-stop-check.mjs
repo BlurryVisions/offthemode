@@ -1,10 +1,10 @@
 // Tests the stop check (content/templates/stop-check.mjs) the way Claude Code runs it: a Stop hook input on stdin, in
 // throwaway git projects whose RULES.md names small check scripts (scripts/stop-check-harness.mjs). What counts as a
 // change is in stop-check-git-cases.mjs. Prints only what failed, then one summary line.
-import { writeFileSync, readFileSync, existsSync, readdirSync, statSync, rmSync, realpathSync, mkdirSync, utimesSync, openSync, closeSync, chmodSync } from "node:fs";
+import { writeFileSync, readFileSync, existsSync, readdirSync, statSync, rmSync, realpathSync, mkdirSync, utimesSync, openSync, closeSync, chmodSync, renameSync } from "node:fs";
 import { join, relative } from "node:path";
 import { tmpdir } from "node:os";
-import { spawn } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { ROOT, SCRIPT, SOURCE, BASE, OUT, sleep, survivors, expect, DONE, CHECKPOINT, PLAN, OWNER, REWORDED, git, project, ownerLine, edit, ran, stateFile, node, hook, now, show, finish } from "./stop-check-harness.mjs";
@@ -37,10 +37,14 @@ function parts() {
   // Pushes, deletes and deploys never run by themselves, however they are spelled: git's options before its command,
   // another letter case (macOS and Windows find the program anyway), Windows names, a path, or a command that runs one.
   const never = ["git -C . push", "git --no-pager push origin main", "git -c a=b push", "Git push", "GIT PUSH", "git.exe push", "/usr/bin/git push", "Del /q x", "DEL x", "RMDIR /s /q x", "rd /s /q build", "erase /q x",
-    "cmd /c rd /s /q x", "powershell Remove-Item -Recurse -Force build", "env rm -rf dist", "/bin/rm -rf x", "npx rimraf dist", "npx vercel deploy", "npm.cmd publish", "node a.mjs && git push", "node a.mjs %PATH%"];
+    "cmd /c rd /s /q x", "powershell Remove-Item -Recurse -Force build", "env rm -rf dist", "/bin/rm -rf x", "npx rimraf dist", "npx vercel deploy", "npm.cmd publish", "node a.mjs && git push", "node a.mjs %PATH%",
+    "git -C . clean -fdx", "git reset --hard", "npx netlify deploy", "rm.exe -rf x", "rimraf.cmd dist"];
   const fine = ["npm test", "npx tsc --noEmit", "git diff --exit-code", "git -C sub status", "node scripts/rm-cache.mjs", "node scripts/check-push.mjs", "npx playwright test --grep push", "node a.mjs && git -c core.quotePath=false diff --exit-code"];
   const run = (cmds) => parseCommands(`## Commands\ncheck ${cmds.map((c) => `\`${c}\``).join(" ")}\n`).filter((c) => c.plain).map((c) => c.cmd);
   expect(run(never).length === 0 && run(fine).length === fine.length, "parseCommands · a push, delete or deploy never runs, however it is spelled, nor a %NAME% cmd.exe would expand; ordinary checks still run", `ran: ${run(never)} · didn't run: ${fine.filter((c) => !run(fine).includes(c))}`);
+  const spelled = ["del-cli dist", "npx vercel@latest --prod", "npx netlify-cli deploy --prod", "npx ntl deploy", "npx rimraf@5 dist", "pnpm -r publish", "npm -w app publish", "bun publish"];
+  const scripts = ["npm -s run publish-check", "node scripts/check.mjs images/logo@2x.png"];
+  expect(run(spelled).length === 0 && run(scripts).length === scripts.length, "parseCommands · a deploy or delete run by version or by its -cli name, or a publish with options before it, never runs; a script named publish-check still runs", `ran: ${run(spelled)} · didn't run: ${scripts.filter((c) => !run(scripts).includes(c))}`);
 
   // The templates as setup writes them: unfilled placeholders are never run or taken for the owner's words.
   const tpl = (name) => readFileSync(join(ROOT, "content/templates", name), "utf8");
@@ -128,9 +132,10 @@ async function otherProject() {
 }
 
 // On Windows both signals end the hook outright, and Windows ends the check's shell with it but not what runs under it.
+// The watcher is told each check: the second one, as a screen check usually is, goes too.
 async function cancelled() {
-  await Promise.all(["SIGTERM", "SIGKILL"].map(async (sig) => {
-    const dir = project(`cancel-${sig}`, { commands: "check `node hang.mjs`" });
+  await Promise.all([["SIGTERM", "check `node hang.mjs`"], ["SIGKILL", "check `node pass.mjs` · screen checks `node hang.mjs`"]].map(async ([sig, commands]) => {
+    const dir = project(`cancel-${sig}`, { commands });
     const input = join(BASE, `cancel-${sig}.json`); // a file, so the input ends at once (see node() in the harness)
     writeFileSync(input, JSON.stringify({ hook_event_name: "Stop", session_id: "s1", cwd: dir, last_assistant_message: DONE }));
     const fd = openSync(input, "r");
@@ -139,7 +144,7 @@ async function cancelled() {
     for (let i = 0; i < 200 && ran(dir, "pids").split(" ").filter(Boolean).length < 3; i++) await sleep(50);
     child.kill(sig);
     const pids = ran(dir, "pids").split(" ").filter(Boolean).map(Number), left = await survivors(pids);
-    expect(pids.length === 3 && !left.length, `a hook stopped with ${sig} mid-check (Esc, or the hook's timeout) leaves nothing of the check running, even in a group of its own`, `pids ${pids} alive ${left}`);
+    expect(pids.length === 3 && !left.length, `a hook stopped with ${sig} mid-check (Esc, or the hook's timeout) leaves nothing of the check running, even in a group of its own${commands.includes("·") ? ", when it is the second check" : ""}`, `pids ${pids} alive ${left}`);
   }));
 }
 
@@ -274,12 +279,13 @@ async function screensAndShapes() {
 
 async function hangingCheck() {
   const dir = project("hanging", { commands: "check `node hang.mjs` · rule checks `node rule.mjs`", budgets: '"stop_check_seconds": 3' }); // time for node to start the check on a busy machine
-  const h = await hook(dir);
+  const started = Date.now(), h = await hook(dir);
   const pids = ran(dir, "pids").split(" ").filter(Boolean).map(Number), left = await survivors(pids);
-  // Timed on the check's own run: the whole stop also starts node and git several times, slow on a busy Windows runner.
-  const kept = JSON.parse(readFileSync(stateFile(dir), "utf8")).results?.["node hang.mjs"];
-  expect(kept?.timedOut && kept.ms < 6000 && h.ms < 25000 && h.back.includes("`node hang.mjs` didn't finish in 3 s, so it judged nothing") && h.back.includes("`node rule.mjs` didn't run: the checks used all their time"),
-    `a hanging check is stopped at stop_check_seconds and reported as judging nothing (its run ${kept?.ms} ms, the whole stop ${h.ms} ms)`, show(h));
+  // Timed on the check's own run, and the stop by its last save: this runner's own git calls and writes hold up its
+  // timers, and the whole stop also starts node and git several times, slow on a busy Windows runner.
+  const kept = JSON.parse(readFileSync(stateFile(dir), "utf8")).results?.["node hang.mjs"], stop = Math.round(statSync(stateFile(dir)).mtimeMs - started);
+  expect(kept?.timedOut && kept.ms < 6000 && stop < 25000 && !h.stderr.includes("killed") && h.back.includes("`node hang.mjs` didn't finish in 3 s, so it judged nothing") && h.back.includes("`node rule.mjs` didn't run: the checks used all their time"),
+    `a hanging check is stopped at stop_check_seconds and reported as judging nothing (its run ${kept?.ms} ms, the whole stop ${stop} ms)`, show(h));
   expect(pids.length === 3 && !left.length, "the hung check and what it started, even in a group of its own, are all gone afterwards", `pids ${pids} alive ${left}`);
   edit(dir, "a.txt", "a change after the hang");
   const later = await hook(dir, { last_assistant_message: CHECKPOINT });
@@ -324,7 +330,7 @@ async function sendBackOnce() {
 // Where .git/ can't be written (an AI tool's sandbox), the result still shows, and the state goes to the temp folder.
 async function readOnlyGit() {
   if (process.platform === "win32" || process.getuid?.() === 0) return; // Windows and root write where a mode says no
-  const dir = project("read-only-git", { commands: "check `node fail.mjs`" }), kept = join(tmpdir(), `offthemode-stop-${createHash("sha256").update(realpathSync(dir)).digest("hex").slice(0, 12)}.json`);
+  const dir = project("read-only-git", { commands: "check `node fail.mjs`" }), kept = tempState(dir);
   const shut = join(BASE, "read-only-tmp");
   mkdirSync(shut), chmodSync(join(dir, ".git"), 0o555), chmodSync(shut, 0o555);
   try {
@@ -373,13 +379,13 @@ async function tidyStop() {
   expect(ran(dir, "tidy") === "x" && h.back.includes("`node tidy.mjs` didn't finish in 3 s"), "a check cut off at its time is asked to stop first, so it can tidy up", show(h));
 }
 
-// What a check leaves running when it ends is stopped too, even a process deaf to the first request.
+// What a check leaves running in its group when it ends is stopped too, even a process deaf to the first request.
 async function leftovers() {
   if (process.platform === "win32") return; // what a check leaves running when it ends stays on Windows (the script says so)
   const dir = project("leftover", { commands: "check `node leave.mjs`" });
   const h = await hook(dir);
   const pids = ran(dir, "pids").split(" ").filter(Boolean).map(Number), left = await survivors(pids, 5000);
-  expect(pids.length === 2 && !left.length && h.shown.includes("The checks passed"), "what a check leaves running when it ends is stopped, even a process that ignores SIGTERM", `pids ${pids} alive ${left} · ${show(h)}`);
+  expect(pids.length === 2 && !left.length && h.shown.includes("The checks passed"), "what a check leaves running in its group when it ends is stopped, even a process that ignores SIGTERM", `pids ${pids} alive ${left} · ${show(h)}`);
 }
 
 // An owner's rule the check can't find in this folder's transcripts (said in another tool, or in a session Claude Code
@@ -454,7 +460,8 @@ async function branchSwitch() {
 
 /** Env that loads a module into the hook before the script: it breaks one thing the way a rare system does. */
 const preload = (name, code) => { const f = join(BASE, name); writeFileSync(f, code); return { NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import=${pathToFileURL(f).href}`.trim() }; };
-const tempState = (dir) => join(tmpdir(), `offthemode-stop-${createHash("sha256").update(realpathSync(dir)).digest("hex").slice(0, 12)}.json`);
+// In git, named for the repository too: when its git folder was made.
+const tempState = (dir, g = statSync(join(dir, ".git"), { throwIfNoEntry: false })) => join(tmpdir(), `offthemode-stop-${createHash("sha256").update(g ? `${realpathSync(dir)}\n${g.birthtimeMs}` : realpathSync(dir)).digest("hex").slice(0, 12)}.json`);
 
 // The state file holds the checks' last lines, and outside git it sits in the temp folder, which on Linux is /tmp,
 // shared by every user: only its owner can read it, and a file under its name another user left there isn't trusted.
@@ -475,8 +482,67 @@ async function saveFails() {
   mkdirSync(stateFile(dir)); // a folder where the state file goes, so renaming it into place fails
   try {
     const first = await hook(dir), second = await hook(dir);
-    expect(ran(dir) === "x" && first.shown.includes("The checks passed") && second.shown.includes("No file changed since"), "a save to .git/ that fails goes to the temp folder, and the next stop reads it there", show(first) + show(second));
+    const left = readdirSync(join(dir, ".git")).filter((f) => f.endsWith(".tmp"));
+    expect(ran(dir) === "x" && first.shown.includes("The checks passed") && second.shown.includes("No file changed since") && !left.length, "a save to .git/ that fails goes to the temp folder, leaving no temp file behind, and the next stop reads it there", `${show(first)}${show(second)} left ${left}`);
   } finally { rmSync(kept, { force: true }); }
+}
+
+// A project first checked outside git keeps its state in .git/ once git init makes one: the system cleans its temp
+// folder (Linux's /tmp at a reboot, macOS's after days unused).
+async function stateAfterInit() {
+  const dir = project("init-later", { commands: "check `node count.mjs`", noGit: true }), kept = tempState(dir);
+  try {
+    await hook(dir);
+    git(dir, "init", "-q"), git(dir, "add", "-A"), git(dir, "commit", "-qm", "start");
+    const h = await hook(dir);
+    rmSync(kept, { force: true }); // the system cleans its temp folder
+    const again = await hook(dir);
+    expect(existsSync(stateFile(dir)) && h.shown.includes("The checks passed") && again.shown.includes("No file changed since"),
+      "after git init the state goes into .git/, so it outlives the temp folder", show(h) + show(again));
+  } finally { rmSync(kept, { force: true }); rmSync(tempState(dir), { force: true }); }
+}
+
+// An --now where .git/ can't be written (an AI tool's sandbox) reads what .git/ holds, and the next stop, where it can,
+// reads what that --now kept: a rule once seen to fail, and an owner's rule dropped, aren't forgotten.
+async function sandboxedNow() {
+  if (process.platform === "win32" || process.getuid?.() === 0) return; // Windows and root write where a mode says no
+  const commands = "check `node pass.mjs` · rule checks `node rule.mjs`", rule = (broke) => JSON.stringify({ quote: OWNER, broke, judged: 5, of: 5, unit: "moves" });
+  const a = project("sandbox-failed", { commands, product: ownerLine(OWNER) }), b = project("sandbox-dropped", { commands, product: ownerLine(OWNER) });
+  const sandboxed = async (dir) => { chmodSync(join(dir, ".git"), 0o555); try { return await now(dir); } finally { chmodSync(join(dir, ".git"), 0o755); } };
+  try {
+    edit(a, "rule.json", rule(2));
+    const broke = await hook(a);
+    edit(a, "rule.json", rule(0));
+    const n = await sandboxed(a), h = await hook(a);
+    expect(broke.back.includes("2 moves break your rule") && !h.shown.includes("has never been seen to fail") && h.shown.includes("Off the Mode checked"),
+      "after an --now where .git/ can't be written, the next stop still knows the rule was seen to fail", show(h));
+    expect(n.stdout.includes("Off the Mode checked") && !n.stdout.includes("has never been seen to fail"), "...and that --now knows it too, from what .git/ holds", n.stdout.slice(0, 600));
+    await hook(b);
+    edit(b, ".offthemode/PRODUCT.md", "PRODUCT · sandbox-dropped\n\n## Refusals and tie-breakers\n- Owner's rules: none yet\n");
+    edit(b, ".offthemode/RULES.md", "RULES · sandbox-dropped\n\n## Budgets\n```json\n{  }\n```\n\n## Commands (fill once the toolchain exists)\ncheck `node pass.mjs`\n\n## Done means verified\nChecks pass.\n");
+    const m = await sandboxed(b), g = await hook(b), told = [m.stdout, g.back].filter((s) => s.includes(`Your rule "${OWNER}" (first seen`)).length;
+    expect(told === 1, `an owner's rule dropped, then an --now where .git/ can't be written: the rule gone is told once, in that --now or at the next stop (told ${told} times)`, m.stdout.slice(0, 400) + show(g));
+  } finally { for (const d of [a, b]) { chmodSync(join(d, ".git"), 0o755); rmSync(tempState(d), { force: true }); } }
+}
+
+// A state another project left in the temp folder under the same path isn't this repository's: a project outside git
+// deleted and a new repository made there, or one moved away and a repository made elsewhere moved there.
+async function spareOfAnother() {
+  const rule = { commands: "check `node pass.mjs` · rule checks `node rule.mjs`", product: ownerLine(OWNER), noGit: true };
+  const made = project("spare-made", rule), moved = project("spare-moved", rule), kept = [tempState(made), tempState(moved)];
+  const other = project("spare-other", { commands: "check `node pass.mjs`" });
+  try {
+    await hook(other); // its own state, in its own .git/, at its own path
+    await hook(made), await hook(moved);
+    // Windows keeps a folder busy while a process's current folder is in it, as a stop's watcher is for a moment after.
+    const busy = async (f) => { for (let i = 0; ; i++) try { return f(); } catch (e) { if (i > 50) throw e; await sleep(100); } };
+    rmSync(made, { recursive: true, force: true, maxRetries: 50, retryDelay: 100 });
+    const fresh = project("spare-made", { commands: "check `node pass.mjs`" });
+    await busy(() => renameSync(moved, join(BASE, "spare-moved-away"))), await busy(() => renameSync(other, moved));
+    const a = await hook(fresh), b = await hook(moved);
+    expect(a.shown.includes("The checks passed") && !a.back && existsSync(stateFile(fresh)), "a new repository where a project outside git left its state in the temp folder starts fresh, in .git/", show(a));
+    expect(b.shown.includes("The checks passed") && !b.back, "...and a repository moved to such a path reads its own state, not the temp folder's", show(b));
+  } finally { for (const k of kept) rmSync(k, { force: true }); }
 }
 
 // Node on musl libc (Alpine) without /proc mounted can't run realpath.native: plain realpath does instead.
@@ -499,6 +565,196 @@ async function watcherFails() {
   expect(ran(dir) === "x" && h.shown.includes("The checks passed"), "a watcher that can't start doesn't stop the check or its report", show(h) + h.stderr.slice(0, 300));
 }
 
+// A global core.fileMode=false or core.ignorecase=true that the repository's own setting overrules, as git init's does:
+// git's value is the repository's, so no file's mode is read and no second git status runs.
+async function globalOverruled() {
+  if (process.platform === "win32") return; // Git for Windows: modes from the index, and letter case always ignored
+  const dir = project("global-overruled", { commands: "check `node count.mjs`" });
+  git(dir, "config", "core.fileMode", "true"), git(dir, "config", "core.ignorecase", "false");
+  const out = join(BASE, "global-overruled.calls"), empty = join(BASE, "empty.gitconfig"), global = join(BASE, "global.gitconfig");
+  writeFileSync(empty, ""), writeFileSync(global, "[core]\n\tfileMode = false\n\tignorecase = true\n");
+  const counted = preload("count-calls.mjs", `import fs from "node:fs"; import cp from "node:child_process"; import { syncBuiltinESMExports } from "node:module"; if (/stop-check\\.mjs$/.test(process.argv[1] ?? "") && !process.argv.includes("--watch")) { const n = { lstat: 0, status: 0 }, l = fs.lstatSync, s = cp.spawnSync; fs.lstatSync = function (...a) { n.lstat++; return l.apply(this, a); }; cp.spawnSync = function (cmd, args, ...r) { if (cmd === "git" && args.includes("status")) n.status++; return s.call(this, cmd, args, ...r); }; syncBuiltinESMExports(); process.on("exit", () => fs.appendFileSync(${JSON.stringify(out)}, JSON.stringify(n) + "\\n")); }`);
+  await hook(dir, {}, { GIT_CONFIG_GLOBAL: empty });
+  const plain = await hook(dir, {}, { ...counted, GIT_CONFIG_GLOBAL: empty }), over = await hook(dir, {}, { ...counted, GIT_CONFIG_GLOBAL: global });
+  const [a, b] = existsSync(out) ? readFileSync(out, "utf8").trim().split("\n") : [];
+  expect(a && a === b && plain.shown.includes("No file changed since") && over.shown.includes("No file changed since"),
+    "a global core.fileMode=false or core.ignorecase=true that the repository's own setting overrules reads no file's mode and runs no second git status", `empty global: ${a} · overruled global: ${b}`);
+}
+
+const here = "import { appendFileSync, readFileSync } from 'node:fs'; import { basename, join } from 'node:path'; const tag = join(process.env.OTM_TEST_OUT, basename(process.cwd()));";
+// A chained check cut off at its time is asked to stop once: its shell dies at the first request, and that is no reason
+// to ask again (Vite listens with process.once, so a second request ends it mid-close). First in the chain, so its shell
+// waits for it on Linux too (dash runs a chain's last command in its place).
+async function chainAskedOnce() {
+  if (process.platform === "win32") return; // Windows ends a process outright: it has no SIGTERM
+  const dir = project("chain-tidy", { commands: "check `node slow-tidy.mjs && node pass.mjs`", budgets: '"stop_check_seconds": 3' });
+  edit(dir, "slow-tidy.mjs", `${here} process.on('SIGTERM', () => { appendFileSync(tag + '.asked', 'x'); setTimeout(() => { appendFileSync(tag + '.tidy', 'x'); process.exit(0); }, 300); }); setInterval(() => {}, 1000);`);
+  const h = await hook(dir);
+  expect(ran(dir, "asked") === "x" && ran(dir, "tidy") === "x" && h.back.includes("`node slow-tidy.mjs && node pass.mjs` didn't finish in 3 s"),
+    "a chained check cut off at its time is asked to stop once, so it can tidy up", `asked ${ran(dir, "asked").length} times, tidied ${ran(dir, "tidy").length} · ${show(h)}`);
+}
+
+// A check that passes shortly before its time and leaves a process holding its output: the leftover is asked to stop
+// once, at the check's end, and the check passed; its time running out while the leftover tidies changes neither.
+async function endsNearTime() {
+  if (process.platform === "win32") return; // what a check leaves running when it ends stays on Windows (the script says so)
+  const dir = project("ends-near-time", { commands: "check `node leave-late.mjs`", budgets: '"stop_check_seconds": 4' });
+  edit(dir, "leave-late.mjs", `${here} import { spawn } from 'node:child_process';
+const kid = "process.on('SIGTERM', () => require('fs').appendFileSync(process.argv[1], 'x')); require('fs').appendFileSync(process.argv[1], 'L'); setInterval(() => {}, 1000);";
+const asked = () => { try { return readFileSync(tag + '.left', 'utf8'); } catch { return ''; } };
+setTimeout(() => { spawn(process.execPath, ['-e', kid, tag + '.left'], { stdio: 'inherit' }); const wait = () => (asked().includes('L') ? (console.log('all good'), process.exit(0)) : setTimeout(wait, 20)); wait(); }, 2200);`);
+  const h = await hook(dir);
+  expect(ran(dir, "left") === "Lx" && h.shown.includes("`node leave-late.mjs`: passed") && !h.back,
+    "a check that passes just before its time is reported as passed, and what it left is asked to stop once", `left ${JSON.stringify(ran(dir, "left"))} · ${show(h)}`);
+}
+
+// The hook killed in the 2 s between a check's SIGTERM and its SIGKILL (Esc, Claude Code quitting, Ctrl+C on --now):
+// what the check left or started, deaf to SIGTERM, is still ended. The deaf process itself kills the hook 300 ms after
+// its first SIGTERM, so the kill lands inside those 2 s however busy this test process is.
+const deafCheck = (own, end) => `const { spawn } = require('node:child_process'), fs = require('node:fs'), { join, basename } = require('node:path');
+const tag = join(process.env.OTM_TEST_OUT, basename(process.cwd()));
+const deaf = "const fs = require('fs'), [term, pids, hook] = process.argv.slice(1); let first = true; process.on('SIGTERM', () => { if (!first) return; first = false; fs.appendFileSync(term, 'x'); setTimeout(() => { try { process.kill(Number(fs.readFileSync(hook, 'utf8')), 'SIGKILL'); } catch {} }, 300); }); fs.appendFileSync(pids, process.pid + ' '); setInterval(() => {}, 1000);";
+spawn(process.execPath, ['-e', deaf, tag + '.term', tag + '.pids', tag + '.hook'], { stdio: 'ignore', detached: ${own} }).unref();
+fs.appendFileSync(tag + '.pids', process.pid + ' ');
+const listening = () => { try { return fs.readFileSync(tag + '.pids', 'utf8').split(' ').filter(Boolean).length === 2; } catch { return false; } };
+const wait = () => (listening() ? (${end})() : setTimeout(wait, 20)); wait();`;
+async function killedInGrace(name, budgets, own, end, what) {
+  if (process.platform === "win32") return; // Windows has no SIGTERM: taskkill ends the tree outright
+  const dir = project(name, { commands: "check `node deaf.cjs`", budgets });
+  edit(dir, "deaf.cjs", deafCheck(own, end));
+  const input = join(BASE, `${name}.json`);
+  writeFileSync(input, JSON.stringify({ hook_event_name: "Stop", session_id: "s1", cwd: dir, last_assistant_message: DONE }));
+  const fd = openSync(input, "r");
+  const child = spawn(process.execPath, [join(dir, ".offthemode/stop-check.mjs")], { cwd: dir, env: { ...process.env, OTM_TEST_OUT: OUT, CLAUDE_PROJECT_DIR: dir }, stdio: [fd, "ignore", "ignore"] });
+  closeSync(fd);
+  writeFileSync(join(OUT, `${name}.hook`), String(child.pid));
+  const ended = await new Promise((ok) => child.on("exit", (code, sig) => ok(sig ?? code)));
+  const pids = ran(dir, "pids").split(" ").filter(Boolean).map(Number), left = await survivors(pids);
+  expect(ran(dir, "term") && pids.length === 2 && !left.length, what, `hook ended by ${ended} · pids ${pids} alive ${left}`);
+}
+const cancelAfterEnd = () => killedInGrace("killed-after-end", "", false, "() => process.exit(0)",
+  "a hook killed in the 2 s after a check ended still ends what the check left, deaf to SIGTERM");
+const cancelAfterTimeout = () => killedInGrace("killed-after-timeout", '"stop_check_seconds": 3', true, "() => setInterval(() => {}, 1000)",
+  "a hook killed in the 2 s after a check was cut off at its time still ends what it started in a group of its own, deaf to SIGTERM");
+
+// Without a ps that lists every process (none, as in Debian's slim image, or one that refuses -A), what a hung check
+// started in a group of its own is still found and ended, at its time and after a kill.
+async function noPs() {
+  if (process.platform === "win32") return; // taskkill ends the tree
+  const bin = join(BASE, "no-ps");
+  mkdirSync(bin);
+  writeFileSync(join(bin, "ps"), "#!/bin/sh\necho \"ps: invalid option -- 'A'\" >&2\nexit 1\n");
+  chmodSync(join(bin, "ps"), 0o755);
+  const env = { PATH: `${bin}:${process.env.PATH}` };
+  const dir = project("no-ps", { commands: "check `node hang.mjs`", budgets: '"stop_check_seconds": 3' });
+  const h = await hook(dir, {}, env);
+  const pids = ran(dir, "pids").split(" ").filter(Boolean).map(Number), left = await survivors(pids);
+  expect(pids.length === 3 && !left.length && h.back.includes("`node hang.mjs` didn't finish in 3 s"), "without a ps that lists every process, a hung check and what it started, even in a group of its own, are all gone afterwards", `pids ${pids} alive ${left}`);
+  const cut = project("no-ps-cancel", { commands: "check `node hang.mjs`" }), input = join(BASE, "no-ps-cancel.json");
+  writeFileSync(input, JSON.stringify({ hook_event_name: "Stop", session_id: "s1", cwd: cut, last_assistant_message: DONE }));
+  const fd = openSync(input, "r");
+  const child = spawn(process.execPath, [join(cut, ".offthemode/stop-check.mjs")], { cwd: cut, env: { ...process.env, ...env, OTM_TEST_OUT: OUT, CLAUDE_PROJECT_DIR: cut }, stdio: [fd, "ignore", "ignore"] });
+  closeSync(fd);
+  for (let i = 0; i < 200 && ran(cut, "pids").split(" ").filter(Boolean).length < 3; i++) await sleep(50);
+  child.kill("SIGKILL");
+  const cutPids = ran(cut, "pids").split(" ").filter(Boolean).map(Number), cutLeft = await survivors(cutPids);
+  expect(cutPids.length === 3 && !cutLeft.length, "without a ps that lists every process, a hook killed mid-check leaves nothing of the check running, even in a group of its own", `pids ${cutPids} alive ${cutLeft}`);
+}
+
+const said = (name, content = OWNER) => {
+  const t = join(BASE, name), transcript_path = join(t, "session.jsonl");
+  mkdirSync(t, { recursive: true });
+  writeFileSync(transcript_path, JSON.stringify({ type: "user", message: { role: "user", content } }) + "\n");
+  return transcript_path;
+};
+const dropCheck = (dir, cmd) => edit(dir, ".offthemode/RULES.md", readFileSync(join(dir, ".offthemode/RULES.md"), "utf8").replace(` · rule checks \`${cmd}\``, ""));
+const branchOf = (dir) => execFileSync("git", ["branch", "--show-current"], { cwd: dir, encoding: "utf8" }).trim();
+
+// The owner's rule removed on a branch, which the AI is told once; the branch merged into the first, a branch made from
+// it, renamed, a detached HEAD: none removes anything, so the removal isn't told or sent back again. The words back,
+// then removed in the same turn as a new branch is made: a new removal, told.
+async function goneOnce() {
+  const transcript_path = said("transcripts-gone-once");
+  const dir = project("gone-once", { commands: "check `node pass.mjs` · rule checks `node rule.mjs`", product: ownerLine(OWNER) }), main = branchOf(dir);
+  const rules = readFileSync(join(dir, ".offthemode/RULES.md"), "utf8"), product = readFileSync(join(dir, ".offthemode/PRODUCT.md"), "utf8");
+  const drop = () => { edit(dir, ".offthemode/PRODUCT.md", "PRODUCT · gone-once\n\n## Refusals and tie-breakers\n- Owner's rules: none yet\n"); dropCheck(dir, "node rule.mjs"); };
+  const claim = () => hook(dir, { transcript_path });
+  await claim();
+  git(dir, "checkout", "-q", "-b", "drop"), drop();
+  const told = await claim();
+  git(dir, "add", "-A"), git(dir, "commit", "-qm", "drop the rule"), git(dir, "checkout", "-q", main), git(dir, "merge", "-q", "--ff-only", "drop");
+  const visits = [await claim()];
+  git(dir, "checkout", "-q", "-b", "next"), visits.push(await claim());
+  git(dir, "branch", "-m", "next", "renamed"), visits.push(await claim());
+  git(dir, "checkout", "-q", "--detach"), visits.push(await claim());
+  const again = visits.filter((h) => h.back || h.shown.includes("is no longer in PRODUCT.md")).length;
+  expect(told.back.includes(`Your rule "${OWNER}" (first seen`) && again === 0,
+    `a removal told once isn't told again on the first branch once merged, a branch made from it, renamed, or a detached HEAD (told again ${again} of 4)`, visits.map(show).join("\n"));
+  git(dir, "checkout", "-q", main), edit(dir, ".offthemode/RULES.md", rules), edit(dir, ".offthemode/PRODUCT.md", product), git(dir, "commit", "-qam", "the rule back");
+  await claim();
+  git(dir, "checkout", "-q", "-b", "later"), drop();
+  const later = await claim();
+  expect(later.back.includes(`Your rule "${OWNER}" (first seen`), "...and with the words back, a removal made with a new branch in the same turn is told and sent back", show(later));
+  // Put back and removed once more, shown first only to the owner (the AI already sent back this turn): the next claim
+  // still sends it to the AI.
+  edit(dir, ".offthemode/RULES.md", rules), edit(dir, ".offthemode/PRODUCT.md", product);
+  await claim();
+  drop();
+  const inTurn = await hook(dir, { transcript_path, stop_hook_active: true }), next = await claim();
+  expect(inTurn.shown.includes("is no longer in PRODUCT.md") && !inTurn.back && next.back.includes(`Your rule "${OWNER}" (first seen`),
+    "...and removed again, a removal shown only to the owner is sent to the AI at the next claim", show(inTurn) + "\n" + show(next));
+}
+
+// A removal told once, as a note or a send-back, isn't told again on a branch made after it (as Claude Code makes one
+// to commit), nor on a detached HEAD: no file there removed anything.
+async function goneOnNewBranch() {
+  const transcript_path = said("transcripts-new-branch");
+  const say = (dir, ...quotes) => {
+    edit(dir, ".offthemode/PRODUCT.md", `PRODUCT\n\n## Refusals and tie-breakers\n${quotes.map((q) => ownerLine(q)).join("\n") || "- Owner's rules: none yet"}\n`);
+    edit(dir, "rule.json", JSON.stringify({ quote: quotes[0] ?? OWNER, broke: 0, judged: 5, of: 5, unit: "moves" }));
+  };
+  const dir = project("new-branch", { commands: "rule checks `node rule.mjs`", product: ownerLine(OWNER) });
+  await hook(dir, { transcript_path });
+  say(dir, REWORDED), await hook(dir, { transcript_path });
+  say(dir, OWNER); const undone = await hook(dir, { transcript_path, stop_hook_active: true });
+  git(dir, "checkout", "-q", "-b", "fix"); const fix = await hook(dir, { transcript_path, session_id: "s2" });
+  git(dir, "checkout", "-q", "--detach"); const detached = await hook(dir, { transcript_path, session_id: "s3" });
+  expect(undone.shown.includes(`"${REWORDED}", which isn't in any message you sent, is no longer in PRODUCT.md.`) && !fix.back && !fix.shown.includes("is no longer in PRODUCT.md") && !detached.back && !detached.shown.includes("is no longer in PRODUCT.md"),
+    "the AI's reword undone, told once as a note: on a branch made after it, or a detached HEAD, it isn't told again, as your rule or at all, and the AI isn't sent back", show(fix) + show(detached));
+  const drop = project("drop-branch", { commands: "check `node pass.mjs` · rule checks `node rule.mjs`", product: ownerLine(OWNER) });
+  await hook(drop, { transcript_path });
+  say(drop), dropCheck(drop, "node rule.mjs");
+  const dropped = await hook(drop, { transcript_path });
+  git(drop, "checkout", "-q", "-b", "next"); const next = await hook(drop, { transcript_path, session_id: "s2" });
+  expect(dropped.back.includes(`Your rule "${OWNER}" (first seen`) && !next.back && !next.shown.includes("is no longer in PRODUCT.md"),
+    "the owner's rule dropped is sent back once; a branch made after it doesn't send it back again", show(dropped) + show(next));
+  // The AI's reword undone in two steps: the owner's words put back first, beside the reword, which goes a turn later.
+  const steps = project("undone-steps", { commands: "rule checks `node rule.mjs`", product: ownerLine(OWNER) });
+  await hook(steps, { transcript_path });
+  say(steps, REWORDED); const reworded = await hook(steps, { transcript_path });
+  say(steps, OWNER, REWORDED), await hook(steps, { transcript_path, stop_hook_active: true });
+  say(steps, OWNER); const removed = await hook(steps, { transcript_path });
+  expect(reworded.back.includes(`Your rule "${OWNER}" (first seen`) && !removed.back && !removed.shown.includes(`Your rule "${REWORDED}"`) && removed.shown.includes(`"${REWORDED}", which isn't in any message you sent, is no longer in PRODUCT.md.`),
+    "the owner's words put back, then the AI's reword removed a turn later: a note, and the AI isn't sent to put its reword back", show(reworded) + show(removed));
+}
+
+// A rule said in another tool, added long after another rule was dropped, then dropped by the AI: still sent back.
+async function unfoundDroppedLater() {
+  const X = "never show a price without the currency next to it", transcript_path = said("transcripts-later");
+  const dir = project("dropped-later", { commands: "check `node pass.mjs` · rule checks `node rule.mjs`", product: ownerLine(OWNER) }), say = (...l) => edit(dir, ".offthemode/PRODUCT.md", `PRODUCT\n\n## Refusals and tie-breakers\n${l.join("\n") || "- Owner's rules: none yet"}\n`);
+  edit(dir, "rule-x.mjs", `console.log('RULE "${X}": broke 0 · judged 3 of 3 prices');`);
+  await hook(dir, { transcript_path });
+  say(), dropCheck(dir, "node rule.mjs"), await hook(dir, { transcript_path });
+  await hook(dir, { transcript_path });
+  say(ownerLine(X, "prices").replace("node rule.mjs", "node rule-x.mjs"));
+  edit(dir, ".offthemode/RULES.md", readFileSync(join(dir, ".offthemode/RULES.md"), "utf8").replace("check `node pass.mjs`", "check `node pass.mjs` · rule checks `node rule-x.mjs`"));
+  const added = await hook(dir, { transcript_path, session_id: "s2" });
+  say(), dropCheck(dir, "node rule-x.mjs"); const dropped = await hook(dir, { transcript_path, session_id: "s3" });
+  expect(added.back.includes(`"${X}" isn't in any message you sent, so it may not be your words`) && dropped.back.includes(`Your rule "${X}" (first seen`),
+    "a rule found in no transcript, added long after another rule was dropped, then dropped by the AI: still sent back as gone", show(added) + show(dropped));
+}
+
 parts();
 await finish("test-stop-check", [failingCheck, passThenFail, otherProject, cancelled, cutState, ruleChecks, rewordAfterSendBack, nowMarks, staleAtCheckpoint, screensAndShapes, hangingCheck, writesOnlyState, rewordTwice, sendBackOnce, readOnlyGit, dayShown,
-  tidyStop, leftovers, stateGuards, saveFails, noProc, watcherFails, unfoundRuleDropped, rewordUndoneEarly, unfoundRewordUndone, branchSwitch, ...gitCases]);
+  tidyStop, leftovers, stateGuards, saveFails, stateAfterInit, sandboxedNow, spareOfAnother, noProc, watcherFails, globalOverruled, chainAskedOnce, endsNearTime, cancelAfterEnd, cancelAfterTimeout, noPs,
+  unfoundRuleDropped, rewordUndoneEarly, unfoundRewordUndone, branchSwitch, goneOnce, goneOnNewBranch, unfoundDroppedLater, ...gitCases]);
