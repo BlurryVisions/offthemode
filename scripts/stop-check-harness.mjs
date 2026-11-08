@@ -1,7 +1,7 @@
 // The harness scripts/test-stop-check.mjs and stop-check-git-cases.mjs share: throwaway git projects whose RULES.md
 // names small check scripts, and the stop check run in them the way Claude Code runs it, a Stop hook input on stdin.
 // OTM_STOP_CHECK=<file> tests another copy of the script (a deliberately broken one shows which test catches it).
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, copyFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, copyFileSync, rmSync, openSync, closeSync } from "node:fs";
 import { join, dirname, basename, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { spawn, execFileSync } from "node:child_process";
@@ -67,26 +67,32 @@ export const ran = (dir, what = "count") => {
 };
 export const stateFile = (dir) => join(dir, ".git/offthemode-stop.json");
 
-export function node(args, cwd, input) {
+let inputs = 0;
+/** Runs node with `input` on stdin, from a file, so it ends at once, as Claude Code's does: a pipe would end only when
+ * this process, busy with the other cases' git calls, gets round to it, and the hook gives up on its input after 3 s. */
+export function node(args, cwd, input, env = {}) {
   return new Promise((ok) => {
-    const child = spawn(process.execPath, args, { cwd, env: { ...process.env, OTM_TEST_OUT: OUT, CLAUDE_PROJECT_DIR: cwd } });
+    const file = join(BASE, `input-${++inputs}.json`);
+    writeFileSync(file, input ?? "");
+    const fd = openSync(file, "r");
+    const child = spawn(process.execPath, args, { cwd, env: { ...process.env, OTM_TEST_OUT: OUT, CLAUDE_PROJECT_DIR: cwd, ...env }, stdio: [fd, "pipe", "pipe"] });
+    closeSync(fd); // the child has its own copy
     let stdout = "", stderr = "";
     // A hook that hangs fails its test instead of hanging the check.
     const timer = setTimeout(() => { stderr += "killed after 30 s"; child.kill("SIGKILL"); }, 30000);
     child.stdout.on("data", (d) => { stdout += d; });
     child.stderr.on("data", (d) => { stderr += d; });
     child.on("close", (code) => { clearTimeout(timer); ok({ code, stdout, stderr }); });
-    child.stdin.end(input ?? "");
   });
 }
-export async function hook(dir, input = {}) {
+export async function hook(dir, input = {}, env = {}) {
   const started = Date.now();
-  const r = await node([join(dir, ".offthemode/stop-check.mjs")], dir, JSON.stringify({ hook_event_name: "Stop", session_id: "s1", cwd: dir, stop_hook_active: false, last_assistant_message: DONE, ...input }));
+  const r = await node([join(dir, ".offthemode/stop-check.mjs")], dir, JSON.stringify({ hook_event_name: "Stop", session_id: "s1", cwd: dir, stop_hook_active: false, last_assistant_message: DONE, ...input }), env);
   let out = null;
   try { out = r.stdout.trim() ? JSON.parse(r.stdout) : null; } catch { out = { raw: r.stdout, stderr: r.stderr }; }
   return { out, ms: Date.now() - started, back: out?.hookSpecificOutput?.additionalContext ?? "", shown: out?.systemMessage ?? "", stderr: r.stderr };
 }
-export const now = (dir) => node([join(dir, ".offthemode/stop-check.mjs"), "--now"], dir);
+export const now = (dir, env) => node([join(dir, ".offthemode/stop-check.mjs"), "--now"], dir, undefined, env);
 export const show = (h) => JSON.stringify(h.out).slice(0, 600);
 
 /** Runs the cases side by side, ends what a failed one left running, removes the projects, and prints the result. */

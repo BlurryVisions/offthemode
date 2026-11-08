@@ -1,13 +1,13 @@
 // Tests the stop check (content/templates/stop-check.mjs) the way Claude Code runs it: a Stop hook input on stdin, in
 // throwaway git projects whose RULES.md names small check scripts (scripts/stop-check-harness.mjs). What counts as a
 // change is in stop-check-git-cases.mjs. Prints only what failed, then one summary line.
-import { writeFileSync, readFileSync, existsSync, readdirSync, statSync, rmSync, realpathSync, mkdirSync, utimesSync } from "node:fs";
+import { writeFileSync, readFileSync, existsSync, readdirSync, statSync, rmSync, realpathSync, mkdirSync, utimesSync, openSync, closeSync, chmodSync } from "node:fs";
 import { join, relative } from "node:path";
 import { tmpdir } from "node:os";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
-import { ROOT, SCRIPT, SOURCE, BASE, OUT, sleep, alive, expect, DONE, CHECKPOINT, PLAN, OWNER, REWORDED, git, project, ownerLine, edit, ran, stateFile, node, hook, show, finish } from "./stop-check-harness.mjs";
+import { ROOT, SCRIPT, SOURCE, BASE, OUT, sleep, alive, expect, DONE, CHECKPOINT, PLAN, OWNER, REWORDED, git, project, ownerLine, edit, ran, stateFile, node, hook, now, show, finish } from "./stop-check-harness.mjs";
 import { gitCases } from "./stop-check-git-cases.mjs";
 
 const { readReply, parseCommands, parseLines, productRules, productScreens, budget, norm } = await import(pathToFileURL(SCRIPT).href);
@@ -73,7 +73,8 @@ async function failingCheck() {
     "no file changed since the last run: the check doesn't run again, its last result is shown, and the stop goes through", show(h));
   edit(dir, ".offthemode/STATE.md", "the notes change every reply");
   h = await hook(dir);
-  expect(ran(dir) === "x" && h.shown.includes("No file changed since"), "a change to the notes alone doesn't run the checks again (RULES.md and PRODUCT.md do count)", show(h));
+  expect(ran(dir) === "x" && h.shown.includes("(.offthemode/STATE.md and files git ignores don't count), so the checks show their last run."),
+    "a change to STATE.md alone doesn't run the checks again, and with no rule check named the owner isn't told one ran", show(h));
   h = await hook(dir, { session_id: "s2" });
   expect(h.back.includes("failed (exit 1)") && ran(dir) === "x", "a new session claiming done on the same failing result is sent back once, from the saved result", show(h));
   edit(dir, "notes.txt", "a change that fixes nothing");
@@ -87,8 +88,8 @@ async function failingCheck() {
   expect(h.back.includes("failed (exit 2)"), "...and the same new numbers on a later claim do send back once", show(h));
   edit(dir, "fail.txt", "3");
   h = await hook(dir, { last_assistant_message: CHECKPOINT });
-  expect(!h.back && ran(dir) === "xxxx" && h.shown.includes("only the rule checks run") && h.shown.includes("failed (exit 2") && h.shown.includes("stopped for your answer") && h.shown.includes("your AI's reply says some work is done"),
-    "a reply that stops for the owner (a checkpoint) reruns only the rule checks, shows the rest as they last ran, and is never sent back", show(h));
+  expect(!h.back && ran(dir) === "xxxx" && h.shown.includes("At a stop for your review the checks show their last run.") && h.shown.includes("failed (exit 2") && h.shown.includes("stopped for your answer") && h.shown.includes("your AI's reply says some work is done"),
+    "a reply that stops for the owner (a checkpoint) reruns only the rule checks (none here), shows the rest as they last ran, and is never sent back", show(h));
   h = await hook(dir, { background_tasks: [{ id: "a", type: "workflow", status: "running" }] });
   expect(h.out === null, "a claim while a workflow is still running waits for it: nothing runs", show(h));
   const now = await node([join(dir, ".offthemode/stop-check.mjs"), "--now"], dir);
@@ -123,8 +124,11 @@ async function cancelled() {
   if (process.platform === "win32") return; // no process groups on Windows; the script kills the tree only while it runs
   await Promise.all(["SIGTERM", "SIGKILL"].map(async (sig) => {
     const dir = project(`cancel-${sig}`, { commands: "check `node hang.mjs`" });
-    const child = spawn(process.execPath, [join(dir, ".offthemode/stop-check.mjs")], { cwd: dir, env: { ...process.env, OTM_TEST_OUT: OUT, CLAUDE_PROJECT_DIR: dir }, stdio: ["pipe", "ignore", "ignore"] });
-    child.stdin.end(JSON.stringify({ hook_event_name: "Stop", session_id: "s1", cwd: dir, last_assistant_message: DONE }));
+    const input = join(BASE, `cancel-${sig}.json`); // a file, so the input ends at once (see node() in the harness)
+    writeFileSync(input, JSON.stringify({ hook_event_name: "Stop", session_id: "s1", cwd: dir, last_assistant_message: DONE }));
+    const fd = openSync(input, "r");
+    const child = spawn(process.execPath, [join(dir, ".offthemode/stop-check.mjs")], { cwd: dir, env: { ...process.env, OTM_TEST_OUT: OUT, CLAUDE_PROJECT_DIR: dir }, stdio: [fd, "ignore", "ignore"] });
+    closeSync(fd);
     for (let i = 0; i < 200 && ran(dir, "pids").split(" ").filter(Boolean).length < 2; i++) await sleep(50);
     child.kill(sig);
     await sleep(sig === "SIGKILL" ? 1200 : 400);
@@ -259,6 +263,69 @@ async function hangingCheck() {
   expect(h.ms < 8000 && h.back.includes("`node hang.mjs` didn't finish in 1 s, so it judged nothing") && h.back.includes("`node rule.mjs` didn't run: the checks used all their time"),
     `a hanging check is stopped at stop_check_seconds and reported as judging nothing (${h.ms} ms)`, show(h));
   expect(pids.length === 2 && !pids.some(alive), "the hung check and the process it started are both gone afterwards", `pids ${pids} alive ${pids.filter(alive)}`);
+  edit(dir, "a.txt", "a change after the hang");
+  const later = await hook(dir, { last_assistant_message: CHECKPOINT });
+  expect(/`node hang\.mjs`: didn't finish in 1 s, at \d\d:\d\d, before the latest changes/.test(later.shown), "at a checkpoint after a change, a hang from before it says so, as a pass or a failure would", show(later));
+}
+
+// The owner's words put back after a reword, then reworded again: the AI's own words never pass for the owner's rule,
+// and each removal of the owner's rule is told.
+async function rewordTwice() {
+  const t = join(BASE, "transcripts-twice"), transcript_path = join(t, "session.jsonl");
+  mkdirSync(t, { recursive: true });
+  writeFileSync(transcript_path, JSON.stringify({ type: "user", message: { role: "user", content: OWNER } }) + "\n");
+  const dir = project("reword-twice", { commands: "rule checks `node rule.mjs`", product: ownerLine(OWNER) });
+  const say = (quote) => { edit(dir, ".offthemode/PRODUCT.md", `PRODUCT · reword-twice\n\n## Refusals and tie-breakers\n${ownerLine(quote)}\n`); edit(dir, "rule.json", JSON.stringify({ quote, broke: 0, judged: 5, of: 5, unit: "moves" })); };
+  await hook(dir, { transcript_path });
+  say(REWORDED);
+  const reworded = await hook(dir, { transcript_path });
+  say(OWNER);
+  const back = await hook(dir, { transcript_path });
+  say(REWORDED);
+  const again = await hook(dir, { transcript_path });
+  expect(reworded.back.includes(`Your rule "${OWNER}"`) && !back.back && back.shown.includes(`"${REWORDED}", which isn't in any message you sent, is no longer in PRODUCT.md.`) && !back.shown.includes(`Your rule "${REWORDED}"`) && back.shown.includes("All passed."),
+    "the owner's words put back: the AI's reword isn't called the owner's rule and the AI isn't sent to put it back; the owner is told once", show(reworded) + show(back));
+  expect(again.back.includes(`Your rule "${OWNER}" (first seen`) && again.back.includes("is no longer in PRODUCT.md"), "...and reworded a second time, the owner's rule gone is told and sent back again", show(again));
+}
+
+// A send-back carrying a line said only once, which the next stop no longer has: the same failure isn't sent back twice.
+async function sendBackOnce() {
+  const t = join(BASE, "transcripts-once"), transcript_path = join(t, "session.jsonl");
+  mkdirSync(t, { recursive: true });
+  writeFileSync(transcript_path, JSON.stringify({ type: "user", message: { role: "user", content: OWNER } }) + "\n");
+  const dir = project("once", { commands: "check `node fail.mjs` · rule checks `node rule.mjs`", product: ownerLine(OWNER) });
+  const first = await hook(dir, { transcript_path });
+  edit(dir, ".offthemode/PRODUCT.md", `PRODUCT · once\n\n## Refusals and tie-breakers\n${ownerLine(REWORDED)}\n`);
+  edit(dir, "rule.json", JSON.stringify({ quote: REWORDED, broke: 0, judged: 5, of: 5, unit: "moves" }));
+  const reworded = await hook(dir, { transcript_path }), same = await hook(dir, { transcript_path });
+  expect(first.back.includes("failed (exit 1)") && reworded.back.includes("is no longer in PRODUCT.md") && !same.back && same.shown.includes("Same result as when your AI was last sent back"),
+    "after a send-back with a line said once, the next claim on the same failure stops, as the send-back says", show(same));
+}
+
+// Where .git/ can't be written (an AI tool's sandbox), the result still shows, and the state goes to the temp folder.
+async function readOnlyGit() {
+  if (process.platform === "win32" || process.getuid?.() === 0) return; // Windows and root write where a mode says no
+  const dir = project("read-only-git", { commands: "check `node fail.mjs`" }), kept = join(tmpdir(), `offthemode-stop-${createHash("sha256").update(realpathSync(dir)).digest("hex").slice(0, 12)}.json`);
+  const shut = join(BASE, "read-only-tmp");
+  mkdirSync(shut), chmodSync(join(dir, ".git"), 0o555), chmodSync(shut, 0o555);
+  try {
+    const n = await now(dir), h = await hook(dir), neither = await now(dir, { TMPDIR: shut });
+    expect(n.code === 1 && n.stdout.includes("failed (exit 1") && existsSync(kept) && h.back.includes("failed (exit 1)") && !h.shown.includes("couldn't run"),
+      "with .git/ read-only, --now still shows the checks' result and exits 1, and a claim is still sent back", n.stdout + n.stderr + show(h));
+    expect(neither.code === 1 && neither.stdout.includes("failed (exit 1"), "...and where the temp folder can't be written either, the result still shows", neither.stdout + neither.stderr);
+  } finally { chmodSync(join(dir, ".git"), 0o755), chmodSync(shut, 0o755); rmSync(kept, { force: true }); }
+}
+
+// A run from another day says the day, not just a time that may read as later today.
+async function dayShown() {
+  const dir = project("day", { commands: "check `node pass.mjs`" });
+  await hook(dir);
+  const s = JSON.parse(readFileSync(stateFile(dir), "utf8")), then = Date.now() - 25 * 3600_000;
+  s.fullAt = then;
+  for (const r of Object.values(s.results)) r.at = then;
+  writeFileSync(stateFile(dir), JSON.stringify(s));
+  const h = await hook(dir), when = `${new Date(then).toTimeString().slice(0, 5)} on ${new Date(then).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+  expect(h.shown.includes(`No file changed since ${when}`) && h.shown.includes(`its run at ${when}`), "a time from another day carries its day", show(h));
 }
 
 async function writesOnlyState() {
@@ -280,4 +347,4 @@ async function writesOnlyState() {
 }
 
 parts();
-await finish("test-stop-check", [failingCheck, passThenFail, otherProject, cancelled, cutState, ruleChecks, rewordAfterSendBack, nowMarks, staleAtCheckpoint, screensAndShapes, hangingCheck, writesOnlyState, ...gitCases]);
+await finish("test-stop-check", [failingCheck, passThenFail, otherProject, cancelled, cutState, ruleChecks, rewordAfterSendBack, nowMarks, staleAtCheckpoint, screensAndShapes, hangingCheck, writesOnlyState, rewordTwice, sendBackOnce, readOnlyGit, dayShown, ...gitCases]);

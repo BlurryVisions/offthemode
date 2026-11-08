@@ -1,9 +1,9 @@
 // What counts as a change: the stop check's fingerprint, which lets a claim reuse the last full run when no file
 // changed, and must never do so when one did. Run by scripts/test-stop-check.mjs.
-import { mkdirSync, rmSync, chmodSync, symlinkSync, copyFileSync } from "node:fs";
+import { mkdirSync, rmSync, chmodSync, symlinkSync, copyFileSync, renameSync, existsSync, readFileSync, writeFileSync, truncateSync } from "node:fs";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
-import { BASE, OUT, project, edit, ran, hook, now, expect, git } from "./stop-check-harness.mjs";
+import { BASE, project, edit, ran, hook, now, expect, git, show, ownerLine, OWNER } from "./stop-check-harness.mjs";
 
 const posix = process.platform !== "win32";
 const reused = (h) => h.shown.includes("No file changed since");
@@ -29,7 +29,7 @@ async function commitAfterNow() {
   git(dir, "add", "fail.txt"); // staged before --now, as an AI often does
   git(dir, "mv", "old-rule.mjs", "moved-rule.mjs");
   rmSync(join(dir, "lab.mjs"));
-  if (posix) symlinkSync("nowhere", join(dir, "dangling")), symlinkSync(OUT, join(dir, "to-a-folder"));
+  if (posix) symlinkSync("nowhere", join(dir, "dangling")), symlinkSync(join(dir, ".offthemode"), join(dir, "to-a-folder"));
   const n = await now(dir);
   const record = await steps(dir, [
     ["committed after --now", () => commit(dir)],
@@ -130,15 +130,21 @@ async function modes() {
   edit(off, "tool.sh", "echo hi");
   chmodSync(join(off, "tool.sh"), 0o755);
   chmodSync(join(off, "pass.mjs"), 0o755);
+  symlinkSync("count.mjs", join(off, "link.mjs"));
   await now(off);
-  const record = await steps(off, [["committed after --now", () => commit(off)]]);
+  // With core.fileMode off git status hides a mode change, and keeps a link's mode for a file in its place.
+  const record = await steps(off, [
+    ["committed after --now", () => commit(off)],
+    ["a mode change git status hides", () => chmodSync(join(off, "tool.sh"), 0o644)],
+    ["a link made a file holding its text", () => { rmSync(join(off, "link.mjs")); edit(off, "link.mjs", "count.mjs"); }],
+  ]);
   // A link's id is hashed with the repository's own hash.
   const sha256 = project("sha256", { commands: "check `node count.mjs`", init: ["--object-format=sha256"] });
   symlinkSync("count.mjs", join(sha256, "link.mjs"));
   await now(sha256);
   const linked = await steps(sha256, [["committed after --now", () => commit(sha256)]]);
-  expect(record === "committed after --now: 1 same" && linked === "committed after --now: 1 same",
-    "with core.fileMode off git keeps the index's mode, and in a SHA-256 repository a link has a SHA-256 id: the fingerprint matches both, so a commit after --now reuses the run", `${record} | ${linked}`);
+  expect(record === "committed after --now: 1 same, a mode change git status hides: 2 ran, a link made a file holding its text: 3 ran" && linked === "committed after --now: 1 same",
+    "with core.fileMode off, and in a SHA-256 repository, a commit after --now reuses the run; a mode change git status hides, or a link made a file, still runs the checks", `${record} | ${linked}`);
 }
 
 async function unreadable() {
@@ -149,7 +155,13 @@ async function unreadable() {
   const record = await steps(dir, [["first"], ["again"]]);
   const crashed = (await hook(dir)).shown.includes("couldn't run");
   chmodSync(join(dir, "secret.txt"), 0o644);
-  expect(record === "first: 1 ran, again: 2 ran" && !crashed, "a changed file it can't read leaves it unsure: no crash, and every claim runs the checks", record);
+  // git status tells of a folder it can't enter only on stderr, and exits 0.
+  const shut = project("unenterable", { commands: "check `node count.mjs`" }), lib = join(shut, "lib");
+  mkdirSync(lib), edit(shut, "lib/x.js", "x"), commit(shut, "lib");
+  const closed = await steps(shut, [["first"], ["a file edited in a folder git then can't enter", () => { edit(shut, "lib/x.js", "y"); chmodSync(lib, 0o600); }]]);
+  chmodSync(lib, 0o755);
+  expect(record === "first: 1 ran, again: 2 ran" && !crashed && closed === "first: 1 ran, a file edited in a folder git then can't enter: 2 ran",
+    "a changed file it can't read, or in a folder git can't enter, leaves it unsure: no crash, and every claim runs the checks", `${record} | ${closed}`);
 }
 
 // git status fails on a submodule whose repository is gone, while git ls-files still works.
@@ -166,4 +178,120 @@ async function gitFails() {
   expect(record === "first: 1 ran, nothing changed: 2 ran", "when git status fails it is unsure, never \"nothing changed\": every claim runs the checks", record);
 }
 
-export const gitCases = [commitAfterNow, subfolder, nestedRepos, shapes, gitsOwnView, conflict, modes, unreadable, gitFails];
+// The notes a check reads count (the method's check-bans.sh reads DESIGN.md); STATE.md, which changes every reply,
+// doesn't. RULES.md and PRODUCT.md count even when git ignores .offthemode/, a line moved from one to the other too.
+async function notesCount() {
+  const dir = project("notes", { commands: "check `node count.mjs`" }), out = project("notes-ignored", { commands: "check `node count.mjs`" });
+  const record = await steps(dir, [["first"], ["STATE.md edited", () => edit(dir, ".offthemode/STATE.md", "where things stand")], ["DESIGN.md edited", () => edit(dir, ".offthemode/DESIGN.md", "### Unbans\n")]]);
+  edit(out, ".gitignore", ".offthemode/\n"), git(out, "rm", "-rq", "--cached", ".offthemode"), commit(out, "notes kept out of git");
+  const rules = readFileSync(join(out, ".offthemode/RULES.md"), "utf8"), product = readFileSync(join(out, ".offthemode/PRODUCT.md"), "utf8");
+  const moved = await steps(out, [["first", () => edit(out, ".offthemode/RULES.md", `${rules}x\n`)], ["a line moved from RULES.md to PRODUCT.md", () => { edit(out, ".offthemode/RULES.md", rules); edit(out, ".offthemode/PRODUCT.md", `x\n${product}`); }]]);
+  expect(record === "first: 1 ran, STATE.md edited: 1 same, DESIGN.md edited: 2 ran" && moved === "first: 1 ran, a line moved from RULES.md to PRODUCT.md: 2 ran",
+    "a note a check reads counts as a change, STATE.md doesn't, and RULES.md and PRODUCT.md count even when git ignores .offthemode/", `${record} | ${moved}`);
+}
+
+// A file that changes while the checks run, here one a check writes: that run didn't check the files as they are now.
+async function changedWhileRunning() {
+  const dir = project("while-running", { commands: "check `node count.mjs && node write.mjs`" });
+  edit(dir, "write.mjs", "import { writeFileSync } from 'node:fs'; writeFileSync('made.txt', 'made by the check');"), commit(dir, "a check that writes");
+  const record = await steps(dir, [["first"], ["the check wrote made.txt while it ran"], ["it wrote the same bytes again"]]);
+  expect(record === "first: 1 ran, the check wrote made.txt while it ran: 2 ran, it wrote the same bytes again: 2 same",
+    "a file changed while the checks ran makes the next claim run them again; once a run leaves the files as it found them, it is reused", record);
+}
+
+// On a disk that ignores letter case (macOS's and Windows' default), a rename that changes only a letter's case.
+async function caseRename() {
+  const dir = project("case", { commands: "check `node count.mjs`" });
+  edit(dir, "Button.txt", "b"), edit(dir, "Other.txt", "o"), commit(dir, "names");
+  if (!existsSync(join(dir, "button.txt"))) return; // a disk that tells case apart: git sees the rename itself
+  const record = await steps(dir, [["first"], ["Button.txt renamed button.txt", () => renameSync(join(dir, "Button.txt"), join(dir, "button.txt"))]]);
+  git(dir, "mv", "Other.txt", "other.txt");
+  await now(dir);
+  const committed = await steps(dir, [["git mv Other.txt other.txt, --now, then committed", () => commit(dir)]]);
+  expect(record === "first: 1 ran, Button.txt renamed button.txt: 2 ran" && committed === "git mv Other.txt other.txt, --now, then committed: 3 same",
+    "a rename that changes only a letter's case runs the checks, and committed after --now it reuses the run", `${record} | ${committed}`);
+}
+
+// Repositories inside repositories count by their commit and their files at any depth, whatever their own git hides.
+async function deepRepos() {
+  const dir = project("deep", { commands: "check `node count.mjs`" }), lib = join(dir, "vendor/lib"), x = join(lib, "deps/x");
+  mkdirSync(x, { recursive: true });
+  edit(x, "a.txt", "a"), git(x, "init", "-q"), commit(x, "a");
+  edit(lib, "b.txt", "b"), git(lib, "init", "-q"), commit(lib, "b"); // takes deps/x in as a repository inside it
+  git(lib, "config", "diff.ignoreSubmodules", "all"), git(lib, "config", "status.showUntrackedFiles", "no"), commit(dir, "vendor/lib");
+  const record = await steps(dir, [
+    ["first"], ["untouched"], ["edited two deep", () => edit(x, "a.txt", "changed")],
+    ["junk in the library", () => edit(lib, ".DS_Store", "finder")], ["untouched, junk and all"],
+    ["a file the library's git was told not to look at, edited", () => { git(lib, "update-index", "--assume-unchanged", "b.txt"); edit(lib, "b.txt", "changed"); }],
+    ["the library's folder emptied, as git submodule deinit leaves it", () => { rmSync(lib, { recursive: true, force: true }); mkdirSync(lib); }], ["untouched, emptied"],
+    ["a file put in the empty folder, which git doesn't see", () => edit(lib, "stray.txt", "s")], ["untouched, unsure"],
+  ]);
+  const want = "first: 1 ran, untouched: 1 same, edited two deep: 2 ran, junk in the library: 3 ran, untouched, junk and all: 3 same, a file the library's git was told not to look at, edited: 4 ran, the library's folder emptied, as git submodule deinit leaves it: 5 ran, untouched, emptied: 5 same, a file put in the empty folder, which git doesn't see: 6 ran, untouched, unsure: 7 ran";
+  expect(record === want, "repositories two deep: a change at any depth runs the checks, whatever their settings hide; junk in one costs one run, not every run", record);
+}
+
+async function linkOutside() {
+  if (!posix) return;
+  const dir = project("link-out", { commands: "check `node count.mjs`" }), shared = join(BASE, "shared-lib");
+  mkdirSync(shared), edit(shared, "cfg.txt", "ok"), symlinkSync(shared, join(dir, "shared")), commit(dir, "a link out");
+  const record = await steps(dir, [["first"], ["the file it points to edited", () => edit(shared, "cfg.txt", "BAD")]]);
+  expect(record === "first: 1 ran, the file it points to edited: 2 ran", "a link out of the repository leaves it unsure, since what it points to can change with no file here changing", record);
+}
+
+// A check that runs git reads what a commit changes, so it runs again at a stop with no file changed.
+async function gitCheck() {
+  const dir = project("git-check", { commands: "check `node count.mjs && git diff --exit-code`" });
+  edit(dir, "pass.mjs", "changed");
+  const n = await now(dir);
+  commit(dir);
+  const h = await hook(dir);
+  expect(n.code === 1 && ran(dir) === "xx" && h.shown.includes("so only the checks that run git ran again") && h.shown.includes("passed (") && !h.shown.includes("its run at") && !h.back,
+    "a check that runs git (git diff --exit-code) fails on --now, then after a commit runs again and passes, with no file changed", show(h));
+}
+
+async function trailingSpace() {
+  if (!posix) return; // Windows drops a trailing space from a folder's name
+  const dir = project("space ", { commands: "check `node count.mjs`" });
+  const record = await steps(dir, [["first"], ["a.txt made", () => edit(dir, "a.txt", "1")], ["a.txt edited", () => edit(dir, "a.txt", "2")], ["b.txt made", () => edit(dir, "b.txt", "1")], ["untouched"]]);
+  expect(record === "first: 1 ran, a.txt made: 2 ran, a.txt edited: 3 ran, b.txt made: 4 ran, untouched: 4 same", "in a folder whose name ends with a space, every change runs the checks, and with none the claim reuses the run", record);
+}
+
+// Too much to read, here a 200 MB file and then 5,001 files git doesn't ignore, leaves it unsure instead of slowing every stop.
+async function tooMuch() {
+  const dir = project("too-much", { commands: "check `node count.mjs`" }), big = join(dir, "data.bin");
+  const record = await steps(dir, [
+    ["first", () => { writeFileSync(big, ""); truncateSync(big, 200 * 2 ** 20); }], ["nothing changed"],
+    ["5,001 small files in its place", () => { rmSync(big); mkdirSync(join(dir, "many")); for (let i = 0; i <= 5000; i++) writeFileSync(join(dir, "many", `${i}.txt`), String(i)); }], ["nothing changed again"],
+  ]);
+  expect(record === "first: 1 ran, nothing changed: 2 ran, 5,001 small files in its place: 3 ran, nothing changed again: 4 ran", "more than 128 MB or 5,000 files to read leaves it unsure: every claim runs the checks", record);
+}
+
+// A project with no repository of its own, inside one that ignores everything (a home folder's dotfiles repository).
+async function parentIgnores() {
+  const dir = project("app-in-home", { commands: "check `node count.mjs`", noGit: true, inside: "home-dotfiles" }), home = join(BASE, "home-dotfiles");
+  edit(home, ".gitignore", "*\n!.gitignore\n"), git(home, "init", "-q"), commit(home, "dotfiles");
+  const record = await steps(dir, [["first"], ["a.txt edited", () => edit(dir, "a.txt", "1")]]);
+  expect(record === "first: 1 ran, a.txt edited: 2 ran", "a project the repository above it ignores is outside git: every claim runs the checks", record);
+}
+
+// git --literal-pathspecs sets this for the programs it starts; it would make the ':/' and ':(exclude)' paths match nothing.
+async function literalPathspecs() {
+  const dir = project("literal", { commands: "check `node count.mjs`" }), env = { GIT_LITERAL_PATHSPECS: "1" };
+  await hook(dir, {}, env);
+  edit(dir, "a.txt", "1");
+  const h = await hook(dir, {}, env);
+  expect(ran(dir) === "xx" && !h.shown.includes("No file changed"), "with GIT_LITERAL_PATHSPECS=1 set, a change still runs the checks", show(h));
+}
+
+// Two projects in one repository each keep their own state: neither takes the other's rules or last results.
+async function twoProjects() {
+  const a = project("proj-a", { commands: "check `node pass.mjs` · rule checks `node rule.mjs`", product: ownerLine(OWNER), inside: "two-projects" });
+  const b = project("proj-b", { commands: "check `node pass.mjs`", inside: "two-projects" });
+  const first = await hook(a), h = await hook(b);
+  expect(first.shown.includes("All passed.") && h.shown.includes("The checks passed.") && !h.shown.includes("is no longer in PRODUCT.md") && !h.back,
+    "two projects in one repository keep their own state: the second never takes the first's rule for one it dropped", show(h));
+  expect(first.shown.includes("has never been seen to fail. Before you trust its rule check, run it on the code from before the change. It must find"),
+    "a rule never seen to fail comes with a plain note on when to trust its check", show(first));
+}
+
+export const gitCases = [commitAfterNow, subfolder, nestedRepos, shapes, gitsOwnView, conflict, modes, unreadable, gitFails, notesCount, changedWhileRunning, caseRename, deepRepos, linkOutside, gitCheck, trailingSpace, tooMuch, parentIgnores, literalPathspecs, twoProjects];
