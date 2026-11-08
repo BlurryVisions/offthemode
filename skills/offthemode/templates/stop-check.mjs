@@ -244,10 +244,10 @@ async function stop(pid, tree = true) {
 const orphans = (pid, from, to) => rows("powershell", ["-NoProfile", "-Command", `$f = [DateTimeOffset]::FromUnixTimeMilliseconds(${from}).LocalDateTime; $t = [DateTimeOffset]::FromUnixTimeMilliseconds(${to}).LocalDateTime; (Get-CimInstance Win32_Process -Filter 'ParentProcessId=${pid}' | ? { $_.CreationDate -ge $f -and $_.CreationDate -le $t }).ProcessId`]).forEach(([p]) => p && taskkill(p));
 let watcher;
 // Tells the watcher the check running now ("pid start"), or none (0). One that can't start (at the process limit) costs
-// only the cleanup after a kill; neither it nor its input keeps this script running.
+// only the cleanup after a kill, and it never keeps this script running.
 const watch = (line) => {
   try {
-    if (!watcher) (watcher = spawn(process.execPath, [fileURLToPath(import.meta.url), "--watch"], { detached: true, stdio: ["pipe", "ignore", "ignore"], windowsHide: true }).on("error", () => {})).unref(), watcher.stdin.on("error", () => {}).unref?.();
+    if (!watcher) (watcher = spawn(process.execPath, [fileURLToPath(import.meta.url), "--watch"], { detached: true, stdio: ["pipe", "ignore", "ignore"], windowsHide: true }).on("error", () => {})).unref(), watcher.stdin.on("error", () => {});
     watcher.stdin.write(`${line}\n`);
   } catch { /* no watcher */ }
 };
