@@ -260,8 +260,10 @@ async function hangingCheck() {
   const h = await hook(dir);
   await new Promise((ok) => setTimeout(ok, 300));
   const pids = ran(dir, "pids").split(" ").filter(Boolean).map(Number);
-  expect(h.ms < 8000 && h.back.includes("`node hang.mjs` didn't finish in 1 s, so it judged nothing") && h.back.includes("`node rule.mjs` didn't run: the checks used all their time"),
-    `a hanging check is stopped at stop_check_seconds and reported as judging nothing (${h.ms} ms)`, show(h));
+  // Timed on the check's own run: the whole stop also starts node and git several times, slow on a busy Windows runner.
+  const kept = JSON.parse(readFileSync(stateFile(dir), "utf8")).results?.["node hang.mjs"];
+  expect(kept?.timedOut && kept.ms < 4000 && h.ms < 25000 && h.back.includes("`node hang.mjs` didn't finish in 1 s, so it judged nothing") && h.back.includes("`node rule.mjs` didn't run: the checks used all their time"),
+    `a hanging check is stopped at stop_check_seconds and reported as judging nothing (its run ${kept?.ms} ms, the whole stop ${h.ms} ms)`, show(h));
   expect(pids.length === 2 && !pids.some(alive), "the hung check and the process it started are both gone afterwards", `pids ${pids} alive ${pids.filter(alive)}`);
   edit(dir, "a.txt", "a change after the hang");
   const later = await hook(dir, { last_assistant_message: CHECKPOINT });
