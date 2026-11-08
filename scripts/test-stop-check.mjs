@@ -695,6 +695,10 @@ async function goneOnce() {
   git(dir, "checkout", "-q", "-b", "later"), drop();
   const later = await claim();
   expect(later.back.includes(`Your rule "${OWNER}" (first seen`), "...and with the words back, a removal made with a new branch in the same turn is told and sent back", show(later));
+  // Merged into the first branch, whose last stop had the words before this removal was told: told already, not again.
+  git(dir, "commit", "-qam", "drop again"), git(dir, "checkout", "-q", main), git(dir, "merge", "-q", "--ff-only", "later");
+  const merged = await claim();
+  expect(!merged.back && !merged.shown.includes("is no longer in PRODUCT.md"), "...and merged into the first branch, whose last stop had the words before that removal, it isn't told again", show(merged));
   // Put back and removed once more, shown first only to the owner (the AI already sent back this turn): the next claim
   // still sends it to the AI.
   edit(dir, ".offthemode/RULES.md", rules), edit(dir, ".offthemode/PRODUCT.md", product);

@@ -385,10 +385,14 @@ async function changedNoteAdvice() {
   mkdirSync(lib, { recursive: true }), edit(lib, "lib.c", "int x;"), git(lib, "init", "-q"), commit(lib, "a clone the project doesn't track");
   const made = project("made-two", { commands: "check `node two.mjs`" });
   edit(made, "two.mjs", "import { writeFileSync } from 'node:fs'; for (const n of ['a', 'b']) writeFileSync(`out-${n}.txt`, String(Math.random()));"), commit(made, "a check that makes two files");
-  const f = await hook(fmt), v = await hook(vendor), m = await hook(made);
-  expect(f.shown.includes("`src/new.js` changed while the checks ran") && !f.shown.includes(".gitignore") && v.shown.includes("`vendor/lib` changed while the checks ran") && !v.shown.includes(".gitignore")
+  // A tracked file a check rewrites at each run, as a build stamp: .gitignore can't take a file git tracks.
+  const stamp = project("stamped-tracked", { commands: "check `node stamp.mjs`" });
+  edit(stamp, "stamp.mjs", "import { writeFileSync } from 'node:fs'; writeFileSync('build-info.txt', String(Math.random()));"), edit(stamp, "build-info.txt", "0"), commit(stamp, "a tracked build stamp");
+  const f = await hook(fmt), v = [await hook(vendor), await hook(vendor)], m = await hook(made), t = [await hook(stamp), await hook(stamp)];
+  expect(f.shown.includes("`src/new.js` changed while the checks ran") && !f.shown.includes(".gitignore") && v.every((h) => h.shown.includes("`vendor/lib` changed while the checks ran") && !h.shown.includes(".gitignore"))
+    && t.every((h) => h.shown.includes("`build-info.txt` changed while the checks ran") && !h.shown.includes(".gitignore"))
     && m.shown.includes("`out-a.txt`, `out-b.txt` changed while the checks ran, so the next claim runs them again. If a check writes them, they can go in .gitignore."),
-    "the note offers .gitignore only for a check's output: never for a source file a formatter rewrote or a repository inside", show(f) + show(v) + show(m));
+    "the note offers .gitignore only for a check's output: never for a source file a formatter rewrote, a repository inside or a tracked file, even one each run changes", [f, ...v, m, ...t].map(show).join(""));
 }
 
 // A repository copied from a disk that ignores letter case to one that tells case apart keeps core.ignorecase true, and
