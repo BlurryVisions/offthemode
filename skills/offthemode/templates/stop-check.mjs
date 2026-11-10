@@ -46,6 +46,8 @@ const LAB = /(?:^|\/)(?:labs?|gallery|states|specimens?|storybook|playground)(?:
 const always = (c) => c.kind === "rule" || /(?:^|&&)\s*git\s/.test(c.cmd);
 // Off the Mode's records, which its commands write at a reply's end and no check reads: a change to them isn't one.
 const RECORDS = ["STATE", "DECISIONS", "CHECKLIST", "REASSESS"];
+// What git is asked about: every path but those records, in this repository and in each repository inside it.
+const PATHS = ["--", ":/", ...RECORDS.map((n) => `:(top,exclude,glob)**/.offthemode/${n}.md`)];
 const MARK = "Off the Mode's stop check";
 
 // ---------- reading the reply ----------
@@ -81,6 +83,8 @@ export const readReply = (text) => (!claims(text) ? "none" : stopsForOwner(text)
 const read = (p) => { try { return readFileSync(p, "utf8"); } catch { return null; } };
 export const norm = (s) => String(s).normalize("NFKC").toLowerCase().replace(/[‘’ʼ`´]/g, "'").replace(/[“”«»„]/g, '"').replace(/\s+/g, " ").trim().replace(/[.!;,]+$/, "");
 const fmt = (n) => n.toLocaleString("en-US");
+// Up to three paths by name, then how many more.
+const some = (paths) => `${paths.slice(0, 3).map((p) => `\`${p}\``).join(", ")}${paths.length > 3 ? ` and ${fmt(paths.length - 3)} more` : ""}`;
 const num = (s) => Number(s.replace(/,/g, ""));
 // The time, with the day when it isn't today.
 const clock = (t, d = new Date(t)) => (!t ? "an earlier stop" : d.toTimeString().slice(0, 5) + (d.toDateString() === new Date().toDateString() ? "" : ` on ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`));
@@ -144,8 +148,9 @@ const git = (args, cwd, { input, strict } = {}) => {
 const real = (p) => { try { return realpathSync.native(p); } catch { return realpathSync(p); } };
 /** A hash of what the project's files hold: each path's mode and id as git add would store them, line-ending filters
  * and all, never git's bookkeeping, so a commit after --now changes nothing. Off the Mode's records (they change every
- * reply) and files git ignores don't count; RULES.md and PRODUCT.md, which say what to check, always do. A repository
- * inside this one counts the same way, by its files, so a commit there changes nothing either. null outside git, or
+ * reply), here or in a repository inside, and files git ignores don't count; RULES.md and PRODUCT.md, which say what to
+ * check, always do. A repository inside this one counts the same way, by its files, so a commit there changes nothing
+ * either. null outside git, or
  * when it can't be sure (git fails or can't open a folder you can enter; a file it can't read, a pipe, a name with a
  * line break or in bytes that aren't UTF-8; a link out of the repository; more than 5,000 files or 128 MB to read), and
  * then every claim runs the checks. outer: the top repository's folder. */
@@ -154,16 +159,16 @@ let lastIds, lastListed, insides;
 function fingerprint(root, outer) {
   if (!outer) insides = [];
   const [top, pre, cdup] = git(["rev-parse", "--show-toplevel", "--show-prefix", "--show-cdup"], root)?.split(/\r?\n/) ?? [];
-  const paths = ["--", ":/", ...(outer ? [] : RECORDS.map((n) => `:(top,exclude,glob)**/.offthemode/${n}.md`))], ids = new Map(), look = new Set(), files = [];
+  const ids = new Map(), look = new Set(), files = [];
   // A repository inside is read from its own top only, which git names however the folder is spelled (NFD, letter case).
-  const listed = top && (!outer || cdup === "") && git(["ls-files", "-s", "-v", "-z", "--full-name", ...paths], root)?.split("\0");
+  const listed = top && (!outer || cdup === "") && git(["ls-files", "-s", "-v", "-z", "--full-name", ...PATHS], root)?.split("\0");
   // With the owner's settings, so ignore lines match as their git matches them. Submodules are left out: each one is
   // read below, the same way as this repository. Where git ignores letter case, a rename that changes only a letter's
   // case shows nowhere: git asked with case on lists the new name, new or ignored.
-  const status = listed && git(["status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignore-submodules=all", ...paths], root, { strict: top })?.split("\0");
+  const status = listed && git(["status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignore-submodules=all", ...PATHS], root, { strict: top })?.split("\0");
   // The last value wins, as in git: the repository's own over the owner's global one. Git for Windows ignores case.
   const config = status && Object.fromEntries((win ? "core.ignorecase true" : git(["config", "--bool", "--get-regexp", "^core\\.(filemode|ignorecase)$"], root) ?? "").split("\n").map((l) => l.split(" ")));
-  const cased = status && (config["core.ignorecase"] !== "true" ? [] : git(["-c", "core.ignoreCase=false", "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignored=matching", "--ignore-submodules=all", ...paths], root, { strict: top })?.split("\0"));
+  const cased = status && (config["core.ignorecase"] !== "true" ? [] : git(["-c", "core.ignoreCase=false", "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignored=matching", "--ignore-submodules=all", ...PATHS], root, { strict: top })?.split("\0"));
   if (!cased) return null;
   // Read from disk: each path git was told not to look at (assume-unchanged, a lowercase tag; skip-worktree, S), each
   // repository inside this one (git status asks it with its own settings), and each path git status names that the
@@ -543,12 +548,14 @@ async function main() {
   if (away) return reply === "none" ? undefined : emit({ systemMessage: `${MARK} ran nothing: your AI is working in ${away}, which isn't this project.` });
   if (!root) return hook ? undefined : console.log("No .offthemode/RULES.md here or above it, so there is nothing to check.");
   const rules = read(join(root, ".offthemode", "RULES.md")) ?? "", product = read(join(root, ".offthemode", "PRODUCT.md")) ?? "";
-  const files = statePath(root), state = loadState(files.reduce((a, b) => (mtime(b) > mtime(a) ? b : a))), commands = parseCommands(rules);
+  const files = statePath(root), newest = () => files.reduce((a, b) => (mtime(b) > mtime(a) ? b : a)), state = loadState(newest()), commands = parseCommands(rules);
   if (!commands.length && !productRules(product).length && !productScreens(product).length) return nothingNamed(hook, state, files);
-  const fp = fingerprint(root), seen = lastIds;
+  const fp = fingerprint(root), seen = lastIds, base = state.fingerprint ?? state.after;
   // The files decide, not how the reply reads: most replies that change code read as claiming nothing. An unsure run is
-  // held to the files as it left them, so a check that stamps a file each run doesn't make every stop a full run.
-  const unchecked = fp !== null && fp !== (state.fingerprint ?? state.after), since = state.fullAt ? "files changed since the last check" : "it has no earlier check of this project";
+  // held to the files as it left them where a check seems to have changed them, so a stamp doesn't rerun every stop;
+  // after any other change during a run there is nothing to hold it to, and the next stop runs the checks again.
+  const unchecked = fp !== null && fp !== base, during = [state.changed].flat().filter(Boolean);
+  const since = !state.fullAt ? "it has no earlier check of this project" : base === undefined ? `files changed while the last check ran${during.length ? ` (${some(during)})` : ""}` : "files changed since the last check";
   if (reply === "none" && !unchecked) return;
   // What a check whose command calls git sees besides the files: HEAD, every ref, git's index, each repository inside's
   // HEAD and index, and Off the Mode's records, staged and on disk, which the fingerprint leaves out.
@@ -573,8 +580,11 @@ async function main() {
   // .gitignore only for files git doesn't track, never a repository inside, that the run made or the last run changed
   // too (a report): not a source file a check rewrote once, as a formatter does.
   const output = changed.every((p) => /^1[02]/.test(lastIds.get(p)) && !tracked.has(p) && (!seen.has(p) || [state.changed].flat().includes(p)));
-  if (kept === null && changed.length) ctx.notes.push(`${changed.slice(0, 3).map((p) => `\`${p}\``).join(", ")}${changed.length > 3 ? ` and ${fmt(changed.length - 3)} more` : ""} changed while the checks ran, so the next claim runs them again.${output ? ` If a check writes ${changed.length > 1 ? "them, they" : "it, it"} can go in .gitignore.` : ""}`);
-  keep(state, results, commands, kept, gitNow, fp, after);
+  // Held to the files as the run left them only where what changed looks like a check's own writing: its output, or the
+  // paths the last run changed too. Anything else, such as an edit someone made meanwhile, is checked at the next stop.
+  const stamped = output || changed.slice(0, 50).every((p) => [state.changed].flat().includes(p));
+  if (kept === null && changed.length) ctx.notes.push(`${some(changed)} changed while the checks ran, so the next ${stamped ? "claim" : "stop"} runs them again.${output ? ` If a check writes ${changed.length > 1 ? "them, they" : "it, it"} can go in .gitignore.` : ""}`);
+  keep(state, results, commands, kept, gitNow, fp, kept === null && !stamped ? undefined : after);
   if (!light) state.changed = changed.slice(0, 50);
   const at = where(root, branch), why = !hook ? "" : reply === "claim" ? ", because your AI said the work is done" : unchecked ? `, because ${since}` : ", because your AI's reply says some work is done";
   const owner = report(results, ctx, [`Off the Mode checked ${at}${why}:`, ...(light ? [light] : [])]);
@@ -589,11 +599,14 @@ async function main() {
   const back = ctx.issues.length > 0 && !input.stop_hook_active && !asks && sent[session] !== numbers(ctx.issues), said = back ? sendBack(results, ctx, at, reply === "claim" ? "" : since) : "";
   const outcome = !ctx.issues.length ? "" : back ? "Your AI was sent back once to fix this or tell you plainly what isn't done."
     : input.stop_hook_active ? "Your AI was already sent back once this turn, so it stops here."
-    : asks ? "Your AI stopped for your answer, so it wasn't sent back."
+    : asks ? "Your AI's reply reads as if it stopped for your answer, so it wasn't sent back."
     : "Same result as when your AI was last sent back, so it stops here.";
+  // Read again before saving: another session may have been sent back while these checks ran, and its record stays.
   // Kept without the lines said once, which the next stop no longer has, so the same failure isn't sent back twice.
+  const disk = ctx.issues.length ? loadState(newest()).sentBack : undefined, theirs = disk?.constructor === Object ? disk : sent;
   if (!ctx.issues.length) delete state.sentBack;
-  else if (back) reached(said), (state.sentBack = { ...Object.fromEntries(Object.entries(sent).slice(-4)), [session]: numbers(ctx.issues.filter((i) => !ctx.once.some(([s, k, l]) => l === i && s[k]))) });
+  else if (!back) state.sentBack = theirs;
+  else reached(said), (state.sentBack = { ...Object.fromEntries(Object.entries(theirs).slice(-4)), [session]: numbers(ctx.issues.filter((i) => !ctx.once.some(([s, k, l]) => l === i && s[k]))) });
   save(files, state);
   const out = { systemMessage: cap([owner, outcome].filter(Boolean).join("\n")) };
   if (back) out.hookSpecificOutput = { hookEventName: "Stop", additionalContext: said };

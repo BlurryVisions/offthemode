@@ -31,6 +31,9 @@ function parts() {
   // Whether a reply stops for the owner is asked of a reply that claims nothing too: it decides who is sent back.
   for (const t of [PLAN, CHECKPOINT, "The build is still running. I'll report back when it finishes."]) expect(stopsForOwner?.(t) === true, `stopsForOwner · stops for the owner: ${t}`);
   for (const t of [DONE, WORKED]) expect(stopsForOwner?.(t) === false, `stopsForOwner · doesn't stop for the owner: ${t}`);
+  // Only a question in the last lines stops for the owner: one the reply asks itself and answers further up doesn't.
+  const answered = "Why did the import fail?\nThe path was relative.\n\nI've made the path absolute in loader.js.\nI've added a test for it.\nI couldn't run the suite here.";
+  expect(stopsForOwner?.(answered) === false && readReply(answered.replace("I couldn't run the suite here.", "All 12 tests pass.")) === "claim", "stopsForOwner · a question answered further up doesn't stop for the owner", answered);
 
   const cmds = parseCommands("## Commands (x)\ncheck `npm run check` · full check `npm run check && npm run build` · run `npm run dev` · rule checks `npm run check:bonus` (reads saved answers; `npm run fetch:mb` refreshes them) · screen checks `npx playwright test e2e/fix.spec.ts` · evals `none`\n\n## Done means verified\n");
   expect(JSON.stringify(cmds.map((c) => [c.kind, c.cmd, c.plain])) === JSON.stringify([["check", "npm run check", true], ["rule", "npm run check:bonus", true], ["screen", "npx playwright test e2e/fix.spec.ts", true]]),
@@ -169,10 +172,99 @@ async function filesDecide() {
     "...and a claim of done on that result is sent back in the words a claim always got, from the saved run", show(h));
 }
 
+// The first stop inside git that stops for the owner, after a change, has no earlier run to show: every check runs.
+async function firstCheckpoint() {
+  const dir = project("first-checkpoint", { commands: "check `node count.mjs && node fail.mjs`" });
+  edit(dir, "app.js", "the AI's first step");
+  const h = await hook(dir, { last_assistant_message: CHECKPOINT });
+  expect(ran(dir) === "x" && !h.back && h.shown.includes("because it has no earlier check of this project") && h.shown.includes("failed (exit 1") && !h.shown.includes("hasn't run yet") && !h.shown.includes("At a stop for your review") && h.shown.includes("stopped for your answer"),
+    "a first stop inside git that stops for the owner, after a change, runs every check and shows what they find; it isn't sent back", show(h));
+}
+
+// An edit someone else makes while the checks run (the owner's editor, a second session in the same checkout), after a
+// check read the file: that run didn't check it, so the next stop runs them again, even when its reply claims nothing. A
+// check that rewrites a tracked file on every run is still held to the files it left: one more run, not one per stop.
+async function editedDuringRun() {
+  const dir = project("edited-during-run", { commands: "check `node count.mjs && node fail.mjs && node wait.mjs`" }), mark = (f) => join(OUT, `edited-during-run.${f}`);
+  // Says fail.mjs has read fail.txt, then waits until it is told the edit was made (20 s at most).
+  edit(dir, "wait.mjs", "import { writeFileSync, existsSync } from 'node:fs'; import { join } from 'node:path'; const at = (f) => join(process.env.OTM_TEST_OUT, 'edited-during-run.' + f); writeFileSync(at('read'), ''); for (const end = Date.now() + 20000; Date.now() < end && !existsSync(at('edited')); ) await new Promise((ok) => setTimeout(ok, 20));");
+  edit(dir, "fail.txt", "0"), git(dir, "add", "-A"), git(dir, "commit", "-qm", "a check that waits");
+  edit(dir, "app.js", "the AI's work");
+  // Someone else, in a process of its own (so the other cases' work here can't delay it): once fail.mjs has read
+  // fail.txt, they break it.
+  const editor = spawn(process.execPath, ["-e", `const { existsSync, writeFileSync } = require('fs'); const end = Date.now() + 25000; (function poll() { if (existsSync(${JSON.stringify(mark("read"))})) { writeFileSync(${JSON.stringify(join(dir, "fail.txt"))}, '1'); writeFileSync(${JSON.stringify(mark("edited"))}, ''); } else if (Date.now() < end) setTimeout(poll, 10); })();`], { stdio: "ignore" });
+  const first = await hook(dir, { last_assistant_message: WORKED });
+  if (editor.exitCode === null) await new Promise((ok) => editor.on("exit", ok));
+  const h = await hook(dir, { last_assistant_message: WORKED, session_id: "s2" });
+  expect(ran(dir) === "xx" && first.shown.includes("The checks passed") && first.shown.includes("`fail.txt` changed while the checks ran, so the next stop runs them again")
+    && h.back.includes("because files changed while the last check ran (`fail.txt`). On ") && h.back.includes("failed (exit 1)") && h.shown.includes("sent back once"),
+    "an edit someone else makes while the checks run, after a check read the file: the next stop runs them again, though its reply claims nothing, says why, and that AI is sent back once", show(first) + show(h));
+  const stamps = project("stamps-tracked", { commands: "check `node count.mjs && node stamp.mjs`" });
+  edit(stamps, "stamp.mjs", "import { writeFileSync } from 'node:fs'; writeFileSync('stamp.txt', `run at ${Date.now()} ${Math.random()}`);"), edit(stamps, "stamp.txt", "0"), git(stamps, "add", "-A"), git(stamps, "commit", "-qm", "a check that stamps a tracked file");
+  const stops = [];
+  for (let i = 0; i < 4; i++) stops.push(await hook(stamps, { last_assistant_message: WORKED }));
+  expect(ran(stamps) === "xx" && stops[1].shown.includes("because files changed while the last check ran (`stamp.txt`)") && stops[1].shown.includes("so the next claim runs them again") && stops.slice(2).every((s) => s.out === null),
+    "...and a check that rewrites a tracked file on every run makes one more run, then is held to the files it left: not a run at every stop", `${ran(stamps)} ${stops.map(show).join(" | ")}`);
+}
+
+// Two sessions in one checkout stop while each other's checks run: both are sent back once, and the one whose stop saved
+// first keeps its record, so its next stop on the same failure isn't sent back twice.
+async function twoSessions() {
+  const dir = project("two-sessions", { commands: "check `node count.mjs && node gate.mjs && node fail.mjs`" }), t = join(OUT, "two-sessions");
+  // Each run of gate.mjs takes a number and waits for two-sessions.go<n>, so the test picks which stop saves first.
+  edit(dir, "gate.mjs", "import { appendFileSync, existsSync, readFileSync } from 'node:fs'; import { join, basename } from 'node:path'; const t = join(process.env.OTM_TEST_OUT, basename(process.cwd())); if (!existsSync(t + '.open')) { appendFileSync(t + '.started', 'x'); const n = readFileSync(t + '.started', 'utf8').length; const end = Date.now() + 15000; while (!existsSync(t + '.go' + n) && Date.now() < end) await new Promise((r) => setTimeout(r, 25)); }");
+  const started = async (n) => { for (let i = 0; i < 600 && !(existsSync(`${t}.started`) && readFileSync(`${t}.started`, "utf8").length >= n); i++) await sleep(25); };
+  const worked = (session_id) => hook(dir, { last_assistant_message: WORKED, session_id });
+  edit(dir, "fail.txt", "0"); writeFileSync(`${t}.open`, ""); await hook(dir); rmSync(`${t}.open`);
+  edit(dir, "fail.txt", "1");
+  const p1 = worked("s1"); await started(1);
+  const p2 = worked("s2"); await started(2);
+  writeFileSync(`${t}.go1`, ""); const first = await p1;
+  writeFileSync(`${t}.go2`, ""); const second = await p2;
+  writeFileSync(`${t}.open`, ""); edit(dir, "notes.txt", "s1's next turn, a change that fixes nothing");
+  const h = await worked("s1");
+  expect(ran(dir) === "xxxx" && first.back.includes("failed (exit 1)") && second.back.includes("failed (exit 1)") && !h.back && h.shown.includes("Same result as when your AI was last sent back"),
+    "two sessions stop while each other's checks run: both are sent back once, and the one that saved first isn't sent back again for the same numbers", show(first) + show(second) + show(h));
+}
+
+// A reply that claims nothing but reads as a stop for the owner isn't sent back: a reply wrongly sent back costs more
+// than one wrongly left alone. A reply that only describes code ("waiting for the server") reads the same way, so the
+// owner's line says how the reply reads, not that the AI stopped.
+async function unsureStop() {
+  const dir = project("unsure-stop", { commands: "check `node fail.mjs`" });
+  edit(dir, "fail.txt", "0");
+  await hook(dir);
+  edit(dir, "fail.txt", "1");
+  const code = await hook(dir, { last_assistant_message: "I added a loading state: the button shows a spinner while waiting for the server.", session_id: "u1" });
+  edit(dir, "fail.txt", "2");
+  const wait = await hook(dir, { last_assistant_message: "I wrote the queue. Stopping here for your review before I start the runner.", session_id: "u2" });
+  expect(!code.back && !wait.back && code.shown.includes("failed (exit 1") && wait.shown.includes("failed (exit 2")
+    && [code, wait].every((h) => h.shown.includes("Your AI's reply reads as if it stopped for your answer, so it wasn't sent back.")),
+    "a file changed, a check fails and the reply claims nothing but reads as a stop for the owner: never sent back, and the owner's line says how the reply reads, not that the AI stopped", show(code) + show(wait));
+}
+
+// An agent's worktree in .claude/worktrees/ that git doesn't ignore holds files a check of the project can read (vitest
+// and eslint read them; node --test doesn't), so its code counts as a change. Its Off the Mode records don't, as the
+// project's own don't.
+async function worktreesInside() {
+  const dir = project("worktrees-inside", { commands: "check `node count.mjs`" }), worked = () => hook(dir, { last_assistant_message: WORKED });
+  await hook(dir);
+  const wt = join(dir, ".claude/worktrees/agent");
+  git(dir, "worktree", "add", "-q", wt, "-b", "agent");
+  edit(wt, "app.test.mjs", "the agent's test");
+  let h = await worked();
+  expect(ran(dir) === "xx" && h.shown.includes("because files changed since the last check"),
+    "a file in an agent's worktree inside the project, which git doesn't ignore, changed: a check of the project can read it, so the checks run", show(h));
+  edit(wt, ".offthemode/STATE.md", "the agent's notes");
+  h = await worked();
+  expect(h.out === null && ran(dir) === "xx",
+    "...and when only that worktree's STATE.md changed, a reply that claims nothing runs nothing, as for the project's own STATE.md", show(h));
+}
+
 async function otherProject() {
   const home = project("home", { commands: "check `node count.mjs`" }), other = project("other-clone", { commands: "check `node count.mjs`" });
-  const h = await hook(home, { cwd: other }), quiet = await hook(home, { cwd: other, last_assistant_message: WORKED });
-  expect(h.shown.includes("ran nothing") && quiet.out === null && ran(other) === "" && ran(home) === "", "when the AI works in another project with notes, none of that project's commands run, and a reply that claims nothing is still left alone", show(h) + show(quiet));
+  const h = await hook(home, { cwd: other }), quiet = await hook(home, { cwd: other, last_assistant_message: WORKED }), cp = await hook(home, { cwd: other, last_assistant_message: CHECKPOINT });
+  expect(h.shown.includes("ran nothing") && cp.shown.includes("ran nothing") && quiet.out === null && ran(other) === "" && ran(home) === "", "when the AI works in another project with notes, none of that project's commands run, at a claim or a stop for the owner, and a reply that claims nothing is still left alone", show(h) + show(cp) + show(quiet));
   const tree = join(BASE, "home-tree");
   git(home, "worktree", "add", "-q", tree);
   const w = await hook(home, { cwd: tree });
@@ -806,6 +898,6 @@ async function unfoundDroppedLater() {
 }
 
 parts();
-await finish("test-stop-check", [failingCheck, passThenFail, filesDecide, otherProject, cancelled, cutState, ruleChecks, rewordAfterSendBack, nowMarks, staleAtCheckpoint, screensAndShapes, hangingCheck, writesOnlyState, rewordTwice, sendBackOnce, readOnlyGit, dayShown,
+await finish("test-stop-check", [failingCheck, passThenFail, filesDecide, firstCheckpoint, editedDuringRun, twoSessions, unsureStop, worktreesInside, otherProject, cancelled, cutState, ruleChecks, rewordAfterSendBack, nowMarks, staleAtCheckpoint, screensAndShapes, hangingCheck, writesOnlyState, rewordTwice, sendBackOnce, readOnlyGit, dayShown,
   tidyStop, leftovers, stateGuards, saveFails, stateAfterInit, sandboxedNow, spareOfAnother, noProc, watcherFails, globalOverruled, chainAskedOnce, endsNearTime, cancelAfterEnd, cancelAfterTimeout, noPs,
   unfoundRuleDropped, rewordUndoneEarly, unfoundRewordUndone, branchSwitch, goneOnce, goneOnNewBranch, unfoundDroppedLater, ...gitCases]);
