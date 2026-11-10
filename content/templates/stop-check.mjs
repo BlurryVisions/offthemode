@@ -232,7 +232,7 @@ function fingerprint(root, outer) {
   files.forEach(([p, mode], i) => ids.set(p, `${mode} ${hashed[i]}`));
   const h = createHash("sha256").update([...ids].sort(([a], [b]) => (a < b ? -1 : 1)).map(([p, id]) => `${p}\0${id}\n`).join(""));
   if (!outer) h.update(JSON.stringify(["RULES.md", "PRODUCT.md"].map((f) => read(join(root, ".offthemode", f))))), (lastIds = ids), (lastListed = listed);
-  else insides.push([root, listed]);
+  else insides.push([root, listed, ids]);
   return h.digest("hex");
 }
 
@@ -534,10 +534,11 @@ async function readInput() {
   return got && text.trim() ? JSON.parse(text) : null;
 }
 const inFlight = (tasks) => (tasks ?? []).some((t) => /subagent|workflow|teammate|cloud/i.test(t?.type ?? "") && !/complete|done|fail|kill|stop|cancel|error/i.test(t?.status ?? ""));
-// Tools that only read; any other may change a file.
-const READS = new Set(["Read", "Grep", "Glob", "LS", "NotebookRead", "WebSearch", "WebFetch", "TodoWrite", "ToolSearch", "AskUserQuestion"]);
+// Tools that can never change a file in the project (the desktop app's turn tools too); any other may.
+const READS = new Set(["Read", "Grep", "Glob", "LS", "NotebookRead", "WebSearch", "WebFetch", "TodoWrite", "ToolSearch", "AskUserQuestion", "EnterPlanMode", "mcp__ccd_turn__update_plan", "mcp__ccd_turn__wrap_up", "mcp__terminal__read_terminal"]);
 /** When the AI first used a tool that can change files after `since`, by its transcript: Infinity when it used none, 0
- * where the transcript can't say (none to read, a line that can't be read, a tool use with no time). */
+ * where the transcript can't say (none to read, a line that can't be read, a tool use with no time). Only the AI's own
+ * lines count: Claude Code also writes copies of them with no time (api-request-blob), which aren't other uses. */
 async function firstWrite(transcript, since = 0) {
   if (!transcript || !existsSync(transcript)) return 0;
   let first = Infinity;
@@ -545,7 +546,7 @@ async function firstWrite(transcript, since = 0) {
     for await (const line of createInterface({ input: createReadStream(transcript), crlfDelay: Infinity })) {
       if (!line.includes('"tool_use"')) continue;
       const e = JSON.parse(line), at = Date.parse(e.timestamp);
-      if (!(at <= since) && Array.isArray(e.message?.content) && e.message.content.some((b) => b?.type === "tool_use" && !READS.has(b.name))) first = Math.min(first, at || 0);
+      if (e.type === "assistant" && !(at <= since) && Array.isArray(e.message?.content) && e.message.content.some((b) => b?.type === "tool_use" && !READS.has(b.name))) first = Math.min(first, at || 0);
     }
   } catch { return 0; }
   return first;
@@ -574,16 +575,21 @@ async function main() {
   // held to the files as it left them where a check seems to have changed them, so a stamp doesn't rerun every stop;
   // after any other change during a run there is nothing to hold it to, and the next stop runs the checks again. A
   // checkout with no full run yet, such as a new worktree or clone, counts as changed once it differs from the commit
-  // it started on (the oldest in git's log of HEAD), not for the files it came with.
-  const left = () => !!git(["status", "--porcelain", "--untracked-files=normal", ...PATHS], root)?.trim() || git(["rev-parse", "HEAD"], root)?.trim() !== ((git(["log", "-g", "--format=%H", "HEAD"], root) ?? "").trim().split("\n").pop() || undefined);
+  // it started on (the oldest in git's log of HEAD), not for the files it came with. What git status is told to hide
+  // and the fingerprint reads counts too: a submodule's ignore setting or the owner's diff.ignoreSubmodules, a file
+  // marked skip-worktree or assume-unchanged that differs on disk, a rename only by letter case.
+  const hidden = () => [[root, lastListed, seen], ...insides].some(([, listed, ids]) => [...ids.values()].includes("case") || listed.some((e) => { const m = e.match(/^([a-zS]) (\d+) (\w+) \d\t([\s\S]+)$/); return m && m[2] !== "160000" && ids.has(m[4]) && ids.get(m[4]) !== `${m[2]} ${m[3]}`; }));
+  const left = () => hidden() || !!git(["status", "--porcelain", "--untracked-files=normal", "--ignore-submodules=none", ...PATHS], root)?.trim() || git(["rev-parse", "HEAD"], root)?.trim() !== ((git(["log", "-g", "--format=%H", "HEAD"], root) ?? "").trim().split("\n").pop() || undefined);
   const unchecked = fp !== null && (lastFull ? fp !== base : left()), during = [state.changed].flat().filter(Boolean);
   // The file times, read only before a full run that a claim didn't ask for. The files written since the last full run
-  // are named, newest first, so the owner can find one that changes by itself (an app log, a dev database). The latest
-  // time, folders' too since a removal moves only its folder's, tells whether anything was written after the AI's tools.
-  const top = hook && unchecked && reply !== "claim" ? git(["rev-parse", "--show-toplevel"], root)?.trim() : "", when = (p) => mtime(join(top, p));
-  const times = top ? [...seen.keys()].map((p) => [p, when(p)]) : [], folders = new Set(top ? ["."] : []);
+  // are named by write time, newest first, so the owner can find one that changes by itself (an app log, a dev
+  // database). The latest change time (a chmod moves no write time), folders' too since a removal moves only its
+  // folder's, tells whether anything changed after the AI's tools.
+  const top = hook && unchecked && reply !== "claim" ? git(["rev-parse", "--show-toplevel"], root)?.trim() : "";
+  const when = (p, s = statSync(join(top, p), { throwIfNoEntry: false })) => (s ? [s.mtimeMs, Math.max(s.mtimeMs, s.ctimeMs)] : [0, 0]);
+  const times = top ? [...seen.keys()].map((p) => [p, ...when(p)]) : [], folders = new Set(top ? ["."] : []);
   for (const p of top ? [...seen.keys(), ...lastListed.map((e) => e.slice(e.indexOf("\t") + 1))] : []) for (let i = p.lastIndexOf("/"); i > 0; i = p.lastIndexOf("/", i - 1)) folders.add(p.slice(0, i));
-  const latest = [...times.map(([, t]) => t), ...[...folders].map(when)].reduce((a, b) => Math.max(a, b), 0);
+  const latest = [...times.map(([, , c]) => c), ...[...folders].map((f) => when(f)[1])].reduce((a, b) => Math.max(a, b), 0);
   const written = lastFull ? times.filter(([, t]) => t > lastFull).sort(([p, t], [q, u]) => u - t || (p < q ? -1 : 1)).map(([p]) => p) : [];
   const since = !lastFull ? "it has no earlier check of this project" : base === undefined ? `files changed while the last check ran${during.length ? ` (${some(during)})` : ""}` : `files changed since the last check${written.length ? ` (written since: ${some(written)})` : ""}`;
   if (reply === "none" && !unchecked) return;
@@ -607,15 +613,16 @@ async function main() {
   const after = light ? undefined : fingerprint(root);
   const changed = fp && after && after !== fp ? [...new Set([...seen.keys(), ...lastIds.keys()])].filter((p) => seen.get(p) !== lastIds.get(p)).sort() : [];
   const kept = light ? undefined : after === fp ? after : null, tracked = new Set(changed.length ? lastListed.map((e) => e.slice(e.indexOf("\t") + 1)) : []);
-  // .gitignore only for files git doesn't track, never a repository inside, that the run made or the last run changed
-  // too (a report): not a source file a check rewrote once, as a formatter does.
-  const output = changed.every((p) => /^1[02]/.test(lastIds.get(p)) && !tracked.has(p) && (!seen.has(p) || [state.changed].flat().includes(p)));
+  // .gitignore only for files git doesn't track, never a repository inside, that the run made or removed, or that the
+  // last run changed too (a report, a log named by time): not a source file a check rewrote once, as a formatter does.
+  const prior = new Set([state.changed].flat());
+  const output = changed.every((p) => !tracked.has(p) && (lastIds.has(p) ? /^1[02]/.test(lastIds.get(p)) && (!seen.has(p) || prior.has(p)) : /^1[02]/.test(seen.get(p))));
   // Held to the files as the run left them only where what changed looks like a check's own writing: its output, or the
   // paths the last run changed too. Anything else, such as an edit someone made meanwhile, is checked at the next stop.
-  const stamped = output || changed.slice(0, 50).every((p) => [state.changed].flat().includes(p));
+  const stamped = output || (changed.length <= 5000 && changed.every((p) => prior.has(p)));
   if (kept === null && changed.length) ctx.notes.push(`${some(changed)} changed while the checks ran, so the next ${stamped ? "claim" : "stop"} runs them again.${output ? ` If a check writes ${changed.length > 1 ? "them, they" : "it, it"} can go in .gitignore.` : ""}`);
   keep(state, results, commands, kept, gitNow, fp, kept === null && !stamped ? undefined : after);
-  if (!light) state.changed = changed.slice(0, 50);
+  if (!light) state.changed = changed.slice(0, 5000);
   const at = where(root, branch), why = !hook ? "" : reply === "claim" ? ", because your AI said the work is done" : unchecked ? `, because ${since}` : ", because your AI's reply says some work is done";
   const owner = report(results, ctx, [`Off the Mode checked ${at}${why}:`, ...(light ? [light] : [])]);
   // A line said only once is marked as said once your AI could read it: in --now's output (yours too, when you run it:
@@ -627,7 +634,7 @@ async function main() {
   const numbers = (issues) => createHash("sha256").update(issues.join("\n")).digest("hex"), session = input.session_id ?? "none";
   const sent = state.sentBack?.constructor === Object ? state.sentBack : {}, asks = stopsForOwner(input.last_assistant_message);
   const due = ctx.issues.length > 0 && !input.stop_hook_active && !asks && sent[session] !== numbers(ctx.issues);
-  // A reply that claims nothing goes back only for a change its own tools could have made: one written after the first
+  // A reply that claims nothing goes back only for a change its own tools could have made: one made after the first
   // tool it used since the last full run that can change files (a file's time can be 2 s coarse). Where its transcript
   // can't say, it could.
   const first = due && reply === "none" && top ? await firstWrite(input.transcript_path, lastFull) : 0, others = first === Infinity || (first > 0 && latest < first - 2000);

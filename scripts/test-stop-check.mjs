@@ -199,13 +199,15 @@ async function othersChange() {
   const ANSWER = "The parser lives in src/parse.js. It splits each line on commas and trims the parts.";
   const old = (Date.now() - 3600e3) / 1000, age = (d = dir) => { for (const e of readdirSync(d, { withFileTypes: true })) if (e.name !== ".git") e.isDirectory() ? age(join(d, e.name)) : utimesSync(join(d, e.name), old, old); utimesSync(d, old, old); };
   const time = (f) => statSync(join(dir, f)).mtimeMs, fullAt = () => JSON.parse(readFileSync(stateFile(dir), "utf8")).fullAt;
-  // The AI's transcript: one line for each tool it used, with its time.
-  const used = (...tools) => writeFileSync(t, tools.map(([name, at], i) => `${JSON.stringify({ type: "assistant", timestamp: new Date(at).toISOString(), message: { role: "assistant", content: [{ type: "tool_use", id: `tool-${i}`, name, input: {} }] } })}\n`).join(""));
+  // The AI's transcript: one line for each tool it used, with its time, then the copy Claude Code may also write of it,
+  // an api-request-blob line with no time, which isn't another use.
+  const message = (name, i) => ({ role: "assistant", content: [{ type: "tool_use", id: `tool-${i}`, name, input: {} }] });
+  const used = (...tools) => writeFileSync(t, tools.map(([name, at], i) => `${JSON.stringify({ type: "assistant", timestamp: new Date(at).toISOString(), message: message(name, i) })}\n${JSON.stringify({ type: "api-request-blob", hash: `h${i}`, message: message(name, i), sessionId: "s1" })}\n`).join(""));
   const answer = (input = {}) => hook(dir, { transcript_path: t, last_assistant_message: ANSWER, ...input });
   age(), edit(dir, "fail.txt", "0");
   await hook(dir);
   edit(dir, "fail.txt", "1"); // the owner's edit, between turns
-  used(["Edit", fullAt() - 1], ["Read", time("fail.txt") + 50], ["Grep", time("fail.txt") + 60]);
+  used(["Edit", fullAt() - 1], ...["Read", "Grep", "Glob", "LS", "NotebookRead", "WebSearch", "WebFetch", "TodoWrite", "ToolSearch", "AskUserQuestion", "EnterPlanMode", "mcp__ccd_turn__update_plan", "mcp__ccd_turn__wrap_up", "mcp__terminal__read_terminal"].map((name, i) => [name, time("fail.txt") + 50 + i]));
   let h = await answer();
   expect(ran(dir) === "xx" && !h.back && h.shown.includes("failed (exit 1)") && h.shown.includes("Nothing shows your AI made these changes, so it wasn't sent back."),
     "the owner's edit, then a reply that claims nothing after tools that only read, its own earlier edit already checked: the checks run and the owner sees them, but the AI isn't sent back", show(h));
@@ -223,12 +225,10 @@ async function othersChange() {
   h = await answer();
   expect(h.back.includes("because files changed since the last check (written since: `fail.txt`). On ") && h.back.includes("failed (exit 4)") && h.shown.includes("sent back once"),
     "...and the AI's own change through a tool is sent back, whatever the reply says, with the file's name", show(h));
-  age(), rmSync(join(dir, "pass.mjs")); // the AI's own removal: no file's time moves, only its folder's
-  used(["Bash", fullAt() + 1]);
+  age(), await sleep(2100), used(["Bash", Date.now()]), rmSync(join(dir, "pass.mjs")); // the AI's own removal: no file's time moves, only its folder's
   h = await answer({ session_id: "s2" });
   expect(h.back.includes("failed (exit 4)"), "...as is its removal of a file, which only the folder's time shows", show(h));
-  age(), rmSync(join(dir, "lib/only.js")); // ...even the last file of its folder, which only git's list still names
-  used(["Bash", fullAt() + 1]);
+  age(), await sleep(2100), used(["Bash", Date.now()]), rmSync(join(dir, "lib/only.js")); // ...even the last file of its folder, which only git's list still names
   h = await answer({ session_id: "s3" });
   expect(h.back.includes("failed (exit 4)"), "...or its removal of the only file in a folder", show(h));
   edit(dir, "fail.txt", "5");
@@ -237,6 +237,61 @@ async function othersChange() {
   edit(dir, "fail.txt", "6");
   const none = await answer({ transcript_path: join(BASE, "no-such-transcript.jsonl") });
   expect(h.back.includes("failed (exit 5)") && none.back.includes("failed (exit 6)"), "...and any change when the transcript can't be read, or there is none", show(h) + show(none));
+  edit(dir, "fail.txt", "7");
+  writeFileSync(t, `${JSON.stringify({ type: "assistant", message: message("Bash", 0) })}\n`); // the AI's own tool use, with no time
+  h = await answer();
+  expect(h.back.includes("failed (exit 7)"), "...or when the AI's own tool use carries no time", show(h));
+}
+
+// The AI's own chmod moves no file's write time, only its change time: it is the AI's change all the same. The owner's
+// chmod well before the AI's first tool still isn't.
+async function ownChmod() {
+  if (process.platform === "win32") return; // no mode bits to change there
+  const dir = project("own-chmod", { commands: "check `node count.mjs && node fail.mjs && test -x tool.sh`" }), t = join(BASE, "own-chmod.jsonl");
+  const used = (at) => writeFileSync(t, `${JSON.stringify({ type: "assistant", timestamp: new Date(at).toISOString(), message: { role: "assistant", content: [{ type: "tool_use", id: "tool-0", name: "Bash", input: {} }] } })}\n`);
+  const answer = (input = {}) => hook(dir, { transcript_path: t, last_assistant_message: "The parser lives in src/parse.js. It splits each line on commas and trims the parts.", ...input });
+  edit(dir, "tool.sh", "#!/bin/sh\n"), chmodSync(join(dir, "tool.sh"), 0o755), edit(dir, "fail.txt", "0"), git(dir, "add", "-A"), git(dir, "commit", "-qm", "tool");
+  await sleep(2100); // every file's times well before the full run
+  await hook(dir);
+  used(JSON.parse(readFileSync(stateFile(dir), "utf8")).fullAt + 1), chmodSync(join(dir, "tool.sh"), 0o644); // the AI's Bash: chmod -x
+  let h = await answer();
+  expect(ran(dir) === "xx" && h.back.includes("failed (exit 1"), "the AI's own chmod, which moves only the file's change time, is sent back", show(h));
+  chmodSync(join(dir, "tool.sh"), 0o755), await hook(dir, { last_assistant_message: DONE }); // fixed, and checked clean
+  chmodSync(join(dir, "tool.sh"), 0o644), used(statSync(join(dir, "tool.sh")).ctimeMs + 2500); // the owner's chmod, the AI's tool 2.5 s later
+  h = await answer({ session_id: "s2" });
+  expect(ran(dir) === "xxxx" && !h.back && h.shown.includes("Nothing shows your AI made these changes"), "...but the owner's chmod before the AI's first tool isn't", show(h));
+}
+
+// A project in a folder of a bigger repository: git names its files from the repository's top, so their times are read
+// there. The times are set by hand: every file and folder is an hour old, the AI's tool runs just after the last full
+// run, and the file it changes is written a second later.
+async function subfolderTimes() {
+  const dir = project("sub-app", { commands: "check `node count.mjs && node fail.mjs`", inside: "subfolder-times" }), top = join(BASE, "subfolder-times"), t = join(BASE, "subfolder-times.jsonl");
+  const old = (Date.now() - 3600e3) / 1000, age = (d = top) => { for (const e of readdirSync(d, { withFileTypes: true })) if (e.name !== ".git") e.isDirectory() ? age(join(d, e.name)) : utimesSync(join(d, e.name), old, old); utimesSync(d, old, old); };
+  const fullAt = () => JSON.parse(readFileSync(join(top, ".git", readdirSync(join(top, ".git")).find((f) => f.startsWith("offthemode-stop"))), "utf8")).fullAt;
+  age(), edit(dir, "fail.txt", "0");
+  await hook(dir);
+  const at = fullAt() + 1000;
+  edit(dir, "fail.txt", "1"), utimesSync(join(dir, "fail.txt"), at / 1000, at / 1000); // the AI's own change, through Bash
+  writeFileSync(t, `${JSON.stringify({ type: "assistant", timestamp: new Date(fullAt() + 1).toISOString(), message: { role: "assistant", content: [{ type: "tool_use", id: "tool-0", name: "Bash", input: {} }] } })}\n`);
+  const h = await hook(dir, { transcript_path: t, last_assistant_message: "The parser lives in src/parse.js. It splits each line on commas and trims the parts." });
+  expect(h.back.includes("because files changed since the last check (written since: `sub-app/fail.txt`). On ") && h.back.includes("failed (exit 1)"),
+    "a project in a folder of a bigger repository: the AI's own change is sent back, named from the repository's top", show(h));
+}
+
+// The owner's line names the files written since the last full run: exactly three with no "and 0 more", and at a stop
+// for the owner's review as at any stop a claim didn't ask for.
+async function namesWritten() {
+  const dir = project("names-written", { commands: "check `node count.mjs`" });
+  await hook(dir);
+  for (const f of ["a", "b", "c"]) edit(dir, `${f}.js`, f);
+  let h = await hook(dir, { last_assistant_message: WORKED });
+  expect(ran(dir) === "xx" && /because files changed since the last check \(written since: `[abc]\.js`, `[abc]\.js`, `[abc]\.js`\):/.test(h.shown),
+    "exactly three files written since the last check: all three named, with no count of more", show(h));
+  edit(dir, "step.js", "step 1");
+  h = await hook(dir, { last_assistant_message: CHECKPOINT });
+  expect(ran(dir) === "xxx" && h.shown.includes("because files changed since the last check (written since: `step.js`):"),
+    "...and a stop for the owner's review after a change names it too", show(h));
 }
 
 // A checkout with no check of its own yet (a red project's first stop, a new worktree) counts as changed by what differs
@@ -267,6 +322,40 @@ async function firstCheckout() {
   edit(hidden, "new.js", "a new file");
   h = await hook(hidden, { last_assistant_message: WORKED });
   expect(notes.out === null && ran(hidden) === "x" && h.shown.includes("passed ("), "...where only STATE.md changed nothing runs, and a new file counts even where the owner's git hides files it doesn't track", show(notes) + show(h));
+}
+
+// At a checkout's first stop, what git status hides and the files hold counts as a change too: a file marked
+// skip-worktree or assume-unchanged, a rename only by letter case, a submodule git is told to ignore. A sparse
+// checkout's files left out (skip-worktree, not on disk) don't count. Here or in a submodule.
+async function hiddenFromStatus() {
+  const cmd = "check `node count.mjs && node fail.mjs`"; // red before any session: only a change runs it
+  for (const flag of ["--skip-worktree", "--assume-unchanged"]) {
+    const dir = project(`hidden${flag}`, { commands: cmd });
+    git(dir, "update-index", flag, "pass.mjs"), edit(dir, "pass.mjs", "the AI's work");
+    const h = await hook(dir, { last_assistant_message: WORKED });
+    expect(ran(dir) === "x" && h.back.includes("failed (exit 1)"), `a checkout's first stop after the AI changes a file marked ${flag.slice(2)}, which git status hides: every check runs and the AI is sent back, though the reply claims nothing`, show(h));
+  }
+  const cased = project("hidden-case", { commands: cmd });
+  renameSync(join(cased, "pass.mjs"), join(cased, "Pass.mjs"));
+  let h = await hook(cased, { last_assistant_message: WORKED });
+  expect(ran(cased) === "x" && h.back.includes("failed (exit 1)"), "...and after a rename only by letter case, which git status hides where git ignores case", show(h));
+  const lib = join(BASE, "hidden-lib");
+  mkdirSync(lib), edit(lib, "lib.js", "ok"), git(lib, "init", "-q"), git(lib, "add", "-A"), git(lib, "commit", "-qm", "lib");
+  const sub = project("hidden-sub", { commands: cmd }), clone = join(BASE, "hidden-clone");
+  git(sub, "-c", "protocol.file.allow=always", "submodule", "add", "-q", lib, "lib"), git(sub, "config", "-f", ".gitmodules", "submodule.lib.ignore", "all");
+  git(sub, "add", "-A"), git(sub, "commit", "-qm", "lib"), git(BASE, "-c", "protocol.file.allow=always", "clone", "-q", "--recurse-submodules", sub, clone);
+  edit(clone, "lib/lib.js", "the AI's work");
+  h = await hook(clone, { last_assistant_message: WORKED });
+  expect(ran(clone) === "x" && h.back.includes("failed (exit 1)"), "...and after a change in a submodule .gitmodules tells git status to ignore, in a new clone", show(h));
+  const clone2 = join(BASE, "hidden-clone2");
+  git(BASE, "-c", "protocol.file.allow=always", "clone", "-q", "--recurse-submodules", sub, clone2), git(join(clone2, "lib"), "update-index", "--skip-worktree", "lib.js"), edit(clone2, "lib/lib.js", "the AI's work");
+  h = await hook(clone2, { last_assistant_message: WORKED });
+  expect(ran(clone2) === "x" && h.back.includes("failed (exit 1)"), "...and after a change to a file the submodule itself marks skip-worktree", show(h));
+  const far = project("hidden-far", { commands: cmd }), sparse = join(BASE, "hidden-sparse");
+  mkdirSync(join(far, "far")), edit(far, "far/x.js", "x"), git(far, "add", "-A"), git(far, "commit", "-qm", "far");
+  git(BASE, "clone", "-q", "--sparse", far, sparse), git(sparse, "sparse-checkout", "set", ".offthemode");
+  h = await hook(sparse, { last_assistant_message: WORKED });
+  expect(h.out === null && ran(sparse) === "", "...but a sparse checkout's first stop, with nothing changed, runs nothing: the files it leaves out aren't a change", show(h));
 }
 
 // The first stop inside git that stops for the owner, after a change, has no earlier run to show: every check runs.
@@ -302,6 +391,36 @@ async function editedDuringRun() {
   for (let i = 0; i < 4; i++) stops.push(await hook(stamps, { last_assistant_message: WORKED }));
   expect(ran(stamps) === "xx" && stops[1].shown.includes("because files changed while the last check ran (`stamp.txt`)") && stops[1].shown.includes("so the next claim runs them again") && stops.slice(2).every((s) => s.out === null),
     "...and a check that rewrites a tracked file on every run makes one more run, then is held to the files it left: not a run at every stop", `${ran(stamps)} ${stops.map(show).join(" | ")}`);
+}
+
+// A check that keeps its last logs, named by time (like a Playwright report's data or a coverage tmp folder): each run
+// removes the oldest and writes a new one. That is its own writing, so only a claim runs it again, not every stop.
+async function rotatingOutput() {
+  const dir = project("rotating-output", { commands: "check `node count.mjs && node rot.mjs`" });
+  edit(dir, "rot.mjs", "import { readdirSync, rmSync, writeFileSync } from 'node:fs'; const l = readdirSync('.').filter((f) => /^run-\\d+\\.log$/.test(f)).sort(); for (const f of l.slice(0, -1)) rmSync(f); writeFileSync(`run-${Date.now()}.log`, 'ok');");
+  git(dir, "add", "-A"), git(dir, "commit", "-qm", "a check that keeps its last two logs, named by time");
+  edit(dir, "app.js", "the AI's work");
+  const stops = [];
+  for (const m of [WORKED, DONE, DONE, WORKED, WORKED]) stops.push(await hook(dir, { last_assistant_message: m }));
+  expect(ran(dir) === "xxx" && stops[2].shown.includes("so the next claim runs them again. If a check writes them, they can go in .gitignore.") && stops.slice(3).every((s) => s.out === null),
+    "a check that removes its oldest log and writes a new one named by time is held to the files it left: a stop that changed nothing runs nothing", `${ran(dir)} ${stops.map(show).join(" | ")}`);
+}
+
+// A check that writes 60 report files each run, more than three names: an edit made while the checks run, to a file
+// whose name sorts after theirs, still isn't held as checked, and the next line counts every file.
+async function editedPastFifty() {
+  const dir = project("edited-past-fifty", { commands: "check `node count.mjs && node gen.mjs && node fail.mjs && node poke.mjs`" });
+  edit(dir, "gen.mjs", "import { mkdirSync, writeFileSync } from 'node:fs'; mkdirSync('build', { recursive: true }); for (let i = 0; i < 60; i++) writeFileSync(`build/r${String(i).padStart(2, '0')}.txt`, String(Math.random()));");
+  // Once armed, after fail.mjs has read fail.txt, fail.txt breaks: as someone's edit while the checks run.
+  edit(dir, "poke.mjs", "import { existsSync, rmSync, writeFileSync } from 'node:fs'; import { join } from 'node:path'; const arm = join(process.env.OTM_TEST_OUT, 'edited-past-fifty.arm'); if (existsSync(arm)) rmSync(arm), writeFileSync('fail.txt', '1');");
+  edit(dir, "fail.txt", "0"), git(dir, "add", "-A"), git(dir, "commit", "-qm", "a check that writes 60 reports");
+  edit(dir, "app.js", "the AI's work");
+  const first = await hook(dir, { last_assistant_message: WORKED });
+  writeFileSync(join(OUT, "edited-past-fifty.arm"), ""), edit(dir, "app.js", "the AI's second change");
+  const second = await hook(dir, { last_assistant_message: WORKED }), third = await hook(dir, { last_assistant_message: WORKED });
+  expect(ran(dir) === "xxx" && first.shown.includes("and 57 more changed while the checks ran") && second.shown.includes("`build/r00.txt`, `build/r01.txt`, `build/r02.txt` and 58 more changed while the checks ran, so the next stop runs them again")
+    && third.back?.includes("because files changed while the last check ran (`build/r00.txt`, `build/r01.txt`, `build/r02.txt` and 58 more). On ") && third.back.includes("failed (exit 1)"),
+    "...and past the 50 names the state keeps: a check that writes 60 files, and an edit meanwhile to a file that sorts after them, is still checked at the next stop, and its line counts all 61", `${ran(dir)} ${[first, second, third].map(show).join(" | ")}`);
 }
 
 // Two sessions in one checkout stop while each other's checks run: both are sent back once, and the one whose stop saved
@@ -1005,6 +1124,6 @@ async function unfoundDroppedLater() {
 }
 
 parts();
-await finish("test-stop-check", [failingCheck, passThenFail, filesDecide, changedByItself, othersChange, firstCheckout, firstCheckpoint, editedDuringRun, twoSessions, unsureStop, worktreesInside, otherProject, cancelled, cutState, ruleChecks, rewordAfterSendBack, nowMarks, staleAtCheckpoint, screensAndShapes, hangingCheck, writesOnlyState, rewordTwice, sendBackOnce, readOnlyGit, dayShown,
+await finish("test-stop-check", [failingCheck, passThenFail, filesDecide, changedByItself, othersChange, ownChmod, subfolderTimes, namesWritten, firstCheckout, hiddenFromStatus, firstCheckpoint, editedDuringRun, rotatingOutput, editedPastFifty, twoSessions, unsureStop, worktreesInside, otherProject, cancelled, cutState, ruleChecks, rewordAfterSendBack, nowMarks, staleAtCheckpoint, screensAndShapes, hangingCheck, writesOnlyState, rewordTwice, sendBackOnce, readOnlyGit, dayShown,
   tidyStop, leftovers, stateGuards, saveFails, stateAfterInit, sandboxedNow, spareOfAnother, noProc, watcherFails, globalOverruled, chainAskedOnce, endsNearTime, cancelAfterEnd, cancelAfterTimeout, noPs,
   unfoundRuleDropped, rewordUndoneEarly, unfoundRewordUndone, branchSwitch, goneOnce, goneOnNewBranch, unfoundDroppedLater, ...gitCases]);
