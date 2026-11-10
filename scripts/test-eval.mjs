@@ -136,6 +136,31 @@ for await (const line of createInterface({ input: process.stdin })) {
     session.close();
     expect(said.length > 0 && said.every((t) => t.includes("the real project: EPERM") && t.includes("its copy: read") && t.includes("a session's socket: EPERM")), `the claude the driver starts runs in the sandbox: the real project and another session's socket refused, its copy read ("${said[0]?.slice(0, 160)}")`);
     expect(d.turns.every((t) => t.asked) && !d.stoppedBy, "each turn ended on a question, and the session closed on its own");
+
+    // stopAtChange: a note in .offthemode/ goes on; the first change outside it stops the arm before the next message.
+    const builder = at("bin", "claude-builds.mjs");
+    put(builder, `#!/usr/bin/env node
+import { mkdirSync, writeFileSync } from "node:fs";
+import { createInterface } from "node:readline";
+const out = (e) => process.stdout.write(JSON.stringify(e) + "\\n");
+let n = 0;
+for await (const line of createInterface({ input: process.stdin })) {
+  n++;
+  if (n === 1) { mkdirSync(".offthemode", { recursive: true }); writeFileSync(".offthemode/stop-test-note.md", "a note\\n"); }
+  if (n === 2) writeFileSync("built.js", "1\\n");
+  out({ type: "system", subtype: "status", status: "requesting" });
+  out({ type: "assistant", message: { content: [{ type: "text", text: \`turn \${n} done\` }] } });
+  out({ type: "result", subtype: "success", is_error: false, terminal_reason: "completed", result: \`turn \${n} done\` });
+}
+`);
+    chmodSync(builder, 0o755);
+    mkdirSync(at("drive-log-stop"));
+    // A real copy starts with everything committed (squash); the probes above left files in this one, so commit them.
+    execFileSync("git", ["-C", copy, "add", "-A"]);
+    execFileSync("git", ["-C", copy, "-c", "user.name=eval", "-c", "user.email=eval@test", "commit", "-q", "--no-verify", "-m", "start of the stop test"]);
+    const stopBase = execFileSync("git", ["-C", copy, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+    const st = await driveArm({ c: { ...c, stopAtChange: true }, arm: "plain", run: 1, dir: copy, base: stopBase, logDir: at("drive-log-stop"), tmp, settings: {}, sid: "test-sid-stop", profile: profile(fence), claude: builder });
+    expect(st.stoppedBy === "first change" && st.turns.length === 2 && /first change/.test(st.turns[1].error ?? ""), `stopAtChange: a note in .offthemode/ goes on, and the first change outside it stops the arm before the next message (stopped by ${st.stoppedBy}, ${st.turns.length} turns, turn 2: ${st.turns[1]?.error})`);
   }
 
   // ---- 2. No path out by link: a link back into the project is re-pointed; any other link out stops the copy.

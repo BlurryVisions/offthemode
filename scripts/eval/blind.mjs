@@ -27,6 +27,12 @@ export function changedFiles(dir, base) {
   return withScratchIndex(dir, (run) => run("diff", "--cached", "--name-only", base, "--", ".", WORKTREES).split("\n").filter(Boolean).length);
 }
 
+// What an arm built: changes outside Off the Mode's notes and Claude Code's own folder. A case's stopAtChange stops
+// the arm at the first one, so a run can be measured up to the moment it starts building.
+export function codeChanges(dir, base) {
+  return withScratchIndex(dir, (run) => run("diff", "--cached", "--name-only", base, "--", ".", ":(exclude).claude", ":(exclude).offthemode").split("\n").filter(Boolean).length);
+}
+
 // Off the Mode's own notes would give the arm away: .offthemode/ stays out, and its ids and name are masked.
 // What a judge could still use to guess is counted, and the report shows it.
 const NOTES = ":(exclude).offthemode";
