@@ -222,7 +222,7 @@ A correction you give once is a moment. A correction you give twice is a missing
 
 > **Why:** A rule is a request; a check is an exit code (the pass or fail signal a script returns). Prose rules compete for attention. Checks do not.
 
-> **Pro move:** Off the Mode's stop check (Verification Loop) can run as a hook, a script your tool runs on an event; in Claude Code, setup offers it. When your AI claims done while the checks in §Commands fail, it sends the claim back once and shows you the lines. Gate only an explicit claim of done, never every turn, or the gate overrides your own checkpoints such as "stop after step 2 for my review". Without hooks, `node .offthemode/stop-check.mjs --now` runs the same checks; hooks only make them automatic.
+> **Pro move:** Off the Mode's stop check (Verification Loop) can run as a hook, a script your tool runs on an event; in Claude Code, setup offers it. At a stop after files changed, it runs the checks in §Commands and shows you the lines; while they fail, it sends your AI back once. Let changed files decide when the checks run, never the reply's words, which are easy to misread; and never send back a reply that stops for your answer, or the gate overrides your own checkpoints such as "stop after step 2 for my review". Without hooks, `node .offthemode/stop-check.mjs --now` runs the same checks; hooks only make them automatic.
 
 ### Prune the rules
 

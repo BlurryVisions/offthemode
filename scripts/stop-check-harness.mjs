@@ -27,6 +27,8 @@ export const expect = (ok, what, detail = "") => (ok ? passed++ : failed.push(`F
 export const DONE = "Done. The fix is live and all 12 tests pass.";
 export const CHECKPOINT = "Step 1 is done. Stopping here for your review before I start step 2.";
 export const PLAN = "Here is the plan: the queue first, then the runner. Which one first?";
+// Work reported with no claim of done and no stop for the owner, as most replies that change code read.
+export const WORKED = "I've added titleCase and a test, but I couldn't run the tests.";
 export const OWNER = "i dont want to shift songs which are only on deluxe and not on normal album to normal album";
 export const REWORDED = "We will not move a song that's only on a deluxe edition to the plain album";
 

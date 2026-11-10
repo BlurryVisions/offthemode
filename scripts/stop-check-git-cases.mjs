@@ -3,7 +3,7 @@
 import { mkdirSync, rmSync, chmodSync, symlinkSync, copyFileSync, renameSync, existsSync, readFileSync, writeFileSync, truncateSync } from "node:fs";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
-import { BASE, OUT, sleep, project, edit, ran, hook, now, expect, git, show, ownerLine, OWNER, CHECKPOINT } from "./stop-check-harness.mjs";
+import { BASE, OUT, sleep, project, edit, ran, hook, now, expect, git, show, ownerLine, OWNER, CHECKPOINT, WORKED } from "./stop-check-harness.mjs";
 
 const posix = process.platform !== "win32";
 const reused = (h) => h.shown.includes("No file changed since");
@@ -332,15 +332,15 @@ async function stampedOutput() {
   const rest = await steps(dir, [["coverage/ put in .gitignore", () => edit(dir, ".gitignore", "coverage/\n")], ["nothing changed"]]);
   expect(one === "first: 1 ran" && twice === 2 && !reused(again) && again.shown.includes("`coverage/index.html` changed while the checks ran") && again.shown.includes("If a check writes it, it can go in .gitignore.") && rest === "coverage/ put in .gitignore: 3 ran, nothing changed: 3 same",
     "a check that stamps a report git doesn't ignore: each claim runs the checks again and names the file, with the remedy; once it is ignored, a claim with nothing changed reuses the run", `${one} | ${show(again)} | ${rest}`);
-  const unsure = project("while-running-checkpoint", { commands: "check `node write.mjs`" });
+  const unsure = project("while-running-checkpoint", { commands: "check `node count.mjs && node write.mjs`" });
   edit(unsure, "write.mjs", "import { writeFileSync } from 'node:fs'; writeFileSync('made.txt', 'made at ' + Date.now());"), commit(unsure, "a check that writes");
-  const first = await hook(unsure), h = await hook(unsure, { last_assistant_message: CHECKPOINT });
-  expect(first.shown.includes("`made.txt` changed while the checks ran, so the next claim runs them again") && h.shown.includes("its run at") && h.shown.includes("perhaps before the latest changes") && !h.shown.includes("The checks passed"),
-    "a run during which a file changed says which, and a checkpoint after it calls it perhaps from before the latest changes, not surely", show(first) + show(h));
+  const first = await hook(unsure), quiet = await hook(unsure, { last_assistant_message: WORKED }), h = await hook(unsure, { last_assistant_message: CHECKPOINT });
+  expect(first.shown.includes("`made.txt` changed while the checks ran, so the next claim runs them again") && quiet.out === null && ran(unsure) === "x" && h.shown.includes("its run at") && h.shown.includes("perhaps before the latest changes") && !h.shown.includes("The checks passed"),
+    "a run during which a file changed says which; while the files are as it left them, a reply that claims nothing runs nothing, and a checkpoint calls the run perhaps from before the latest changes, not surely", show(first) + show(quiet) + show(h));
   edit(unsure, "app.js", "the AI's later change");
   const later = await hook(unsure, { last_assistant_message: CHECKPOINT });
-  expect(later.shown.includes("its run at") && later.shown.includes(", before the latest changes") && !later.shown.includes("perhaps"),
-    "...and once a file changed after that run, a checkpoint says it is surely from before the latest changes", show(later));
+  expect(ran(unsure) === "xx" && later.shown.includes("passed (") && !later.shown.includes("its run at") && !later.shown.includes("before the latest changes"),
+    "...and once a file changed after that run, a checkpoint runs the checks again instead of showing it", show(later));
 }
 
 // A file someone else edits while the checks run (the owner's editor, a watcher), in two full runs in a row: the check

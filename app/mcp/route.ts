@@ -44,7 +44,7 @@ const handler = createMcpHandler(
       "get_template",
       {
         title: "Get an Off the Mode template",
-        description: `Returns one of the templates: the project's .offthemode/ files, ME.md for ~/.offthemode/ (the user's usual setup), UPDATES.md (the lines the templates replaced, for updating a project set up earlier), and stop-check.mjs (the script that runs the project's checks when the AI says the work is done): ${templateNames.join(", ")}.`,
+        description: `Returns one of the templates: the project's .offthemode/ files, ME.md for ~/.offthemode/ (the user's usual setup), UPDATES.md (the lines the templates replaced, for updating a project set up earlier), and stop-check.mjs (the script that runs the project's checks after files change): ${templateNames.join(", ")}.`,
         inputSchema: z.object({ name: z.enum(templateNames) }),
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
@@ -84,7 +84,7 @@ const handler = createMcpHandler(
     for (const name of templateNames) {
       const mimeType = isScript(name) ? "text/javascript" : "text/markdown";
       const description = name === "UPDATES.md" ? "The lines the templates replaced, newest first"
-        : isScript(name) ? `The .offthemode/${name} script, which runs the project's checks when the AI says the work is done`
+        : isScript(name) ? `The .offthemode/${name} script, which runs the project's checks after files change`
         : `The .offthemode/${name} template`;
       server.registerResource(
         `template-${name}`,

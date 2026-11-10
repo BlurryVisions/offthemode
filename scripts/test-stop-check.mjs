@@ -7,10 +7,10 @@ import { tmpdir } from "node:os";
 import { spawn, execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
-import { ROOT, SCRIPT, SOURCE, BASE, OUT, sleep, survivors, expect, DONE, CHECKPOINT, PLAN, OWNER, REWORDED, git, project, ownerLine, edit, ran, stateFile, node, hook, now, show, finish } from "./stop-check-harness.mjs";
+import { ROOT, SCRIPT, SOURCE, BASE, OUT, sleep, survivors, expect, DONE, CHECKPOINT, PLAN, WORKED, OWNER, REWORDED, git, project, ownerLine, edit, ran, stateFile, node, hook, now, show, finish } from "./stop-check-harness.mjs";
 import { gitCases } from "./stop-check-git-cases.mjs";
 
-const { readReply, parseCommands, parseLines, productRules, productScreens, budget, norm } = await import(pathToFileURL(SCRIPT).href);
+const { readReply, stopsForOwner, parseCommands, parseLines, productRules, productScreens, budget, norm } = await import(pathToFileURL(SCRIPT).href);
 
 // ---------- the parts ----------
 function parts() {
@@ -28,6 +28,9 @@ function parts() {
     "Piece 1 is done, with all tests passing. Piece 2 is building in the background.", "All fixed, and the tests pass.\n\n**Commit and push now?** I recommend yes.", "The diagnostic is live. Please try once more, then tell me once you've tried.", "Step 2 is done. Over to you for review."]) {
     expect(readReply(t) === "checkpoint", `readReply · a checkpoint: ${t}`, readReply(t));
   }
+  // Whether a reply stops for the owner is asked of a reply that claims nothing too: it decides who is sent back.
+  for (const t of [PLAN, CHECKPOINT, "The build is still running. I'll report back when it finishes."]) expect(stopsForOwner?.(t) === true, `stopsForOwner · stops for the owner: ${t}`);
+  for (const t of [DONE, WORKED]) expect(stopsForOwner?.(t) === false, `stopsForOwner · doesn't stop for the owner: ${t}`);
 
   const cmds = parseCommands("## Commands (x)\ncheck `npm run check` · full check `npm run check && npm run build` · run `npm run dev` · rule checks `npm run check:bonus` (reads saved answers; `npm run fetch:mb` refreshes them) · screen checks `npx playwright test e2e/fix.spec.ts` · evals `none`\n\n## Done means verified\n");
   expect(JSON.stringify(cmds.map((c) => [c.kind, c.cmd, c.plain])) === JSON.stringify([["check", "npm run check", true], ["rule", "npm run check:bonus", true], ["screen", "npx playwright test e2e/fix.spec.ts", true]]),
@@ -74,14 +77,15 @@ function parts() {
 // ---------- the hook ----------
 async function failingCheck() {
   const dir = project("failing", { commands: "check `node count.mjs && node fail.mjs` · full check `node pass.mjs`" });
-  let h = await hook(dir, { last_assistant_message: PLAN });
-  expect(h.out === null && ran(dir) === "" && !existsSync(stateFile(dir)), "a reply that doesn't claim done runs nothing, shows nothing and writes nothing", show(h));
-  h = await hook(dir);
+  let h = await hook(dir);
   expect(h.back.includes("`node count.mjs && node fail.mjs` failed (exit 1)") && h.back.includes("1 test failed: adds up") && h.shown.includes("sent back once") && ran(dir) === "x",
     "a done claim with a failing check sends the AI back, with the failing lines", show(h));
   h = await hook(dir);
   expect(!h.back && ran(dir) === "x" && h.shown.includes("No file changed since") && h.shown.includes("failed (exit 1") && h.shown.includes("its run at") && h.shown.includes("Same result as when your AI was last sent back"),
     "no file changed since the last run: the check doesn't run again, its last result is shown, and the stop goes through", show(h));
+  const kept = readFileSync(stateFile(dir), "utf8");
+  h = await hook(dir, { last_assistant_message: PLAN });
+  expect(h.out === null && ran(dir) === "x" && readFileSync(stateFile(dir), "utf8") === kept, "with no file changed, a reply that doesn't claim done runs nothing, shows nothing and writes nothing", show(h));
   edit(dir, ".offthemode/STATE.md", "the notes change every reply");
   h = await hook(dir);
   expect(ran(dir) === "x" && h.shown.includes("(STATE.md, DECISIONS.md, CHECKLIST.md, REASSESS.md and files git ignores don't count), so the checks show their last run."),
@@ -97,12 +101,13 @@ async function failingCheck() {
   edit(dir, "notes.txt", "another change");
   h = await hook(dir);
   expect(h.back.includes("failed (exit 2)"), "...and the same new numbers on a later claim do send back once", show(h));
-  edit(dir, "fail.txt", "3");
   h = await hook(dir, { last_assistant_message: CHECKPOINT });
   expect(!h.back && ran(dir) === "xxxx" && h.shown.includes("At a stop for your review the checks show their last run.") && h.shown.includes("failed (exit 2") && h.shown.includes("stopped for your answer") && h.shown.includes("your AI's reply says some work is done"),
-    "a reply that stops for the owner (a checkpoint) reruns only the rule checks (none here), shows the rest as they last ran, and is never sent back", show(h));
+    "a reply that stops for the owner (a checkpoint), with no file changed, reruns only the rule checks (none here), shows the rest as they last ran, and is never sent back", show(h));
+  edit(dir, "fail.txt", "3");
   h = await hook(dir, { background_tasks: [{ id: "a", type: "workflow", status: "running" }] });
-  expect(h.out === null, "a claim while a workflow is still running waits for it: nothing runs", show(h));
+  const agent = await hook(dir, { agent_id: "agent-1", last_assistant_message: WORKED });
+  expect(h.out === null && agent.out === null && ran(dir) === "xxxx", "a claim while a workflow is still running waits for it, and an agent's own stop is left alone: nothing runs, though a file changed", show(h) + show(agent));
   const now = await node([join(dir, ".offthemode/stop-check.mjs"), "--now"], dir);
   expect(now.code === 1 && now.stdout.includes("Not done yet:") && now.stdout.includes("failed (exit 3"), "--now runs the same checks by hand and exits 1 when they don't show it done", now.stdout + now.stderr);
   h = await hook(dir);
@@ -121,10 +126,53 @@ async function passThenFail() {
     "fail, pass, then the same failure again: sent back again, since a clean run forgets the last send-back; with no rule named it never says \"All passed\"", show(first) + show(clean) + show(h));
 }
 
+// The files decide when the checks run, not the reply's wording: a reply that claims nothing, as most replies that
+// change code read, is checked once a file changed and left alone when none did.
+async function filesDecide() {
+  const dir = project("files-decide", { commands: "check `node count.mjs && node fail.mjs`" }), worked = (input = {}) => hook(dir, { last_assistant_message: WORKED, ...input });
+  edit(dir, "fail.txt", "0");
+  let h = await worked();
+  expect(ran(dir) === "x" && !h.back && h.shown.includes("because it has no earlier check of this project") && h.shown.includes("passed (") && h.shown.includes("The checks passed"),
+    "a first stop whose reply claims nothing: with no check yet, the checks run and the owner sees the result", show(h));
+  const saved = () => (existsSync(stateFile(dir)) ? readFileSync(stateFile(dir), "utf8") : ""), kept = saved();
+  h = await worked();
+  expect(h.out === null && ran(dir) === "x" && kept && saved() === kept, "...and with no file changed since that run, a reply that claims nothing runs nothing, shows nothing and writes nothing", show(h));
+  edit(dir, "app.js", "the AI's work");
+  h = await worked();
+  expect(ran(dir) === "xx" && !h.back && h.shown.includes("because files changed since the last check") && h.shown.includes("passed (") && !h.shown.includes("its run at"),
+    "a file changed and the reply claims nothing: the checks run and the owner sees the result, with no send-back while they pass", show(h));
+  h = await hook(dir);
+  expect(ran(dir) === "xx" && !h.back && h.shown.includes("because your AI said the work is done") && h.shown.includes("No file changed since") && h.shown.includes("The checks passed"),
+    "...and a claim after it, with no file changed, shows that run, as it would a claim's", show(h));
+  edit(dir, "fail.txt", "1");
+  h = await worked();
+  expect(ran(dir) === "xxx" && h.back.includes("ran the checks RULES.md §Commands names, because files changed since the last check. On ") && h.back.includes(" they don't show the work done:") && !h.back.includes("says the work is done")
+    && h.back.includes("failed (exit 1)") && h.back.includes("1 test failed: adds up") && h.shown.includes("sent back once"),
+    "a file changed, the reply claims nothing and a check fails: the AI is sent back once, and isn't told its reply said the work is done", show(h));
+  const still = await worked({ stop_hook_active: true });
+  edit(dir, "fail.txt", "2");
+  h = await worked({ stop_hook_active: true });
+  expect(still.out === null && ran(dir) === "xxxx" && !h.back && h.shown.includes("failed (exit 2") && h.shown.includes("already sent back once"),
+    "...and a second stop in the same turn is never sent back: left alone with no file changed, shown with new numbers", show(still) + show(h));
+  edit(dir, "notes.txt", "a change that fixes nothing");
+  const sent = await worked();
+  edit(dir, "notes.txt", "another");
+  h = await worked();
+  const claim = await hook(dir);
+  expect(sent.back.includes("failed (exit 2)") && !h.back && h.shown.includes("Same result as when your AI was last sent back") && !claim.back && claim.shown.includes("No file changed since") && claim.shown.includes("Same result as when your AI was last sent back"),
+    "...and in a later turn new numbers go back once, then stop, whether the next reply claims nothing or done", show(sent) + show(h) + show(claim));
+  edit(dir, "fail.txt", "3");
+  h = await hook(dir, { last_assistant_message: PLAN });
+  expect(!h.back && h.shown.includes("failed (exit 3") && h.shown.includes("stopped for your answer"), "a file changed, a check fails and the reply ends with a question: shown to the owner, never sent back", show(h));
+  h = await hook(dir);
+  expect(h.shown.includes("No file changed since") && h.back.includes("ran the checks RULES.md §Commands names, because the last reply says the work is done. On ") && h.back.includes(" they don't show it done:") && h.back.includes("failed (exit 3)"),
+    "...and a claim of done on that result is sent back in the words a claim always got, from the saved run", show(h));
+}
+
 async function otherProject() {
   const home = project("home", { commands: "check `node count.mjs`" }), other = project("other-clone", { commands: "check `node count.mjs`" });
-  const h = await hook(home, { cwd: other });
-  expect(h.shown.includes("ran nothing") && ran(other) === "" && ran(home) === "", "when the AI works in another project with notes, none of that project's commands run", show(h));
+  const h = await hook(home, { cwd: other }), quiet = await hook(home, { cwd: other, last_assistant_message: WORKED });
+  expect(h.shown.includes("ran nothing") && quiet.out === null && ran(other) === "" && ran(home) === "", "when the AI works in another project with notes, none of that project's commands run, and a reply that claims nothing is still left alone", show(h) + show(quiet));
   const tree = join(BASE, "home-tree");
   git(home, "worktree", "add", "-q", tree);
   const w = await hook(home, { cwd: tree });
@@ -247,24 +295,24 @@ async function nowMarks() {
 }
 
 async function staleAtCheckpoint() {
-  const dir = project("stale", { commands: "check `node fail.mjs` · rule checks `node rule.mjs` · screen checks `node screen-ok.mjs`", product: `${ownerLine(OWNER)}\n- Screen check: /queue · checked by node screen-ok.mjs` });
+  const commands = "check `node fail.mjs` · rule checks `node rule.mjs` · screen checks `node screen-ok.mjs`", product = `${ownerLine(OWNER)}\n- Screen check: /queue · checked by node screen-ok.mjs`;
+  const dir = project("stale", { commands, product });
   edit(dir, "fail.txt", "0");
-  const first = await hook(dir, { last_assistant_message: CHECKPOINT });
-  expect(first.shown.includes("The rule checks passed, but `node fail.mjs` hasn't run yet; `node screen-ok.mjs` hasn't run yet.") && !first.shown.includes("All passed") && !first.shown.includes("No screen check printed"),
-    "the first stop is a checkpoint: the checks that never ran aren't called passed, and a screen whose check hasn't run isn't flagged", show(first));
   const claim = await hook(dir), same = await hook(dir);
   expect(claim.shown.includes("All passed.") && same.shown.includes("No file changed since") && same.shown.includes("All passed."), "a claim runs them all; with no file changed since, their last run still counts as passed", show(claim) + show(same));
   edit(dir, "fail.txt", "1");
   const h = await hook(dir, { last_assistant_message: CHECKPOINT });
-  expect(h.shown.includes("before the latest changes)") && h.shown.includes("The rule checks passed, but `node fail.mjs` last ran at") && !h.shown.includes("All passed"),
-    "a checkpoint after the code changed shows the last run as from before the changes, never \"All passed\"", show(h));
-  const plain = project("stale-plain", { commands: "check `node pass.mjs`" });
-  const p = await hook(plain, { last_assistant_message: CHECKPOINT });
-  expect(p.shown.includes("No check failed, but `node pass.mjs` hasn't run yet. No rule of yours is checked") && !p.shown.includes("The checks passed"), "...and with no rule named, it never says \"The checks passed\" for a check that didn't run", show(p));
-  const loose = project("stale-loose", { commands: "check `node pass.mjs`", noGit: true });
+  expect(!h.back && h.shown.includes("because files changed since the last check") && h.shown.includes("`node fail.mjs`: failed (exit 1") && h.shown.includes("`node screen-ok.mjs`: passed (") && !h.shown.includes("its run at") && !h.shown.includes("At a stop for your review") && h.shown.includes("stopped for your answer"),
+    "a checkpoint after the code changed runs every check again and shows what they find now, never their last run; it is still not sent back", show(h));
+  // Outside git it can't tell whether a file changed, so there the reply decides alone.
+  const first = project("stale-first", { commands, product, noGit: true }), loose = project("stale-loose", { commands: "check `node pass.mjs`", noGit: true });
+  const quiet = await hook(first, { last_assistant_message: WORKED }), f = await hook(first, { last_assistant_message: CHECKPOINT }), p = await hook(loose, { last_assistant_message: CHECKPOINT });
   await hook(loose);
   const l = await hook(loose, { last_assistant_message: CHECKPOINT });
-  rmSync(join(tmpdir(), `offthemode-stop-${createHash("sha256").update(realpathSync(loose)).digest("hex").slice(0, 12)}.json`), { force: true });
+  for (const d of [first, loose]) rmSync(tempState(d), { force: true });
+  expect(quiet.out === null && f.shown.includes("The rule checks passed, but `node fail.mjs` hasn't run yet; `node screen-ok.mjs` hasn't run yet.") && !f.shown.includes("All passed") && !f.shown.includes("No screen check printed"),
+    "outside git, a reply that claims nothing still runs nothing, and at a first stop that is a checkpoint the checks that never ran aren't called passed, nor a screen whose check hasn't run flagged", show(quiet) + show(f));
+  expect(p.shown.includes("No check failed, but `node pass.mjs` hasn't run yet. No rule of yours is checked") && !p.shown.includes("The checks passed"), "...and with no rule named, it never says \"The checks passed\" for a check that didn't run", show(p));
   expect(l.shown.includes("last ran at") && l.shown.includes("perhaps before the latest changes"), "outside git, where it can't tell, a checkpoint says the last run is perhaps from before the latest changes", show(l));
 }
 
@@ -287,9 +335,8 @@ async function hangingCheck() {
   expect(kept?.timedOut && kept.ms < 6000 && stop < 25000 && !h.stderr.includes("killed") && h.back.includes("`node hang.mjs` didn't finish in 3 s, so it judged nothing") && h.back.includes("`node rule.mjs` didn't run: the checks used all their time"),
     `a hanging check is stopped at stop_check_seconds and reported as judging nothing (its run ${kept?.ms} ms, the whole stop ${stop} ms)`, show(h));
   expect(pids.length === 3 && !left.length, "the hung check and what it started, even in a group of its own, are all gone afterwards", `pids ${pids} alive ${left}`);
-  edit(dir, "a.txt", "a change after the hang");
   const later = await hook(dir, { last_assistant_message: CHECKPOINT });
-  expect(/`node hang\.mjs`: didn't finish in 3 s, at \d\d:\d\d, before the latest changes/.test(later.shown), "at a checkpoint after a change, a hang from before it says so, as a pass or a failure would", show(later));
+  expect(/`node hang\.mjs`: didn't finish in 3 s, at \d\d:\d\d\n/.test(later.shown), "at a checkpoint with no file changed, a hang shows as its last run with its time, as a pass or a failure would", show(later));
 }
 
 // The owner's words put back after a reword, then reworded again: the AI's own words never pass for the owner's rule,
@@ -367,8 +414,8 @@ async function writesOnlyState() {
   expect(snap() === before && gitFiles() === [...gitBefore.split(","), "offthemode-stop.json"].sort().join(",") && index() === indexBefore && h.shown.includes("All passed."),
     "it writes nothing in the project but its own state file in .git/, and never rewrites git's index", show(h));
   const none = project("nothing", { commands: "check `{{?CHECK_CMD}}` · evals `none`" });
-  const first = await hook(none), second = await hook(none);
-  expect(first.shown.includes("found nothing to run") && second.out === null, "with no check named it says so once, then stays quiet", show(first) + show(second));
+  const first = await hook(none, { last_assistant_message: WORKED }), second = await hook(none);
+  expect(first.shown.includes("found nothing to run") && second.out === null, "with no check named it says so once, whatever the reply says, then stays quiet", show(first) + show(second));
 }
 
 // Asked to stop first, a check cut off at its time can tidy up, as Playwright closes its browser and removes its profile.
@@ -759,6 +806,6 @@ async function unfoundDroppedLater() {
 }
 
 parts();
-await finish("test-stop-check", [failingCheck, passThenFail, otherProject, cancelled, cutState, ruleChecks, rewordAfterSendBack, nowMarks, staleAtCheckpoint, screensAndShapes, hangingCheck, writesOnlyState, rewordTwice, sendBackOnce, readOnlyGit, dayShown,
+await finish("test-stop-check", [failingCheck, passThenFail, filesDecide, otherProject, cancelled, cutState, ruleChecks, rewordAfterSendBack, nowMarks, staleAtCheckpoint, screensAndShapes, hangingCheck, writesOnlyState, rewordTwice, sendBackOnce, readOnlyGit, dayShown,
   tidyStop, leftovers, stateGuards, saveFails, stateAfterInit, sandboxedNow, spareOfAnother, noProc, watcherFails, globalOverruled, chainAskedOnce, endsNearTime, cancelAfterEnd, cancelAfterTimeout, noPs,
   unfoundRuleDropped, rewordUndoneEarly, unfoundRewordUndone, branchSwitch, goneOnce, goneOnNewBranch, unfoundDroppedLater, ...gitCases]);

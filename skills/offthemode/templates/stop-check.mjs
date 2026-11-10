@@ -1,14 +1,15 @@
 // Off the Mode · the stop check. Setup copies it to .offthemode/stop-check.mjs and replaces it whole on update.
-// When your AI says the work is done, it runs the checks .offthemode/RULES.md §Commands names (check, rule checks,
-// screen checks), shows you what they found, and sends the AI back once when they don't show the work done. At a stop
-// for your review, or when no file changed since the last full run (Off the Mode's records, such as STATE.md, and files
-// git ignores don't count), only the rule checks rerun, and a check whose command calls git, but only when anything git
-// sees has changed, records too; the others show their last run. A reply that claims nothing runs nothing. The checks
-// run as if you typed them in a terminal (on Windows, cmd.exe, not Git Bash), outside Claude Code's sandbox. This script
-// makes no network call (a check it runs may), and writes only its own state file (inside .git/; in the temp folder
-// outside git, or where .git/ can't be written); git's own filters, such as Git LFS's, may keep a copy of a changed file
-// inside .git/, as they do on git add. A filter that drops part of a file as git stores it, such as nbstripout's for
-// notebook outputs, hides a change to that part.
+// At a stop after a file changed since its last full run (Off the Mode's records, such as STATE.md, and files git
+// ignores don't count), it runs the checks .offthemode/RULES.md §Commands names (check, rule checks, screen checks),
+// whatever the reply says, shows you what they found, and sends the AI back once when they don't show the work done,
+// unless the reply stops for your answer. With no file changed, a reply that claims nothing runs nothing; any other
+// reruns only the rule checks, and a check whose command calls git, but only when anything git sees has changed,
+// records too; the others show their last run. Where it can't tell (outside git, say), a reply that says the work is
+// done and doesn't stop for you counts as a change. The checks run as if you typed them in a terminal (on Windows,
+// cmd.exe, not Git Bash), outside Claude Code's sandbox. This script makes no network call (a check it runs may), and
+// writes only its own state file (inside .git/; in the temp folder outside git, or where .git/ can't be written); git's
+// own filters, such as Git LFS's, may keep a copy of a changed file inside .git/, as they do on git add. A filter that
+// drops part of a file as git stores it, such as nbstripout's for notebook outputs, hides a change to that part.
 // Run it yourself, or from any AI tool: node .offthemode/stop-check.mjs --now (exit 1 when the checks don't show it done)
 // Claude Code runs it at each stop once .claude/settings.local.json holds this block, added only on the owner's yes:
 // SETTINGS {"hooks":{"Stop":[{"hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.offthemode/stop-check.mjs"],"timeout":900,"statusMessage":"Off the Mode is checking the work"}]}]}}
@@ -50,7 +51,8 @@ const MARK = "Off the Mode's stop check";
 // ---------- reading the reply ----------
 // Read with patterns, measured on 610 real final replies from five projects, 100 of them labelled by hand: 12 of the 18
 // read as a claim say the work is done; of 18 that do, 12 read as a claim, 6 as a checkpoint (shown, never sent back).
-// A reply wrongly read as a claim can be sent back once, so an unsure reply reads as a checkpoint.
+// A reply wrongly read as a claim can be sent back once, so an unsure reply reads as a checkpoint. Changed files are
+// checked whatever it reads: of 125 real replies that edited project code, 73 read as claiming nothing.
 const STRONG = "pushed|merged|deployed|shipped";
 const SOFT = "done|fixed|finished|complete|verified|live|ready|in place|resolved|all set|committed|built|tested";
 const DOUBT = new RegExp(String.raw`(?:\b(?:not|never|nothing|yet|once|when|whenever|if|unless|until|before|after|whether|will|would|should|could|can|to|be|being|needs?|gets?)|n't)\b(?:[ \t]+[\w'’]+){0,4}?[ \t]+(?:${STRONG}|${SOFT})\b|\bdone[- ]when\b`, "gi");
@@ -65,13 +67,15 @@ const CHECKPOINT = /\b(?:(?:for|await|awaiting) your review|so you can review|(?
 // It waits on a job still running, or on a step only the owner can take.
 const WAITING = /\b(?:I need [^.\n]{0,60}\bfrom you|needs you\b|your (?:one |only |next )?step now|I'll (?:continue|go on|carry on|pick (?:it|this) up|report back) (?:when|once|after)|(?:is|are) still running|(?:still )?waiting (?:on|for)|when (?:it|they|that|this|both|the \w+) (?:finish(?:es)?|ends?|reports?|lands?|comes? back|(?:is|are) in)|still to come|your steps|you need to do|please (?:try|open|run|tell|copy|paste|reply|answer|confirm|look|leave|log in)|tell me (?:once|when|it's|it is)|copy what|reply with|(?:answer|pick|choose) (?:\d|one|both|a or b)|in the background|(?:once|when) (?:you|they|it)(?:'re|'s| are| is)? (?:back|answer|reply|say|confirm)|I'll [^.\n]{0,60}\b(?:once|when) |can't [^.\n]{0,40}\byet|over to you|your turn|tell me to (?:go on|continue|start)|holding (?:here|there)|when you say so)\b/i;
 
-/** "claim" when the reply says the work is done, "checkpoint" when it also stops for the owner, else "none". */
-export function readReply(text) {
-  const plain = String(text ?? "").replace(/```[\s\S]*?```|`[^`\n]*`|"[^"\n]*"|“[^”\n]*”/g, " ").replace(DOUBT, " ");
-  if (!CLAIMS.some((re) => re.test(plain))) return "none";
-  const end = plain.trim().split("\n").filter((l) => l.trim()).slice(-3).join("\n");
-  return CHECKPOINT.test(plain) || WAITING.test(plain) || /\?[\s*_)]*(?:\n|$)|\?\*\*/.test(end) ? "checkpoint" : "claim";
+const bare = (text) => String(text ?? "").replace(/```[\s\S]*?```|`[^`\n]*`|"[^"\n]*"|“[^”\n]*”/g, " ").replace(DOUBT, " ");
+const claims = (text, plain = bare(text)) => CLAIMS.some((re) => re.test(plain));
+/** Whether the reply stops for the owner: for their review, on a wait, or with a question in its last lines. */
+export function stopsForOwner(text) {
+  const plain = bare(text), end = plain.trim().split("\n").filter((l) => l.trim()).slice(-3).join("\n");
+  return CHECKPOINT.test(plain) || WAITING.test(plain) || /\?[\s*_)]*(?:\n|$)|\?\*\*/.test(end);
 }
+/** "claim" when the reply says the work is done, "checkpoint" when it also stops for the owner, else "none". */
+export const readReply = (text) => (!claims(text) ? "none" : stopsForOwner(text) ? "checkpoint" : "claim");
 
 // ---------- reading the notes ----------
 const read = (p) => { try { return readFileSync(p, "utf8"); } catch { return null; } };
@@ -448,10 +452,10 @@ function report(results, ctx, head) {
   if (ctx.notes.length) lines.push("Also:", ...ctx.notes.map((n) => `- ${n}`));
   return lines.join("\n");
 }
-function sendBack(results, ctx, where) {
+function sendBack(results, ctx, where, since) {
   const failed = results.filter((r) => r.timedOut || (r.code !== undefined && r.code !== 0));
   return cap([
-    `${MARK} (.offthemode/stop-check.mjs) ran the checks RULES.md §Commands names, because the last reply says the work is done. On ${where} they don't show it done:`,
+    `${MARK} (.offthemode/stop-check.mjs) ran the checks RULES.md §Commands names, because ${since ? `${since}. On ${where} they don't show the work done` : `the last reply says the work is done. On ${where} they don't show it done`}:`,
     ...ctx.issues.map((i) => `- ${i}`),
     ...(ctx.forms ? [`Each rule check prints ${RULE_FORM}; each screen check prints ${SCREEN_FORM}.`] : []),
     ...failed.flatMap((r) => [`Last lines of \`${r.c.cmd}\`:`, tail(r.out)]),
@@ -505,12 +509,12 @@ const save = (files, state) => files.some((f) => {
   try { writeFileSync(tmp, JSON.stringify(state), { mode: 0o600, flag: "wx" }); renameSync(tmp, f); return true; } catch { try { rmSync(tmp, { force: true }); } catch { /* none */ } return false; }
 });
 /** Remembers each check's last result, which a light stop shows, with the files (a run at a light stop: as they were
- * then; a run kept as unsure: as it left them) and what git saw; after a full run, the fingerprint and its time. */
+ * then; a run kept as unsure: as it left them) and what git saw; after a full run, its fingerprints and its time. */
 function keep(state, results, commands, fp, gitNow, now, after) {
   const fresh = Object.fromEntries(results.filter((r) => !r.reused && r.skipped !== "later").map((r) => [r.c.cmd,
     { code: r.code, timedOut: r.timedOut, ms: r.ms, left: r.left, skipped: r.skipped, out: tail(r.out ?? ""), rules: r.rules, screens: r.screens, malformed: r.malformed, at: r.at, fp: fp === undefined ? now : fp, git: gitNow, after: fp === null ? after : undefined }]));
   state.results = Object.fromEntries(commands.map((c) => [c.cmd, fresh[c.cmd] ?? state.results?.[c.cmd]]).filter(([, v]) => v));
-  if (fp !== undefined) Object.assign(state, { fingerprint: fp, fullAt: Date.now() });
+  if (fp !== undefined) Object.assign(state, { fingerprint: fp, after, fullAt: Date.now() });
 }
 
 async function readInput() {
@@ -534,14 +538,18 @@ function nothingNamed(hook, state, files) {
 async function main() {
   const input = await readInput(), hook = input !== null;
   const reply = hook ? readReply(input.last_assistant_message) : "manual";
-  if (hook && (input.agent_id || reply === "none" || inFlight(input.background_tasks))) return;
+  if (hook && (input.agent_id || inFlight(input.background_tasks))) return;
   const { root, away } = hook ? projectRoot(input) : { root: findRoot(process.cwd()) };
-  if (away) return emit({ systemMessage: `${MARK} ran nothing: your AI is working in ${away}, which isn't this project.` });
+  if (away) return reply === "none" ? undefined : emit({ systemMessage: `${MARK} ran nothing: your AI is working in ${away}, which isn't this project.` });
   if (!root) return hook ? undefined : console.log("No .offthemode/RULES.md here or above it, so there is nothing to check.");
   const rules = read(join(root, ".offthemode", "RULES.md")) ?? "", product = read(join(root, ".offthemode", "PRODUCT.md")) ?? "";
   const files = statePath(root), state = loadState(files.reduce((a, b) => (mtime(b) > mtime(a) ? b : a))), commands = parseCommands(rules);
   if (!commands.length && !productRules(product).length && !productScreens(product).length) return nothingNamed(hook, state, files);
   const fp = fingerprint(root), seen = lastIds;
+  // The files decide, not how the reply reads: most replies that change code read as claiming nothing. An unsure run is
+  // held to the files as it left them, so a check that stamps a file each run doesn't make every stop a full run.
+  const unchecked = fp !== null && fp !== (state.fingerprint ?? state.after), since = state.fullAt ? "files changed since the last check" : "it has no earlier check of this project";
+  if (reply === "none" && !unchecked) return;
   // What a check whose command calls git sees besides the files: HEAD, every ref, git's index, each repository inside's
   // HEAD and index, and Off the Mode's records, staged and on disk, which the fingerprint leaves out.
   const records = () => (git(["ls-files", "-s", "-z", "--", ...RECORDS.map((n) => `:(top,glob)**/.offthemode/${n}.md`)], root) ?? "").split("\0").filter(Boolean).map((e) => [e, read(join(root, e.split("\t").pop()))]);
@@ -552,7 +560,7 @@ async function main() {
   const rerun = commands.filter((c) => c.plain && again(c));
   const named = [rerun.some((c) => c.kind === "rule") && "the rule checks", rerun.some((c) => c.kind !== "rule") && "the checks that call git"].filter(Boolean).join(" and ");
   const what = (verb) => (!named ? "the checks show their last run" : rerun.length < commands.length ? `only ${named} ${verb}; the others show their last run` : `${named} ${verb}`);
-  const light = !hook ? "" : reply === "checkpoint" ? `At a stop for your review ${what("run again")}.`
+  const light = !hook || unchecked ? "" : reply === "checkpoint" ? `At a stop for your review ${what("run again")}.`
     : fp !== null && fp === state.fingerprint ? `No file changed since ${clock(state.fullAt)} (${RECORDS.map((n) => `${n}.md`).join(", ")} and files git ignores don't count), so ${what("ran again")}.` : "";
   const results = await runAll(commands, root, budget(rules), light ? state.results ?? {} : null, fp, again);
   const branch = git(["branch", "--show-current"], root)?.trim(), ctx = await judge(results, product, state, hook ? input.transcript_path : null, branch);
@@ -568,7 +576,7 @@ async function main() {
   if (kept === null && changed.length) ctx.notes.push(`${changed.slice(0, 3).map((p) => `\`${p}\``).join(", ")}${changed.length > 3 ? ` and ${fmt(changed.length - 3)} more` : ""} changed while the checks ran, so the next claim runs them again.${output ? ` If a check writes ${changed.length > 1 ? "them, they" : "it, it"} can go in .gitignore.` : ""}`);
   keep(state, results, commands, kept, gitNow, fp, after);
   if (!light) state.changed = changed.slice(0, 50);
-  const at = where(root, branch), why = !hook ? "" : reply === "claim" ? ", because your AI said the work is done" : ", because your AI's reply says some work is done";
+  const at = where(root, branch), why = !hook ? "" : reply === "claim" ? ", because your AI said the work is done" : unchecked ? `, because ${since}` : ", because your AI's reply says some work is done";
   const owner = report(results, ctx, [`Off the Mode checked ${at}${why}:`, ...(light ? [light] : [])]);
   // A line said only once is marked as said once your AI could read it: in --now's output (yours too, when you run it:
   // an AI tool that runs --now in a terminal looks like you, and must not see the line forever), or in a send-back as
@@ -577,11 +585,11 @@ async function main() {
   if (!hook) return void (reached(owner), save(files, state), console.log(owner), (process.exitCode = ctx.issues.length ? 1 : 0));
   // Sent back once per set of numbers in a session; a clean run forgets it, so a later break goes back again.
   const numbers = (issues) => createHash("sha256").update(issues.join("\n")).digest("hex"), session = input.session_id ?? "none";
-  const sent = state.sentBack?.constructor === Object ? state.sentBack : {};
-  const back = ctx.issues.length > 0 && !input.stop_hook_active && reply === "claim" && sent[session] !== numbers(ctx.issues), said = back ? sendBack(results, ctx, at) : "";
+  const sent = state.sentBack?.constructor === Object ? state.sentBack : {}, asks = stopsForOwner(input.last_assistant_message);
+  const back = ctx.issues.length > 0 && !input.stop_hook_active && !asks && sent[session] !== numbers(ctx.issues), said = back ? sendBack(results, ctx, at, reply === "claim" ? "" : since) : "";
   const outcome = !ctx.issues.length ? "" : back ? "Your AI was sent back once to fix this or tell you plainly what isn't done."
     : input.stop_hook_active ? "Your AI was already sent back once this turn, so it stops here."
-    : reply === "checkpoint" ? "Your AI stopped for your answer, so it wasn't sent back."
+    : asks ? "Your AI stopped for your answer, so it wasn't sent back."
     : "Same result as when your AI was last sent back, so it stops here.";
   // Kept without the lines said once, which the next stop no longer has, so the same failure isn't sent back twice.
   if (!ctx.issues.length) delete state.sentBack;
