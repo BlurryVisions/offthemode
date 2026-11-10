@@ -1,15 +1,16 @@
 // Off the Mode · the stop check. Setup copies it to .offthemode/stop-check.mjs and replaces it whole on update.
-// At a stop after a file changed since its last full run (Off the Mode's records, such as STATE.md, and files git
-// ignores don't count), it runs the checks .offthemode/RULES.md §Commands names (check, rule checks, screen checks),
-// whatever the reply says, shows you what they found, and sends the AI back once when they don't show the work done,
-// unless the reply stops for your answer. With no file changed, a reply that claims nothing runs nothing; any other
-// reruns only the rule checks, and a check whose command calls git, but only when anything git sees has changed,
-// records too; the others show their last run. Where it can't tell (outside git, say), a reply that says the work is
-// done and doesn't stop for you counts as a change. The checks run as if you typed them in a terminal (on Windows,
-// cmd.exe, not Git Bash), outside Claude Code's sandbox. This script makes no network call (a check it runs may), and
-// writes only its own state file (inside .git/; in the temp folder outside git, or where .git/ can't be written); git's
-// own filters, such as Git LFS's, may keep a copy of a changed file inside .git/, as they do on git add. A filter that
-// drops part of a file as git stores it, such as nbstripout's for notebook outputs, hides a change to that part.
+// At a stop after a file changed since its last full run, or since the commit this checkout started on where it has
+// run none yet (Off the Mode's records, such as STATE.md, and files git ignores don't count), it runs the checks
+// .offthemode/RULES.md §Commands names (check, rule checks, screen checks), whatever the reply says, shows you what
+// they found, and sends the AI back once when they don't show the work done, unless the reply stops for your answer.
+// With no file changed, a reply that claims nothing runs nothing; any other reruns only the rule checks, and a check
+// whose command calls git, but only when anything git sees has changed, records too; the others show their last run.
+// Where it can't tell (outside git, say), a reply that says the work is done and doesn't stop for you counts as a
+// change. The checks run as if you typed them in a terminal (on Windows, cmd.exe, not Git Bash), outside Claude Code's
+// sandbox. This script makes no network call (a check it runs may), and writes only its own state file (inside .git/;
+// in the temp folder outside git, or where .git/ can't be written); git's own filters, such as Git LFS's, may keep a
+// copy of a changed file inside .git/, as they do on git add. A filter that drops part of a file as git stores it,
+// such as nbstripout's for notebook outputs, hides a change to that part.
 // Run it yourself, or from any AI tool: node .offthemode/stop-check.mjs --now (exit 1 when the checks don't show it done)
 // Claude Code runs it at each stop once .claude/settings.local.json holds this block, added only on the owner's yes:
 // SETTINGS {"hooks":{"Stop":[{"hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.offthemode/stop-check.mjs"],"timeout":900,"statusMessage":"Off the Mode is checking the work"}]}]}}
@@ -553,8 +554,11 @@ async function main() {
   const fp = fingerprint(root), seen = lastIds, base = state.fingerprint ?? state.after;
   // The files decide, not how the reply reads: most replies that change code read as claiming nothing. An unsure run is
   // held to the files as it left them where a check seems to have changed them, so a stamp doesn't rerun every stop;
-  // after any other change during a run there is nothing to hold it to, and the next stop runs the checks again.
-  const unchecked = fp !== null && fp !== base, during = [state.changed].flat().filter(Boolean);
+  // after any other change during a run there is nothing to hold it to, and the next stop runs the checks again. A
+  // checkout with no full run yet, such as a new worktree or clone, counts as changed once it differs from the commit
+  // it started on (the oldest in git's log of HEAD), not for the files it came with.
+  const left = () => !!git(["status", "--porcelain", "--untracked-files=normal", ...PATHS], root)?.trim() || git(["rev-parse", "HEAD"], root)?.trim() !== ((git(["log", "-g", "--format=%H", "HEAD"], root) ?? "").trim().split("\n").pop() || undefined);
+  const unchecked = fp !== null && (state.fullAt ? fp !== base : left()), during = [state.changed].flat().filter(Boolean);
   const since = !state.fullAt ? "it has no earlier check of this project" : base === undefined ? `files changed while the last check ran${during.length ? ` (${some(during)})` : ""}` : "files changed since the last check";
   if (reply === "none" && !unchecked) return;
   // What a check whose command calls git sees besides the files: HEAD, every ref, git's index, each repository inside's

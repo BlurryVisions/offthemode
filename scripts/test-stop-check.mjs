@@ -172,6 +172,29 @@ async function filesDecide() {
     "...and a claim of done on that result is sent back in the words a claim always got, from the saved run", show(h));
 }
 
+// A checkout with no check of its own yet (a red project's first stop, a new worktree) counts as changed by what differs
+// from the commit it started on, not by the files it came with: a stop that changed nothing runs nothing and sends nothing
+// back, and the AI's work, committed as RULES.md tells it, is checked and sent back.
+async function firstCheckout() {
+  const dir = project("first-checkout", { commands: "check `node count.mjs && node fail.mjs`" }); // fail.txt holds 1: red before any session
+  let h = await hook(dir, { last_assistant_message: WORKED });
+  expect(h.out === null && ran(dir) === "" && !existsSync(stateFile(dir)), "a red project's first stop, nothing changed since the commit it started on, and a reply that claims nothing: nothing runs, nothing is written and the AI isn't sent back", show(h));
+  h = await hook(dir);
+  expect(ran(dir) === "x" && h.back.includes("failed (exit 1)"), "...and a claim there runs every check and is sent back, as before", show(h));
+  const tree = join(BASE, "first-checkout-wt");
+  git(dir, "worktree", "add", "-q", tree);
+  h = await hook(tree, { last_assistant_message: WORKED });
+  expect(h.out === null && ran(tree) === "", "a new worktree's first stop with nothing changed and a reply that claims nothing: nothing runs and nothing is sent back", show(h));
+  edit(tree, "app.js", "the AI's work"), git(tree, "add", "-A"), git(tree, "commit", "-qm", "the AI's work");
+  h = await hook(tree, { last_assistant_message: WORKED });
+  expect(ran(tree) === "x" && h.back.includes("because it has no earlier check of this project. On ") && h.back.includes("failed (exit 1)"),
+    "...and once the AI commits work there, the next stop runs every check and sends it back, though the reply claims nothing", show(h));
+  const old = project("first-old", { commands: "check `node count.mjs && node fail.mjs`" });
+  edit(old, "notes.txt", "a later commit"), git(old, "add", "-A"), git(old, "commit", "-qm", "later");
+  h = await hook(old, { last_assistant_message: WORKED });
+  expect(ran(old) === "x" && h.back.includes("because it has no earlier check of this project. On "), "a checkout that has moved on from the commit it started on runs every check at its first stop, whatever the reply says", show(h));
+}
+
 // The first stop inside git that stops for the owner, after a change, has no earlier run to show: every check runs.
 async function firstCheckpoint() {
   const dir = project("first-checkpoint", { commands: "check `node count.mjs && node fail.mjs`" });
@@ -898,6 +921,6 @@ async function unfoundDroppedLater() {
 }
 
 parts();
-await finish("test-stop-check", [failingCheck, passThenFail, filesDecide, firstCheckpoint, editedDuringRun, twoSessions, unsureStop, worktreesInside, otherProject, cancelled, cutState, ruleChecks, rewordAfterSendBack, nowMarks, staleAtCheckpoint, screensAndShapes, hangingCheck, writesOnlyState, rewordTwice, sendBackOnce, readOnlyGit, dayShown,
+await finish("test-stop-check", [failingCheck, passThenFail, filesDecide, firstCheckout, firstCheckpoint, editedDuringRun, twoSessions, unsureStop, worktreesInside, otherProject, cancelled, cutState, ruleChecks, rewordAfterSendBack, nowMarks, staleAtCheckpoint, screensAndShapes, hangingCheck, writesOnlyState, rewordTwice, sendBackOnce, readOnlyGit, dayShown,
   tidyStop, leftovers, stateGuards, saveFails, stateAfterInit, sandboxedNow, spareOfAnother, noProc, watcherFails, globalOverruled, chainAskedOnce, endsNearTime, cancelAfterEnd, cancelAfterTimeout, noPs,
   unfoundRuleDropped, rewordUndoneEarly, unfoundRewordUndone, branchSwitch, goneOnce, goneOnNewBranch, unfoundDroppedLater, ...gitCases]);
