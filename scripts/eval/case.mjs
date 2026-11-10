@@ -37,6 +37,7 @@ const FIELDS = {
   disallow: ["strings", "tools denied in both arms, besides git push"],
   quietMinutes: ["number", "minutes with no output and no agent file changing that end a turn"],
   stopAt: ["number", "stop an arm once it has read this many million tokens (off when absent)"],
+  stopAtChange: ["boolean", "stop an arm at its first change outside .offthemode/ and .claude/, when it starts building (off when absent)"],
   judge: ["boolean", "run the three blind judges (default true)"],
 };
 

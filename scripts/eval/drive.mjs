@@ -10,7 +10,7 @@ import { appendFileSync, createWriteStream, existsSync, readdirSync, statSync } 
 import { join } from "node:path";
 import { say, M, track } from "./run.mjs";
 import { sessionFile, sessionUsage } from "./measure.mjs";
-import { changedFiles } from "./blind.mjs";
+import { changedFiles, codeChanges } from "./blind.mjs";
 import { ARM_NAMES } from "./case.mjs";
 import { asksOwner } from "./hurdles.mjs";
 import { sandboxed } from "./sandbox.mjs";
@@ -124,6 +124,10 @@ class ArmSession {
 
   watch() {
     const turn = this.turns.at(-1), activeAt = this.activeAt();
+    if (this.c.stopAtChange && codeChanges(this.dir, this.base) > 0) {
+      this.endTurn(activeAt, "stopped at its first change outside .offthemode/ and .claude/");
+      return this.finish("first change");
+    }
     const idle = Date.now() - activeAt, tasks = [...this.open.values()];
     const agents = tasks.filter((t) => t.type !== "local_bash").length;
     if (idle > HANG_MINUTES * 60_000) {

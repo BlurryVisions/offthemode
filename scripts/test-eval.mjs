@@ -136,6 +136,62 @@ for await (const line of createInterface({ input: process.stdin })) {
     session.close();
     expect(said.length > 0 && said.every((t) => t.includes("the real project: EPERM") && t.includes("its copy: read") && t.includes("a session's socket: EPERM")), `the claude the driver starts runs in the sandbox: the real project and another session's socket refused, its copy read ("${said[0]?.slice(0, 160)}")`);
     expect(d.turns.every((t) => t.asked) && !d.stoppedBy, "each turn ended on a question, and the session closed on its own");
+
+    // stopAtChange: a note in .offthemode/ goes on; the first change outside it stops the arm before the next message.
+    const builder = at("bin", "claude-builds.mjs");
+    put(builder, `#!/usr/bin/env node
+import { mkdirSync, writeFileSync } from "node:fs";
+import { createInterface } from "node:readline";
+const out = (e) => process.stdout.write(JSON.stringify(e) + "\\n");
+let n = 0;
+for await (const line of createInterface({ input: process.stdin })) {
+  n++;
+  if (n === 1) { mkdirSync(".offthemode", { recursive: true }); writeFileSync(".offthemode/stop-test-note.md", "a note\\n"); }
+  if (n === 2) writeFileSync("built.js", "1\\n");
+  out({ type: "system", subtype: "status", status: "requesting" });
+  out({ type: "assistant", message: { content: [{ type: "text", text: \`turn \${n} done\` }] } });
+  out({ type: "result", subtype: "success", is_error: false, terminal_reason: "completed", result: \`turn \${n} done\` });
+}
+`);
+    chmodSync(builder, 0o755);
+    mkdirSync(at("drive-log-stop"));
+    // A real copy starts with everything committed (squash); the probes above left files in this one, so commit them.
+    execFileSync("git", ["-C", copy, "add", "-A"]);
+    execFileSync("git", ["-C", copy, "-c", "user.name=eval", "-c", "user.email=eval@test", "commit", "-q", "--no-verify", "-m", "start of the stop test"]);
+    const stopBase = execFileSync("git", ["-C", copy, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+    const st = await driveArm({ c: { ...c, stopAtChange: true }, arm: "plain", run: 1, dir: copy, base: stopBase, logDir: at("drive-log-stop"), tmp, settings: {}, sid: "test-sid-stop", profile: profile(fence), claude: builder });
+    expect(st.stoppedBy === "first change" && st.turns.length === 2 && /first change/.test(st.turns[1].error ?? ""), `stopAtChange: a note in .offthemode/ goes on, and the first change outside it stops the arm before the next message (stopped by ${st.stoppedBy}, ${st.turns.length} turns, turn 2: ${st.turns[1]?.error})`);
+
+    // Work an agent leaves in its own worktree (not committed) stops the arm too, as Claude Code's workflows can build there.
+    execFileSync("git", ["-C", copy, "add", "-A"]);
+    execFileSync("git", ["-C", copy, "-c", "user.name=eval", "-c", "user.email=eval@test", "commit", "-q", "--no-verify", "-m", "start of the worktree test"]);
+    const treeBase = execFileSync("git", ["-C", copy, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+    const treeBuilder = at("bin", "claude-builds-in-a-worktree.mjs");
+    put(treeBuilder, `#!/usr/bin/env node
+import { execFileSync } from "node:child_process";
+import { writeFileSync } from "node:fs";
+import { createInterface } from "node:readline";
+const out = (e) => process.stdout.write(JSON.stringify(e) + "\\n");
+let n = 0;
+for await (const line of createInterface({ input: process.stdin })) {
+  n++;
+  if (n === 2) { execFileSync("git", ["worktree", "add", "-q", "-b", "wf1", ".claude/worktrees/wf1"], { stdio: "ignore" }); writeFileSync(".claude/worktrees/wf1/built-in-a-tree.js", "1\\n"); }
+  out({ type: "system", subtype: "status", status: "requesting" });
+  out({ type: "assistant", message: { content: [{ type: "text", text: \`turn \${n} done\` }] } });
+  out({ type: "result", subtype: "success", is_error: false, terminal_reason: "completed", result: \`turn \${n} done\` });
+}
+`);
+    chmodSync(treeBuilder, 0o755);
+    mkdirSync(at("drive-log-tree"));
+    const wt = await driveArm({ c: { ...c, stopAtChange: true }, arm: "plain", run: 1, dir: copy, base: treeBase, logDir: at("drive-log-tree"), tmp, settings: {}, sid: "test-sid-tree", profile: profile(fence), claude: treeBuilder });
+    expect(wt.stoppedBy === "first change" && wt.turns.length === 2, `stopAtChange: work left in an agent's worktree stops the arm too (stopped by ${wt.stoppedBy}, ${wt.turns.length} turns)`);
+    // A commit left on a branch whose worktree is gone still counts as built.
+    const tree = join(copy, ".claude", "worktrees", "wf1");
+    execFileSync("git", ["-C", tree, "add", "-A"]);
+    execFileSync("git", ["-C", tree, "-c", "user.name=eval", "-c", "user.email=eval@test", "commit", "-q", "--no-verify", "-m", "built in a worktree"]);
+    execFileSync("git", ["-C", copy, "worktree", "remove", "--force", tree]);
+    const { codeChanges } = await import("./eval/blind.mjs");
+    expect(codeChanges(copy, treeBase) > 0, "a commit left on a branch whose worktree was removed still counts as built");
   }
 
   // ---- 2. No path out by link: a link back into the project is re-pointed; any other link out stops the copy.
