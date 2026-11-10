@@ -2,15 +2,17 @@
 // At a stop after a file changed since its last full run, or since the commit this checkout started on where it has
 // run none yet (Off the Mode's records, such as STATE.md, and files git ignores don't count), it runs the checks
 // .offthemode/RULES.md §Commands names (check, rule checks, screen checks), whatever the reply says, shows you what
-// they found, and sends the AI back once when they don't show the work done, unless the reply stops for your answer.
-// With no file changed, a reply that claims nothing runs nothing; any other reruns only the rule checks, and a check
-// whose command calls git, but only when anything git sees has changed, records too; the others show their last run.
-// Where it can't tell (outside git, say), a reply that says the work is done and doesn't stop for you counts as a
-// change. The checks run as if you typed them in a terminal (on Windows, cmd.exe, not Git Bash), outside Claude Code's
-// sandbox. This script makes no network call (a check it runs may), and writes only its own state file (inside .git/;
-// in the temp folder outside git, or where .git/ can't be written); git's own filters, such as Git LFS's, may keep a
-// copy of a changed file inside .git/, as they do on git add. A filter that drops part of a file as git stores it,
-// such as nbstripout's for notebook outputs, hides a change to that part.
+// they found, and sends the AI back once when they don't show the work done. It isn't sent back when its reply stops
+// for your answer, or claims nothing while nothing shows its own tools made the change: its transcript shows no tool
+// that can change files since the last full run, or no file was written after the first one. With no file changed, a
+// reply that claims nothing runs nothing; any other reruns only the rule checks, and a check whose command calls git,
+// but only when anything git sees has changed, records too; the others show their last run. Where it can't tell
+// (outside git, say), a reply that says the work is done and doesn't stop for you counts as a change. The checks run
+// as if you typed them in a terminal (on Windows, cmd.exe, not Git Bash), outside Claude Code's sandbox. This script
+// makes no network call (a check it runs may), and writes only its own state file (inside .git/; in the temp folder
+// outside git, or where .git/ can't be written); git's own filters, such as Git LFS's, may keep a copy of a changed
+// file inside .git/, as they do on git add. A filter that drops part of a file as git stores it, such as nbstripout's
+// for notebook outputs, hides a change to that part.
 // Run it yourself, or from any AI tool: node .offthemode/stop-check.mjs --now (exit 1 when the checks don't show it done)
 // Claude Code runs it at each stop once .claude/settings.local.json holds this block, added only on the owner's yes:
 // SETTINGS {"hooks":{"Stop":[{"hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.offthemode/stop-check.mjs"],"timeout":900,"statusMessage":"Off the Mode is checking the work"}]}]}}
@@ -532,6 +534,22 @@ async function readInput() {
   return got && text.trim() ? JSON.parse(text) : null;
 }
 const inFlight = (tasks) => (tasks ?? []).some((t) => /subagent|workflow|teammate|cloud/i.test(t?.type ?? "") && !/complete|done|fail|kill|stop|cancel|error/i.test(t?.status ?? ""));
+// Tools that only read; any other may change a file.
+const READS = new Set(["Read", "Grep", "Glob", "LS", "NotebookRead", "WebSearch", "WebFetch", "TodoWrite", "ToolSearch", "AskUserQuestion"]);
+/** When the AI first used a tool that can change files after `since`, by its transcript: Infinity when it used none, 0
+ * where the transcript can't say (none to read, a line that can't be read, a tool use with no time). */
+async function firstWrite(transcript, since = 0) {
+  if (!transcript || !existsSync(transcript)) return 0;
+  let first = Infinity;
+  try {
+    for await (const line of createInterface({ input: createReadStream(transcript), crlfDelay: Infinity })) {
+      if (!line.includes('"tool_use"')) continue;
+      const e = JSON.parse(line), at = Date.parse(e.timestamp);
+      if (!(at <= since) && Array.isArray(e.message?.content) && e.message.content.some((b) => b?.type === "tool_use" && !READS.has(b.name))) first = Math.min(first, at || 0);
+    }
+  } catch { return 0; }
+  return first;
+}
 function where(root, branch, sha = git(["rev-parse", "--short", "HEAD"], root)?.trim()) {
   return sha ? `${branch || "a detached HEAD"} at ${sha}${git(["status", "--porcelain"], root)?.trim() ? " with uncommitted changes" : ""}` : root;
 }
@@ -551,15 +569,23 @@ async function main() {
   const rules = read(join(root, ".offthemode", "RULES.md")) ?? "", product = read(join(root, ".offthemode", "PRODUCT.md")) ?? "";
   const files = statePath(root), newest = () => files.reduce((a, b) => (mtime(b) > mtime(a) ? b : a)), state = loadState(newest()), commands = parseCommands(rules);
   if (!commands.length && !productRules(product).length && !productScreens(product).length) return nothingNamed(hook, state, files);
-  const fp = fingerprint(root), seen = lastIds, base = state.fingerprint ?? state.after;
+  const fp = fingerprint(root), seen = lastIds, base = state.fingerprint ?? state.after, lastFull = state.fullAt;
   // The files decide, not how the reply reads: most replies that change code read as claiming nothing. An unsure run is
   // held to the files as it left them where a check seems to have changed them, so a stamp doesn't rerun every stop;
   // after any other change during a run there is nothing to hold it to, and the next stop runs the checks again. A
   // checkout with no full run yet, such as a new worktree or clone, counts as changed once it differs from the commit
   // it started on (the oldest in git's log of HEAD), not for the files it came with.
   const left = () => !!git(["status", "--porcelain", "--untracked-files=normal", ...PATHS], root)?.trim() || git(["rev-parse", "HEAD"], root)?.trim() !== ((git(["log", "-g", "--format=%H", "HEAD"], root) ?? "").trim().split("\n").pop() || undefined);
-  const unchecked = fp !== null && (state.fullAt ? fp !== base : left()), during = [state.changed].flat().filter(Boolean);
-  const since = !state.fullAt ? "it has no earlier check of this project" : base === undefined ? `files changed while the last check ran${during.length ? ` (${some(during)})` : ""}` : "files changed since the last check";
+  const unchecked = fp !== null && (lastFull ? fp !== base : left()), during = [state.changed].flat().filter(Boolean);
+  // The file times, read only before a full run that a claim didn't ask for. The files written since the last full run
+  // are named, newest first, so the owner can find one that changes by itself (an app log, a dev database). The latest
+  // time, folders' too since a removal moves only its folder's, tells whether anything was written after the AI's tools.
+  const top = hook && unchecked && reply !== "claim" ? git(["rev-parse", "--show-toplevel"], root)?.trim() : "", when = (p) => mtime(join(top, p));
+  const times = top ? [...seen.keys()].map((p) => [p, when(p)]) : [], folders = new Set(top ? ["."] : []);
+  for (const p of top ? [...seen.keys(), ...lastListed.map((e) => e.slice(e.indexOf("\t") + 1))] : []) for (let i = p.lastIndexOf("/"); i > 0; i = p.lastIndexOf("/", i - 1)) folders.add(p.slice(0, i));
+  const latest = [...times.map(([, t]) => t), ...[...folders].map(when)].reduce((a, b) => Math.max(a, b), 0);
+  const written = lastFull ? times.filter(([, t]) => t > lastFull).sort(([p, t], [q, u]) => u - t || (p < q ? -1 : 1)).map(([p]) => p) : [];
+  const since = !lastFull ? "it has no earlier check of this project" : base === undefined ? `files changed while the last check ran${during.length ? ` (${some(during)})` : ""}` : `files changed since the last check${written.length ? ` (written since: ${some(written)})` : ""}`;
   if (reply === "none" && !unchecked) return;
   // What a check whose command calls git sees besides the files: HEAD, every ref, git's index, each repository inside's
   // HEAD and index, and Off the Mode's records, staged and on disk, which the fingerprint leaves out.
@@ -600,10 +626,16 @@ async function main() {
   // Sent back once per set of numbers in a session; a clean run forgets it, so a later break goes back again.
   const numbers = (issues) => createHash("sha256").update(issues.join("\n")).digest("hex"), session = input.session_id ?? "none";
   const sent = state.sentBack?.constructor === Object ? state.sentBack : {}, asks = stopsForOwner(input.last_assistant_message);
-  const back = ctx.issues.length > 0 && !input.stop_hook_active && !asks && sent[session] !== numbers(ctx.issues), said = back ? sendBack(results, ctx, at, reply === "claim" ? "" : since) : "";
+  const due = ctx.issues.length > 0 && !input.stop_hook_active && !asks && sent[session] !== numbers(ctx.issues);
+  // A reply that claims nothing goes back only for a change its own tools could have made: one written after the first
+  // tool it used since the last full run that can change files (a file's time can be 2 s coarse). Where its transcript
+  // can't say, it could.
+  const first = due && reply === "none" && top ? await firstWrite(input.transcript_path, lastFull) : 0, others = first === Infinity || (first > 0 && latest < first - 2000);
+  const back = due && !others, said = back ? sendBack(results, ctx, at, reply === "claim" ? "" : since) : "";
   const outcome = !ctx.issues.length ? "" : back ? "Your AI was sent back once to fix this or tell you plainly what isn't done."
     : input.stop_hook_active ? "Your AI was already sent back once this turn, so it stops here."
     : asks ? "Your AI's reply reads as if it stopped for your answer, so it wasn't sent back."
+    : others ? "Nothing shows your AI made these changes, so it wasn't sent back."
     : "Same result as when your AI was last sent back, so it stops here.";
   // Read again before saving: another session may have been sent back while these checks ran, and its record stays.
   // Kept without the lines said once, which the next stop no longer has, so the same failure isn't sent back twice.
