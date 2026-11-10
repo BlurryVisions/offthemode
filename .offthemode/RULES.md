@@ -17,6 +17,7 @@ Rules only this project needs, each saying what to do and why, kept apart from t
 - Each command's rendered text stays under the MCP test's 10000-character guard (D-025), so a status check stays cheap. Write every rule in full, clear words first; raise the guard with a reason rather than squeeze a rule until it loses meaning (DECISIONS D-015).
 - Before blaming a rule or proposing a fix, show from the evidence why the safeguard already in place didn't stop it, because twice a surface rule was blamed.
 - Lead with what a change doesn't solve yet and what that costs until it does; never call it done or solved while part of it is pending, because twice the open part was missed.
+- Every plan or fix shows both branches: what it should do, with the test that shows it, and what it can make worse (tokens, time, questions to me, the output, safety), each with a number or the word unchecked. A plan is a guess until a test has run. Because three times only the upside was shown (2026-10-27, 2026-11-10 twice).
 - Every report or status uses one shape, in plain words: done or not done; then each problem → its cause, with the evidence → what was tried or the fix → where it stands (fixed and proven, written but untested, or open and waiting on me); a changed number comes with why. Because twice I got raw facts or scattered progress lines instead of the story (2026-10-21, 2026-11-09).
 
 ## Shipping (how this project goes live; confirmed 2026-10-07, matches ~/.offthemode/ME.md)
