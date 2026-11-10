@@ -1,6 +1,6 @@
 // What each arm changed, as diffs a judge can read without knowing who built which, and the three blind judges.
 import { execFileSync, spawn } from "node:child_process";
-import { rmSync, writeFileSync } from "node:fs";
+import { realpathSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { git, track } from "./run.mjs";
@@ -8,8 +8,8 @@ import { sandboxed } from "./sandbox.mjs";
 
 // Everything that differs from the start, committed or not, new files included, through a scratch index so the
 // copy's own index stays as the arm left it. .gitignore and .git/info/exclude keep fixtures and installs out.
-function withScratchIndex(dir, fn) {
-  const env = { ...process.env, GIT_INDEX_FILE: join(dir, ".git", "eval-index") };
+function withScratchIndex(dir, fn, index = join(dir, ".git", "eval-index")) {
+  const env = { ...process.env, GIT_INDEX_FILE: index };
   const run = (...args) => execFileSync("git", args, { cwd: dir, env, encoding: "utf8", maxBuffer: 1 << 30 });
   try {
     run("read-tree", "HEAD");
@@ -27,10 +27,25 @@ export function changedFiles(dir, base) {
   return withScratchIndex(dir, (run) => run("diff", "--cached", "--name-only", base, "--", ".", WORKTREES).split("\n").filter(Boolean).length);
 }
 
-// What an arm built: changes outside Off the Mode's notes and Claude Code's own folder. A case's stopAtChange stops
+// What an arm built: changes outside Off the Mode's notes and Claude Code's own folder, in the copy, in each worktree
+// its agents build in (Claude Code keeps them in .claude/worktrees/), and on every branch. A case's stopAtChange stops
 // the arm at the first one, so a run can be measured up to the moment it starts building.
+const BUILT = ["--", ".", ":(exclude).claude", ":(exclude).offthemode"];
+const listed = (out) => out.split("\n").filter(Boolean).length;
 export function codeChanges(dir, base) {
-  return withScratchIndex(dir, (run) => run("diff", "--cached", "--name-only", base, "--", ".", ":(exclude).claude", ":(exclude).offthemode").split("\n").filter(Boolean).length);
+  const diff = (run) => listed(run("diff", "--cached", "--name-only", base, ...BUILT));
+  let n = withScratchIndex(dir, diff);
+  const here = realpathSync(dir);
+  const trees = git(dir, "worktree", "list", "--porcelain").split("\n").filter((l) => l.startsWith("worktree ")).map((l) => l.slice("worktree ".length));
+  trees.forEach((tree, i) => {
+    try {
+      if (realpathSync(tree) !== here) n += withScratchIndex(tree, diff, join(dir, ".git", `eval-index-${i}`));
+    } catch { /* a worktree being made or removed is read on the next tick */ }
+  });
+  for (const ref of git(dir, "for-each-ref", "--format=%(refname)", "refs/heads").split("\n").filter(Boolean)) {
+    n += listed(git(dir, "diff", "--name-only", base, ref, ...BUILT));
+  }
+  return n;
 }
 
 // Off the Mode's own notes would give the arm away: .offthemode/ stays out, and its ids and name are masked.
