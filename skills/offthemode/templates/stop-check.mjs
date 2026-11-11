@@ -3,8 +3,9 @@
 // run none yet (Off the Mode's records, such as STATE.md, and files git ignores don't count), it runs the checks
 // .offthemode/RULES.md §Commands names (check, rule checks, screen checks), whatever the reply says, shows you what
 // they found, and sends the AI back once when they don't show the work done. It isn't sent back when its reply stops
-// for your answer, or claims nothing while nothing shows its own tools made the change: its transcript shows no tool
-// that can change files since the last full run, or no file was written after the first one. With no file changed, a
+// for your answer, or claims nothing while nothing shows its own tools made the change: by its transcript, no tool
+// that can change files was at work since the files were last found as checked (a full run, or a later stop with no
+// file changed, marked by the state file's time), or nothing changed after the first one. With no file changed, a
 // reply that claims nothing runs nothing; any other reruns only the rule checks, and a check whose command calls git,
 // but only when anything git sees has changed, records too; the others show their last run. Where it can't tell
 // (outside git, say), a reply that says the work is done and doesn't stop for you counts as a change. The checks run
@@ -16,7 +17,7 @@
 // Run it yourself, or from any AI tool: node .offthemode/stop-check.mjs --now (exit 1 when the checks don't show it done)
 // Claude Code runs it at each stop once .claude/settings.local.json holds this block, added only on the owner's yes:
 // SETTINGS {"hooks":{"Stop":[{"hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.offthemode/stop-check.mjs"],"timeout":900,"statusMessage":"Off the Mode is checking the work"}]}]}}
-import { readFileSync, writeFileSync, renameSync, rmSync, existsSync, statSync, lstatSync, readlinkSync, readdirSync, realpathSync, accessSync, constants, createReadStream } from "node:fs";
+import { readFileSync, writeFileSync, renameSync, rmSync, existsSync, statSync, lstatSync, readlinkSync, readdirSync, realpathSync, accessSync, utimesSync, constants, createReadStream } from "node:fs";
 import { join, dirname, resolve, relative, isAbsolute } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
@@ -533,22 +534,45 @@ async function readInput() {
   process.stdin.destroy();
   return got && text.trim() ? JSON.parse(text) : null;
 }
-const inFlight = (tasks) => (tasks ?? []).some((t) => /subagent|workflow|teammate|cloud/i.test(t?.type ?? "") && !/complete|done|fail|kill|stop|cancel|error/i.test(t?.status ?? ""));
+const ENDED = /complete|done|fail|kill|stop|cancel|error/i;
+const inFlight = (tasks) => (tasks ?? []).some((t) => /subagent|workflow|teammate|cloud/i.test(t?.type ?? "") && !ENDED.test(t?.status ?? ""));
 // Tools that can never change a file in the project (the desktop app's turn tools too); any other may.
 const READS = new Set(["Read", "Grep", "Glob", "LS", "NotebookRead", "WebSearch", "WebFetch", "TodoWrite", "ToolSearch", "AskUserQuestion", "EnterPlanMode", "mcp__ccd_turn__update_plan", "mcp__ccd_turn__wrap_up", "mcp__terminal__read_terminal"]);
-/** When the AI first used a tool that can change files after `since`, by its transcript: Infinity when it used none, 0
- * where the transcript can't say (none to read, a line that can't be read, a tool use with no time). Only the AI's own
- * lines count: Claude Code also writes copies of them with no time (api-request-blob), which aren't other uses. */
-async function firstWrite(transcript, since = 0) {
+// Tools that have finished by the AI's next message, unless told to run in the background. Any other tool that can
+// change files may still be at work later (an agent, a workflow, a command in a terminal tab, a tool this script
+// doesn't know).
+const WAITS = new Set(["Bash", "Edit", "Write", "MultiEdit", "NotebookEdit"]);
+/** The time of the AI's first tool use that could have changed a file since the files were last found as checked, by
+ * its transcript: Infinity when there is none, 0 where the transcript can't say (none to read, a line that can't be
+ * read, a tool use with no time). `since` is the last full run; `mark` the last stop that found no file changed, if
+ * later. A tool that waits counts when the AI's next message came after the mark, since only then had it finished; any
+ * other counts when used after the last full run. Only the AI's own lines count: Claude Code also writes copies of
+ * them with no time (api-request-blob), and a subagent's lines belong to the tool that started it. */
+async function firstWrite(transcript, since = 0, mark = since) {
   if (!transcript || !existsSync(transcript)) return 0;
-  let first = Infinity;
-  try {
-    for await (const line of createInterface({ input: createReadStream(transcript), crlfDelay: Infinity })) {
-      if (!line.includes('"tool_use"')) continue;
-      const e = JSON.parse(line), at = Date.parse(e.timestamp);
-      if (e.type === "assistant" && !(at <= since) && Array.isArray(e.message?.content) && e.message.content.some((b) => b?.type === "tool_use" && !READS.has(b.name))) first = Math.min(first, at || 0);
+  let first = Infinity, waiting = [], last, rest = "";
+  const count = (t) => { first = Math.min(first, t || 0); };
+  const look = (line) => {
+    if (!line.includes('"type":"assistant"')) return;
+    const e = JSON.parse(line), at = Date.parse(e.timestamp), id = e.message?.id;
+    if (e.type !== "assistant" || e.isSidechain) return;
+    // The AI's next message: the tools of the one before have finished by now.
+    if (id === undefined || id !== last) { if (!(at <= mark)) waiting.forEach(count); (waiting = []), (last = id); }
+    for (const b of Array.isArray(e.message?.content) ? e.message.content : []) {
+      if (b?.type !== "tool_use" || READS.has(b.name)) continue;
+      if (WAITS.has(b.name) && !b.input?.run_in_background) waiting.push(at);
+      else if (!(at <= since)) count(at);
     }
+  };
+  try { // split at \n only: readline also splits at U+2028 and U+2029, which a JSON line may hold
+    for await (const chunk of createReadStream(transcript, "utf8")) {
+      if (!chunk.includes("\n")) { rest += chunk; continue; }
+      const lines = (rest + chunk).split("\n");
+      (rest = lines.pop()), lines.forEach(look);
+    }
+    look(rest);
   } catch { return 0; }
+  waiting.forEach(count); // no later message: they may still be at work
   return first;
 }
 function where(root, branch, sha = git(["rev-parse", "--short", "HEAD"], root)?.trim()) {
@@ -568,7 +592,7 @@ async function main() {
   if (away) return reply === "none" ? undefined : emit({ systemMessage: `${MARK} ran nothing: your AI is working in ${away}, which isn't this project.` });
   if (!root) return hook ? undefined : console.log("No .offthemode/RULES.md here or above it, so there is nothing to check.");
   const rules = read(join(root, ".offthemode", "RULES.md")) ?? "", product = read(join(root, ".offthemode", "PRODUCT.md")) ?? "";
-  const files = statePath(root), newest = () => files.reduce((a, b) => (mtime(b) > mtime(a) ? b : a)), state = loadState(newest()), commands = parseCommands(rules);
+  const files = statePath(root), newest = () => files.reduce((a, b) => (mtime(b) > mtime(a) ? b : a)), state = loadState(newest()), seenAt = mtime(newest()), commands = parseCommands(rules);
   if (!commands.length && !productRules(product).length && !productScreens(product).length) return nothingNamed(hook, state, files);
   const fp = fingerprint(root), seen = lastIds, base = state.fingerprint ?? state.after, lastFull = state.fullAt;
   // The files decide, not how the reply reads: most replies that change code read as claiming nothing. An unsure run is
@@ -592,7 +616,12 @@ async function main() {
   const latest = [...times.map(([, , c]) => c), ...[...folders].map((f) => when(f)[1])].reduce((a, b) => Math.max(a, b), 0);
   const written = lastFull ? times.filter(([, t]) => t > lastFull).sort(([p, t], [q, u]) => u - t || (p < q ? -1 : 1)).map(([p]) => p) : [];
   const since = !lastFull ? "it has no earlier check of this project" : base === undefined ? `files changed while the last check ran${during.length ? ` (${some(during)})` : ""}` : `files changed since the last check${written.length ? ` (written since: ${some(written)})` : ""}`;
-  if (reply === "none" && !unchecked) return;
+  if (reply === "none" && !unchecked) {
+    // No file changed: the state file's time marks that, its content untouched, so a tool the AI had finished with by
+    // now isn't taken for a later change. Not while Claude Code lists a task as still running, which may yet change one.
+    try { if (lastFull && fp !== null && !(input.background_tasks ?? []).some((t) => !ENDED.test(t?.status ?? ""))) utimesSync(newest(), new Date(), new Date()); } catch { /* no mark */ }
+    return;
+  }
   // What a check whose command calls git sees besides the files: HEAD, every ref, git's index, each repository inside's
   // HEAD and index, and Off the Mode's records, staged and on disk, which the fingerprint leaves out.
   const records = () => (git(["ls-files", "-s", "-z", "--", ...RECORDS.map((n) => `:(top,glob)**/.offthemode/${n}.md`)], root) ?? "").split("\0").filter(Boolean).map((e) => [e, read(join(root, e.split("\t").pop()))]);
@@ -635,9 +664,9 @@ async function main() {
   const sent = state.sentBack?.constructor === Object ? state.sentBack : {}, asks = stopsForOwner(input.last_assistant_message);
   const due = ctx.issues.length > 0 && !input.stop_hook_active && !asks && sent[session] !== numbers(ctx.issues);
   // A reply that claims nothing goes back only for a change its own tools could have made: one made after the first
-  // tool it used since the last full run that can change files (a file's time can be 2 s coarse). Where its transcript
-  // can't say, it could.
-  const first = due && reply === "none" && top ? await firstWrite(input.transcript_path, lastFull) : 0, others = first === Infinity || (first > 0 && latest < first - 2000);
+  // tool that can change files and was at work since the files were last found as checked, at a full run or a later
+  // stop with none changed (a file's time can be 2 s coarse). Where its transcript can't say, it could.
+  const first = due && reply === "none" && top ? await firstWrite(input.transcript_path, lastFull ?? 0, Math.max(lastFull ?? 0, seenAt)) : 0, others = first === Infinity || (first > 0 && latest < first - 2000);
   const back = due && !others, said = back ? sendBack(results, ctx, at, reply === "claim" ? "" : since) : "";
   const outcome = !ctx.issues.length ? "" : back ? "Your AI was sent back once to fix this or tell you plainly what isn't done."
     : input.stop_hook_active ? "Your AI was already sent back once this turn, so it stops here."
