@@ -1,7 +1,8 @@
 // Tests the meter (scripts/meter.mjs): its counting on session files shaped the way Claude Code writes them (a line
 // per content block, each repeating the call's id and counts), and the script run as a Stop hook, input on stdin.
 // OTM_METER points the tests at another copy, so a deliberate break can be shown to fail. Prints only what failed.
-import { appendFileSync, writeFileSync, mkdirSync, statSync, existsSync, readFileSync, readdirSync, symlinkSync } from "node:fs";
+import { appendFileSync, writeFileSync, mkdirSync, statSync, existsSync, readFileSync, readdirSync, symlinkSync, chmodSync, openSync, closeSync } from "node:fs";
+import { spawn } from "node:child_process";
 import { join, dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ROOT, BASE, expect, node, finish } from "./stop-check-harness.mjs";
@@ -11,11 +12,12 @@ const METER = resolve(process.env.OTM_METER || join(ROOT, "scripts/meter.mjs")),
 const { gained, measure, line, agentFiles } = await import(pathToFileURL(METER).href);
 
 let ids = 0;
-/** One model call: `read` tokens from cache plus 5 more read, so it counts as read + 5. */
-const call = (read, { blocks = 2, out = 10, side = false, reason = "tool_use" } = {}) => {
+/** One model call: `read` tokens from cache plus 5 more read, so it counts as read + 5. Real files say how a call
+ * ended on its last line or on an earlier one (`early`), and a continued session's copies carry the earlier `session`. */
+const call = (read, { blocks = 2, out = 10, side = false, reason = "tool_use", session = null, early = false } = {}) => {
   const id = ++ids;
-  return Array.from({ length: blocks }, (_, i) => JSON.stringify({ type: "assistant", ...(side ? { isSidechain: true } : {}), timestamp: "2026-11-11T00:00:00.000Z", requestId: `req_${id}`,
-    message: { id: `msg_${id}`, role: "assistant", stop_reason: i === blocks - 1 ? reason : null, content: [{ type: "text", text: "x" }],
+  return Array.from({ length: blocks }, (_, i) => JSON.stringify({ type: "assistant", ...(side ? { isSidechain: true } : {}), ...(session ? { sessionId: session } : {}), timestamp: "2026-11-11T00:00:00.000Z", requestId: `req_${id}`,
+    message: { id: `msg_${id}`, role: "assistant", stop_reason: (early ? i === 0 : i === blocks - 1) ? reason : null, content: [{ type: "text", text: "x" }],
       usage: { input_tokens: 2, cache_creation_input_tokens: 3, cache_read_input_tokens: read, output_tokens: out } } }));
 };
 const NOISE = [
@@ -29,7 +31,7 @@ const NOISE = [
 const put = (file, lines) => { mkdirSync(dirname(file), { recursive: true }); appendFileSync(file, lines.map((l) => `${l}\n`).join("")); };
 const session = (name) => { const file = join(BASE, "meter", name, "chat.jsonl"); return { file, agents: join(BASE, "meter", name, "chat", "subagents") }; };
 const sum = (file) => calls(file).reduce((s, c) => s + c.memory, 0);
-const show = (x) => JSON.stringify(x).slice(0, 500);
+const show = (x) => String(JSON.stringify(x)).slice(0, 500);
 
 async function countsOnce() {
   const s = session("once");
@@ -99,6 +101,59 @@ async function longLines() {
   expect(half.calls === 1 && half.tokens === 405 && rest.calls === 1 && rest.tokens === 505, "a file read up to a point and then from there gives the same count, each call once", show([half, rest]));
 }
 
+async function hugeLine() {
+  const s = session("huge"), pad = (line, bytes) => line.replace('"text":"x"', `"text":"${"x".repeat(bytes)}"`);
+  // A call's line longer than any real one, then a call's line of four reads, then a plain one.
+  put(s.file, [pad(call(900, { blocks: 1 })[0], (16 << 20) + 100), pad(call(700, { blocks: 1 })[0], 3_200_000), ...call(300, { blocks: 1 })]);
+  const got = gained(s.file);
+  expect(got.calls === 2 && got.tokens === 1010 && got.offset === statSync(s.file).size, "a line longer than any model call's is passed over, and the lines after it are counted, a long one too", show(got));
+}
+
+async function continued() {
+  const s = session("continued");
+  put(s.file, [...call(1000, { session: "earlier" }), ...call(2000, { session: "earlier" }), ...call(300, { session: "chat" }), ...call(40), ...call(500, { session: "chat", reason: "end_turn", out: 7 })]);
+  const m = measure(s.file, null);
+  expect(m.reply.chat === 855 && m.reply.steps === 3 && m.reply.size === 512, "a session continued from an earlier one leaves out the copies of that session's calls", show(m.reply));
+  expect(m.state.files[s.file].offset === statSync(s.file).size && measure(s.file, m.state).reply.chat === 0, "and doesn't come back to them", show(m.state));
+  expect(sum(s.file) === 3865, "npm run usage counts the copies: the one difference between the two", String(sum(s.file)));
+  const named = measure(s.file, null, "earlier");
+  expect(named.reply.chat === 3055 && named.reply.steps === 3, "the session's id decides which calls are its own", show(named.reply));
+  const o = session("continued-all");
+  put(o.file, [...call(1000, { session: "another" }), ...call(2000, { session: "another", reason: "end_turn" })]);
+  const all = measure(o.file, null);
+  expect(all.reply.chat === 3010 && all.reply.steps === 2, "a file whose every call carries another id is counted whole: that id is its own after all", show(all.reply));
+  const h = session("continued-hook");
+  put(h.file, [...call(1000, { session: "earlier" }), ...call(300, { session: "hooked", reason: "end_turn" })]);
+  const hooked = await run({ transcript_path: h.file, session_id: "hooked" }, temp("continued"));
+  expect(hooked.said.includes("this session so far: 305 tokens (the chat 305 in 1 step)"), "as a hook, the session id Claude Code gives is the one that decides", show(hooked));
+}
+
+async function agentUnread() {
+  const s = session("unread"), locked = join(s.agents, "agent-locked.jsonl");
+  put(s.file, call(100, { reason: "end_turn" }));
+  put(join(s.agents, "agent-a1.jsonl"), call(40, { side: true }));
+  put(locked, call(50, { side: true }));
+  chmodSync(locked, 0);
+  let readable = true;
+  try { closeSync(openSync(locked, "r")); } catch { readable = false; }
+  const m = measure(s.file, null);
+  chmodSync(locked, 0o644);
+  if (readable) return; // Windows, or run as root: the file can't be closed to this user, so there is nothing to test
+  expect(m && m.reply.chat === 105 && m.reply.agents === 45 && m.reply.agentN === 1, "an agent file that can't be read is passed over, and the rest is still counted", show(m?.reply));
+}
+
+async function inputLeftOpen() {
+  const s = session("open"), tmp = temp("open");
+  put(s.file, call(100, { reason: "end_turn" }));
+  const child = spawn(process.execPath, [METER], { env: { ...process.env, TMPDIR: tmp, TEMP: tmp, TMP: tmp }, stdio: ["pipe", "pipe", "ignore"] });
+  let out = "";
+  child.stdout.on("data", (d) => { out += d; });
+  child.stdin.on("error", () => {});
+  child.stdin.write(JSON.stringify({ hook_event_name: "Stop", transcript_path: s.file, session_id: "o1" }));
+  const code = await new Promise((ok) => { const t = setTimeout(() => { child.kill("SIGKILL"); ok("killed after 2.5 s"); }, 2500); child.on("close", (c) => { clearTimeout(t); ok(c); }); });
+  expect(code === 0 && out.includes("this session so far: 105 tokens"), "a runner that sends the input and never closes the pipe gets the line at once, and the meter ends", show({ code, out }));
+}
+
 async function chatSize() {
   const s = session("size");
   put(s.file, [...call(1000, { out: 40, reason: "end_turn" }), ...call(70, { side: true })]);
@@ -130,6 +185,12 @@ async function countsBehind() {
   put(s.file, call(200, { reason: "end_turn" }));
   const b = measure(s.file, a.state), c = measure(s.file, b.state);
   expect(a.state.behind === 1 && b.state.behind === 1 && c.state.behind === 2 && c.state.runs === 3, "a stop whose file doesn't yet hold the reply's last call is counted as behind", show([a.state, b.state, c.state]));
+  const e = session("behind-early");
+  put(e.file, call(100, { reason: "end_turn", early: true, blocks: 3 }));
+  const ended = measure(e.file, null);
+  put(e.file, call(100, { reason: "tool_use", early: true, blocks: 3 }));
+  const open = measure(e.file, ended.state);
+  expect(ended.state.behind === 0 && open.state.behind === 1, "how a call ended is read from whichever of its lines says so", show([ended.state, open.state]));
 }
 
 async function wording() {
@@ -187,7 +248,10 @@ async function stillWorking() {
   const ended = await stop("w2", [{ id: "t2", type: "workflow", status: "completed" }, { id: "t3", type: "subagent", status: "failed" }]);
   const shell = await stop("w3", [{ id: "t1", type: "shell", status: "running" }]);
   const odd = await stop("w4", { not: "a list" });
-  expect(busy.said.endsWith(" · agents are still working, so the next line carries the rest"), "a workflow still running is said", show(busy));
+  const mate = await stop("w5", [{ id: "t4", type: "teammate", status: "running" }]);
+  const gone = await stop("w6", [{ id: "t5", type: "workflow", status: "killed" }, { id: "t6", type: "subagent", status: "stopped" }, { id: "t7", type: "teammate", status: "cancelled" }]);
+  expect(busy.said.endsWith(" · agents are still working, so the next line carries the rest") && mate.said.endsWith("carries the rest"), "a workflow or a teammate still running is said", show([busy.said, mate.said]));
+  expect(gone.said.endsWith("re-read at every further step"), "agents that were killed, stopped or cancelled are not", show(gone.said));
   expect([ended, shell, odd].every((r) => r.said.endsWith("re-read at every further step")), "ended agents, a shell command left running and a list that isn't one are not", show([ended.said, shell.said, odd.said]));
 }
 
@@ -199,6 +263,16 @@ async function recordGuards() {
   writeFileSync(blocked, "");
   const a = await run({ transcript_path: s.file, session_id: "s5" }, blocked), b = await run({ transcript_path: s.file, session_id: "s5" }, blocked);
   expect([a, b].every((r) => r.code === 0 && r.said.includes("this session so far: 105 tokens")), "where the record can't be kept the line still shows, counting the session so far each time", show([a, b]));
+  const held = temp("held");
+  mkdirSync(join(held, "offthemode-meter", "s7.json"), { recursive: true });
+  writeFileSync(join(held, "offthemode-meter", "s7.json", "in-the-way"), "");
+  const c = await run({ transcript_path: s.file, session_id: "s7" }, held), d = await run({ transcript_path: s.file, session_id: "s7" }, held);
+  expect([c, d].every((r) => r.code === 0 && r.said.includes("this session so far: 105 tokens")) && readdirSync(join(held, "offthemode-meter")).join() === "s7.json", "a record that can't be written leaves no other file behind, stop after stop", show(readdirSync(join(held, "offthemode-meter"))));
+  const one = join(BASE, "meter", "unnamed", "one.jsonl"), two = join(BASE, "meter", "unnamed", "two.jsonl"), unnamed = temp("unnamed");
+  put(one, call(100, { reason: "end_turn" }));
+  put(two, call(200, { reason: "end_turn" }));
+  const u1 = await run({ transcript_path: one }, unnamed), u2 = await run({ transcript_path: two }, unnamed), u3 = await run({ transcript_path: one, session_id: "" }, unnamed);
+  expect(u1.said.includes("so far: 105 tokens") && u2.said.includes("so far: 205 tokens") && u3.out === null && readdirSync(join(unnamed, "offthemode-meter")).sort().join() === "one.json,two.json", "with no session id the record is named after the session's file, one for each", show([u1.said, u2.said, u3.out]));
   writeFileSync(join(tmp, "offthemode-meter", "s6.json"), "{ not json");
   const broken = await run({ transcript_path: s.file, session_id: "s6" }, tmp);
   expect(broken.code === 0 && broken.said.includes("this session so far: 105 tokens"), "a record that doesn't parse is started again", show(broken));
@@ -222,4 +296,4 @@ function promises() {
 }
 
 promises();
-await finish("test-meter", [countsOnce, sameAsUsage, resumes, splitCalls, longLines, chatSize, startsOver, countsBehind, wording, asHook, staysQuiet, stillWorking, recordGuards, byHand]);
+await finish("test-meter", [countsOnce, sameAsUsage, resumes, splitCalls, longLines, hugeLine, continued, agentUnread, inputLeftOpen, chatSize, startsOver, countsBehind, wording, asHook, staysQuiet, stillWorking, recordGuards, byHand]);
