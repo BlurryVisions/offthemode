@@ -23,3 +23,14 @@ jobs:
       - run: npm run test:view
       - run: node scripts/build-content.mjs --check --committed
       - run: npx tsc --noEmit
+      # The stop check (content/templates/stop-check.mjs) run as Claude Code runs it, in throwaway git projects.
+      - run: npm run test:stop-check
+  # The stop check on Windows, where it runs through cmd.exe and ends a check with taskkill; ubuntu never runs those paths.
+  stop-check-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node scripts/test-stop-check.mjs

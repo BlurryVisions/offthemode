@@ -20,6 +20,8 @@ For {{PERSON}} who {{STRUGGLE}}, {{?PROJECT_NAME}} is the {{FRAME}} that {{THE_O
 
 ## Refusals and tie-breakers
 - We will not {{REFUSAL}}, because {{REASON}}.
+- Owner's rule ({{?DATE}}): "{{THE_OWNER'S_WORDS, exactly as said, never restated as a refusal}}" · counted in {{UNIT | each thing the code puts out, such as each song it moves}} · checked by {{?the rule check's command in RULES.md §Commands}} (one line per always or never rule the owner states about their data or screens; with none, "- Owner's rules: none yet")
+- Screen check: {{?the real route of a screen that tells the owner what will happen}} · checked by {{?the screen check's command}} (one line each; with none, "- Screen checks: none yet")
 - {{speed}} over {{completeness}}; {{inference}} over {{configuration}}.
 
 ## Feeling (only if the product has a UI)

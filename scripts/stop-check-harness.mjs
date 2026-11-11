@@ -1,0 +1,125 @@
+// The harness scripts/test-stop-check.mjs and stop-check-git-cases.mjs share: throwaway git projects whose RULES.md
+// names small check scripts, and the stop check run in them the way Claude Code runs it, a Stop hook input on stdin.
+// OTM_STOP_CHECK=<file> tests another copy of the script (a deliberately broken one shows which test catches it).
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, copyFileSync, rmSync, openSync, closeSync } from "node:fs";
+import { join, dirname, basename, resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { spawn, execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+
+export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+export const SCRIPT = resolve(process.env.OTM_STOP_CHECK || join(ROOT, "content/templates/stop-check.mjs"));
+export const SOURCE = readFileSync(SCRIPT, "utf8");
+export const BASE = mkdtempSync(join(tmpdir(), "otm-stop-check-"));
+export const OUT = join(BASE, "outside");
+mkdirSync(OUT);
+let passed = 0;
+const failed = [], pidFiles = [];
+export const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms));
+export const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
+/** The pids still alive after waiting up to ms for them to end: a busy machine is slow to end and reap a process. */
+export async function survivors(pids, ms = 10000) {
+  for (const end = Date.now() + ms; pids.some(alive) && Date.now() < end; ) await sleep(100);
+  return pids.filter(alive);
+}
+export const expect = (ok, what, detail = "") => (ok ? passed++ : failed.push(`FAIL ${what}${detail ? `\n     ${detail}` : ""}`));
+
+export const DONE = "Done. The fix is live and all 12 tests pass.";
+export const CHECKPOINT = "Step 1 is done. Stopping here for your review before I start step 2.";
+export const PLAN = "Here is the plan: the queue first, then the runner. Which one first?";
+// Work reported with no claim of done and no stop for the owner, as most replies that change code read.
+export const WORKED = "I've added titleCase and a test, but I couldn't run the tests.";
+export const OWNER = "i dont want to shift songs which are only on deluxe and not on normal album to normal album";
+export const REWORDED = "We will not move a song that's only on a deluxe edition to the plain album";
+
+// Check scripts a project's RULES.md names. Each records that it ran in OUT, outside the project.
+const here = "import { appendFileSync, readFileSync } from 'node:fs'; import { basename, join } from 'node:path'; const tag = join(process.env.OTM_TEST_OUT, basename(process.cwd()));";
+const CHECKS = {
+  "count.mjs": `${here} appendFileSync(tag + '.count', 'x');`,
+  "fail.mjs": `${here} console.log('1 test failed: adds up'); process.exit(Number(readFileSync('fail.txt', 'utf8')));`,
+  "fail.txt": "1",
+  "pass.mjs": "console.log('all good');",
+  "old-rule.mjs": "console.log('0 breaks across all 109 edition families');",
+  "rule.mjs": "import { readFileSync } from 'node:fs'; const r = JSON.parse(readFileSync('rule.json', 'utf8')); console.log(`RULE \"${r.quote}\": broke ${r.broke} · judged ${r.judged} of ${r.of} ${r.unit}`); process.exit(r.broke ? 1 : 0);",
+  "rule.json": JSON.stringify({ quote: OWNER, broke: 0, judged: 5, of: 5, unit: "moves" }),
+  "screen.mjs": "console.log('SCREEN \"/fix\": wrong 2 · checked 8 of 10 rows'); process.exit(1);",
+  "noisy.mjs": `for (let i = 0; i < 200; i++) console.log('RULE bad line ' + i); console.log(${JSON.stringify(`RULE "${REWORDED}": broke 0 · judged 5 of 5 moves`)});`,
+  "screen-ok.mjs": "console.log('SCREEN \"/queue\": wrong 0 · checked 3 of 3 rows');",
+  "lab.mjs": "console.log('SCREEN \"/lab/fix/[state]\": wrong 0 · checked 10 of 10 rows');",
+  // A hung check, a process it started, and one it started in a group of its own, as Playwright starts a browser.
+  "hang.mjs": `${here} import { spawn } from 'node:child_process'; const run = (detached) => spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore', detached }); const kid = run(false), far = run(true); appendFileSync(tag + '.pids', process.pid + ' ' + kid.pid + ' ' + far.pid + ' '); setInterval(() => {}, 1000);`,
+  // A hung check that tidies up when asked to stop, as Playwright closes its browser and removes its temp profile.
+  "tidy.mjs": `${here} process.on('SIGTERM', () => { appendFileSync(tag + '.tidy', 'x'); process.exit(0); }); setInterval(() => {}, 1000);`,
+  // A check that passes and leaves two processes running, one of them deaf to SIGTERM; it ends once both are listening.
+  "leave.mjs": `${here} import { spawn } from 'node:child_process'; const run = (code) => spawn(process.execPath, ['-e', code + "require('fs').appendFileSync(process.argv[1], process.pid + ' '); setInterval(() => {}, 1000);", tag + '.pids'], { stdio: 'ignore' }).unref(); run(''); run("process.on('SIGTERM', () => {}); "); const listening = () => { try { return readFileSync(tag + '.pids', 'utf8').split(' ').filter(Boolean).length; } catch { return 0; } }; const wait = () => (listening() < 2 ? setTimeout(wait, 20) : process.exit(0)); wait();`,
+};
+
+export const git = (dir, ...args) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "-c", "advice.addEmbeddedRepo=false", ...args], { cwd: dir, stdio: "ignore" });
+/** A project named `name`; with `inside`, it is the folder `name` in a repository named `inside`. `init` adds git init
+ * options, such as a SHA-256 repository. */
+export function project(name, { commands, product = "", budgets = "", noGit = false, inside = "", init = [] }) {
+  const repo = join(BASE, inside || name), dir = inside ? join(repo, name) : repo;
+  mkdirSync(join(dir, ".offthemode"), { recursive: true });
+  writeFileSync(join(dir, ".offthemode/RULES.md"), `RULES · ${name}\n\n## Budgets\n\`\`\`json\n{ ${budgets} }\n\`\`\`\n\n## Commands (fill once the toolchain exists)\n${commands}\n\n## Done means verified\nChecks pass.\n`);
+  writeFileSync(join(dir, ".offthemode/PRODUCT.md"), `PRODUCT · ${name}\n\n## Refusals and tie-breakers\n${product}\n`);
+  for (const [f, text] of Object.entries(CHECKS)) writeFileSync(join(dir, f), text);
+  copyFileSync(SCRIPT, join(dir, ".offthemode/stop-check.mjs"));
+  if (noGit) return dir;
+  git(repo, "init", "-q", ...init);
+  git(repo, "add", "-A");
+  git(repo, "commit", "-qm", "start");
+  return dir;
+}
+export const ownerLine = (quote, unit = "moves") => `- Owner's rule (2026-10-27): "${quote}" · counted in ${unit} · rule check \`node rule.mjs\``;
+export const edit = (dir, f, text) => writeFileSync(join(dir, f), text);
+export const ran = (dir, what = "count") => {
+  const f = join(OUT, `${basename(dir)}.${what}`);
+  if (what === "pids") pidFiles.push(f);
+  return existsSync(f) ? readFileSync(f, "utf8") : "";
+};
+export const stateFile = (dir) => join(dir, ".git/offthemode-stop.json");
+
+let inputs = 0;
+/** Runs node with `input` on stdin, from a file, so it ends at once, as Claude Code's does: a pipe would end only when
+ * this process, busy with the other cases' git calls, gets round to it, and the hook gives up on its input after 3 s. */
+export function node(args, cwd, input, env = {}) {
+  return new Promise((ok) => {
+    const file = join(BASE, `input-${++inputs}.json`);
+    writeFileSync(file, input ?? "");
+    const fd = openSync(file, "r");
+    const win = process.platform === "win32", child = spawn(process.execPath, args, { cwd, env: { ...process.env, OTM_TEST_OUT: OUT, CLAUDE_PROJECT_DIR: cwd, ...env }, stdio: [fd, "pipe", "pipe"], detached: !win });
+    closeSync(fd); // the child has its own copy
+    let stdout = "", stderr = "";
+    // A hook that hangs fails its test instead of hanging the check, and on macOS and Linux what it started (a git call
+    // stuck on a pipe) goes with it. Judged a turn later, once exits that came in are read: the cases' git calls and
+    // writes here hold up this timer, and a hook that ended meanwhile isn't hung.
+    const timer = setTimeout(() => setImmediate(() => {
+      if (child.exitCode !== null || child.signalCode !== null) return;
+      stderr += "killed after 30 s";
+      try { if (win) child.kill("SIGKILL"); else process.kill(-child.pid, "SIGKILL"); } catch { /* gone */ }
+    }), 30000);
+    child.stdout.on("data", (d) => { stdout += d; });
+    child.stderr.on("data", (d) => { stderr += d; });
+    child.on("close", (code) => { clearTimeout(timer); ok({ code, stdout, stderr }); });
+  });
+}
+export async function hook(dir, input = {}, env = {}) {
+  const started = Date.now();
+  const r = await node([join(dir, ".offthemode/stop-check.mjs")], dir, JSON.stringify({ hook_event_name: "Stop", session_id: "s1", cwd: dir, stop_hook_active: false, last_assistant_message: DONE, ...input }), env);
+  let out = null;
+  try { out = r.stdout.trim() ? JSON.parse(r.stdout) : null; } catch { out = { raw: r.stdout, stderr: r.stderr }; }
+  return { out, ms: Date.now() - started, back: out?.hookSpecificOutput?.additionalContext ?? "", shown: out?.systemMessage ?? "", stderr: r.stderr };
+}
+export const now = (dir, env) => node([join(dir, ".offthemode/stop-check.mjs"), "--now"], dir, undefined, env);
+export const show = (h) => JSON.stringify(h.out).slice(0, 600);
+
+/** Runs the cases side by side, ends what a failed one left running, removes the projects, and prints the result. A
+ * case that throws fails by name, and a folder that won't go is named, never hiding the failures. */
+export async function finish(name, cases) {
+  await Promise.all(cases.map((c) => c().catch((e) => failed.push(`FAIL ${c.name} threw: ${e?.stack ?? e}`))));
+  for (const pid of pidFiles.flatMap((f) => (existsSync(f) ? readFileSync(f, "utf8").split(" ").filter(Boolean).map(Number) : []))) { try { process.kill(pid, "SIGKILL"); } catch { /* gone */ } }
+  try { rmSync(BASE, { recursive: true, force: true }); } catch (e) { console.error(`left ${BASE}: ${e.message}`); }
+  for (const f of failed) console.error(f);
+  console.log(`${name}: ${passed} passed${failed.length ? `, ${failed.length} failed` : ""}`);
+  process.exit(failed.length ? 1 : 0);
+}

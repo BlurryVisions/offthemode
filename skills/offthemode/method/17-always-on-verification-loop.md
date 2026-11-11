@@ -1,6 +1,6 @@
 ## Always-On · Verification Loop
 
-> **Output:** every check named once in `.offthemode/RULES.md` §Commands (fast check, full check, one-file lint, audit, screenshots, evals), `scripts/audit-ux.ts` with a journey file per core journey, an `evals/` set for a model-driven core, and an end-of-change report in which every claim has evidence.
+> **Output:** every check named once in `.offthemode/RULES.md` §Commands (fast check, full check, one-file lint, audit, screenshots, rule checks, screen checks, evals), `scripts/audit-ux.ts` with a journey file per core journey, an `evals/` set for a model-driven core, and an end-of-change report in which every claim has evidence.
 
 This is the biggest lever in the method. A model is far better at fixing an error it can read than at avoiding one it was warned about in the abstract. Give your AI signals, make it read them, and don't let it call anything done while they fail. RULES.md §Done means verified sets that standard; this guide supplies the checks behind it.
 
@@ -31,10 +31,25 @@ Your AI runs what RULES.md names, so give each check one name and one exact comm
 | Full check | The fast check plus end-to-end and accessibility tests | Before a feature counts as finished |
 | One-file lint | The project's own linter on one file: `npx biome check --write` or `npx eslint --fix`, `swiftlint lint --quiet`, `ktlint`, `dart analyze` | After each edit |
 | Audit | The computed-style audit and `scripts/audit-ux.ts` | Per UI or journey change |
-| Screenshots | Every touched surface at each of screenshot_sizes in RULES.md §Budgets, light and dark | Per UI change |
+| Screenshots | Every touched surface in the real app on your real data or a copy (shots stay out of git), at each of screenshot_sizes in RULES.md §Budgets, light and dark; invented rows only for a state real data can't show, labelled so | Per UI change |
+| Rule checks | One per always or never rule you state, printing its RULE line (below) | Before anything is called done |
+| Screen checks | One per screen that says what will happen, printing its SCREEN line (below) | Per change to that screen or the code behind it |
 | Evals | The eval runner | When the core changes |
 
 Use the linter the project already has. A Biome project should never fail every edit on a hard-coded ESLint call.
+
+### Rule checks and screen checks
+
+A check your AI wrote, judged with the app's own logic, only proves the code agrees with itself. So each always or never rule you state about your data or screens gets a rule check:
+
+- Your AI quotes the rule in PRODUCT.md §Refusals and tie-breakers exactly as you said it, never restated as a "We will not" line, with the date and what it counts, which you confirm: `- Owner's rule (2026-10-12): "never move a song onto an album it isn't on" · counted in songs moved · checked by npm run check:albums`.
+- The rule check runs the real code over every real case (your data or a copy, kept out of git) and judges each one against something the code doesn't work out itself: an outside source, cases you marked, or the real screen. The judge never calls the app's functions that decide the rule, and history the code itself reads is not an outside source.
+- It prints `RULE "<your words>": broke B · judged J of N <what it counts>`. N counts every case the code puts out (every song it moves, not the albums they land on), J the ones the outside source decided. Done only when B is 0 and J equals N.
+- Prove it before trusting it: run it on the code from before the change. Its N must equal everything that code puts out, and it must find the breaks you reported; if you reported none, your AI shows you three it found, by name, to confirm.
+- It reads saved outside answers, so it runs offline and fast; a case with no saved answer is not judged, and a separate command fetches them. When cases can't be judged, the product should get the truth, or the check fetch it. If a project rule stops that, your AI asks in its next numbered round, with the count: "your rule covers 1,690 songs moved; I can judge 870 today, because <rule>; my pick: let the app look up the rest".
+- A screen that tells you what will happen (a preview, a plan, a queue) is named in PRODUCT.md, `- Screen check: /fix · checked by npm run check:fix-screen`, and gets a screen check: it opens that route in the real app on your data or a copy, never a lab or gallery page, compares each row's words, count and state with what the code will do, and prints `SCREEN "<route>": wrong W · checked C of R rows`. It only reads and compares, and never presses an action that writes to your accounts. Done only when W is 0 and C equals R.
+
+Name them in RULES.md §Commands as `rule checks` and `screen checks`; the stop check runs them (the Pro move below).
 
 ### UX assertions
 
@@ -168,8 +183,8 @@ Verification you have to remember is verification that gets skipped by week two.
 
 ```prompt title="Prove It Works"
 Before you tell me this is done, prove it.
-1. Run the fast check from .offthemode/RULES.md §Commands and paste the last 20 lines. If anything fails, fix it and rerun.
-2. Run the audit and the screenshots on every surface you touched, at each of screenshot_sizes in RULES.md §Budgets, light and dark (or on the simulator). Open each screenshot and look at it.
+1. Run the fast check, rule checks and screen checks from .offthemode/RULES.md §Commands (`node .offthemode/stop-check.mjs --now` runs them all) and paste the last 20 lines, with every RULE and SCREEN line. If anything fails, breaks or is left unjudged, fix it and rerun.
+2. Run the audit and the screenshots on every surface you touched, in the real app on my real data or a copy, at each of screenshot_sizes in RULES.md §Budgets, light and dark (or on the simulator). Open each screenshot and look at it.
 3. Critique the screenshots against .offthemode/DESIGN.md: grid, type scale, spacing tokens, exactly one primary action, anything that reads as a default template. Fix, then shoot again.
 4. Exercise the unhappy paths: empty, loading, error, offline, 10x content, the largest text size.
 5. If prompts, model ids, retrieval settings or the core contract changed, run the evals. A drop past the gate in RULES.md §Budgets blocks.
@@ -186,11 +201,12 @@ When the change touches the interface, a contract, a schema, sign-in, payments o
 You are reviewing a change you did not write. Read .offthemode/PRODUCT.md, RULES.md and DESIGN.md, then the diff against {{BASE_REF | main}}.
 - Screens: compare each new screenshot with the one from before the change, as a pair, and say which is better and why. Then judge the same pairs again with the order swapped. Count only verdicts that agree both ways.
 - Contracts, schemas, sign-in, payments or wide changes: list what breaks, what was assumed without proof, and what a person could do that the code does not expect. Point to the file and line.
+- Rule and screen checks: list what each imports from the app that decides the rule, what its N counts, and any route under a lab or gallery.
 Report findings only, most serious first. Change nothing.
 ```
 
 Models tend to favour whichever option they see first, so judging both orders cancels that bias. Bring the findings back to the building session: fix each one or rebut it with evidence. For screens, fix the losses the review names and review again; stop when a round flips no loss, then list what remains for your own taste call.
 
-> **Pro move:** If your tool supports hooks or saved commands (Claude Code does), you can run the one-file lint automatically after every edit, run the fast check before your AI stops, and save Prove It Works as a command. This is optional; pasted, the prompts do the same job.
+> **Pro move:** Off the Mode ships the stop check, `.offthemode/stop-check.mjs`. In any tool, `node .offthemode/stop-check.mjs --now` runs the fast check, rule checks and screen checks, shows their lines, and fails on a break, a case not judged, a rule check with no RULE line, a lab page in a SCREEN line, or quoted words you never said. In Claude Code, setup offers to run it by itself as a hook: at a stop after files changed, it runs them all, whatever the reply says, and sends your AI back once while they fail, unless the reply stops for your answer; with no file changed, a reply that says work is done reruns only the rule checks, and a check whose command calls git, but only when anything git sees has changed; you wait as long as the checks take. If your tool supports hooks or saved commands (Claude Code does), you can also run the one-file lint after every edit and save Prove It Works as a command.
 
-> **Trap:** Your AI may "fix" failing tests by weakening assertions or updating snapshots, and "fix" a failing audit by marking the element exempt. Tests, snapshots and exemptions change only when the spec changes. Each change goes into DECISIONS.md with its reason, and you review every one yourself.
+> **Trap:** Your AI may "fix" failing tests by weakening assertions or updating snapshots, "fix" a failing audit by marking the element exempt, and "fix" a failing rule check by rewording your rule or counting fewer cases. Tests, snapshots, exemptions and what a rule check counts change only when the spec changes, and your quoted words only when you say new ones. Each change goes into DECISIONS.md with its reason, and you review every one yourself.

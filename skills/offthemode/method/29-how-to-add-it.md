@@ -113,7 +113,7 @@ Open the project in your AI tool and say "set up off the mode". Setup asks first
 - **New project** (an empty folder, or just an idea). It asks about the product before anything else: what it is, who it's for, the job they need done, the moment they first get value, what it refuses to be, how it should feel. From your answers it writes the files.
 - **Existing project.** It reads the code first: the stack, the commands, the screens and flows that exist. It drafts PRODUCT.md from what the code shows, writes each guess as a hypothesis ("I think the main user is X, because Y"), asks you the 3 questions a wrong guess would cost most to undo, and tells you where the other guesses are, so you can correct any in your own words. RULES.md gets your real stack and commands, and CHECKLIST.md sets what exists against what the core concept needs.
 
-Setup changes no code. It writes the `.offthemode/` folder, plus one line you approve so your tool loads it. The project's own rule files stay where they are: setup adds that one line, and changes another line only when you approve the fix, for a conflict or an out-of-date fact. If you say yes, it also keeps your usual shipping setup (code host, commit name, hosting) in `~/.offthemode/ME.md`, one small file in your home folder, outside every project, so the next project only asks you to confirm. The folder starts with six core files:
+Setup changes no code. It writes the `.offthemode/` folder, plus one line you approve so your tool loads it and, in Claude Code, the stop check's hook in `.claude/settings.local.json` if you say yes. The project's own rule files stay where they are: setup adds that one line, and changes another line only when you approve the fix, for a conflict or an out-of-date fact. If you say yes, it also keeps your usual shipping setup (code host, commit name, hosting) in `~/.offthemode/ME.md`, one small file in your home folder, outside every project, so the next project only asks you to confirm. The folder starts with six core files:
 
 | File | What it holds |
 |---|---|
@@ -123,6 +123,8 @@ Setup changes no code. It writes the `.offthemode/` folder, plus one line you ap
 | GLOSSARY.md | A plain-words summary for people, then the Terms the code and copy use |
 | STATE.md | Where things stand now, kept current as the work happens |
 | DECISIONS.md | Every decision, appended, never rewritten |
+
+When Node is installed, setup also writes `stop-check.mjs`, the script the stop check runs. Running /offthemode again replaces it with the current version.
 
 #### Optional files
 
@@ -171,7 +173,8 @@ Before any work in this project, read .offthemode/RULES.md and .offthemode/STATE
 ### Remove it
 
 1. Remove the auto-load line setup added to your tool's instructions file.
-2. Remove the connection: in Claude, Settings, then Connectors; in Claude Code, `claude mcp remove --scope user offthemode`; in Codex, the `[mcp_servers.offthemode]` block in `~/.codex/config.toml`; in Cursor, VS Code and other tools, their MCP settings; for the skills, delete the seven folders.
-3. Delete `.offthemode/`, or keep it. It is plain Markdown about your product, and it stays useful without any tool.
+2. In Claude Code, if you turned on the stop check, delete its Stop block (the one that runs `.offthemode/stop-check.mjs`) from `.claude/settings.local.json`.
+3. Remove the connection: in Claude, Settings, then Connectors; in Claude Code, `claude mcp remove --scope user offthemode`; in Codex, the `[mcp_servers.offthemode]` block in `~/.codex/config.toml`; in Cursor, VS Code and other tools, their MCP settings; for the skills, delete the seven folders.
+4. Delete `.offthemode/`, or keep it. It is plain Markdown about your product, plus the stop check's script, and it stays useful without any tool.
 
 Code that was written along the way, such as tokens, scripts and tests, is ordinary project code. Keep it or remove it as you would any other.

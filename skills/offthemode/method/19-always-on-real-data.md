@@ -9,10 +9,10 @@ Three terms. A content model lists each kind of record, its fields, how long eac
 ```prompt title="Build the Seed"
 Read {{CONTENT_MODEL_PATH}}. If it is missing, draft it first (entities, fields, min/typical/max length, optionality, cardinality, realistic distributions for {{MARKET}}). Show me the content model and the seed plan (profiles, files, the states route).
 Then build a deterministic seed (fixed random seed) at {{SEED_PATH}} with @faker-js/faker or the stack's equivalent, writing to fixtures/. Profiles by environment variable:
-- demo: the product in month six with real users in {{MARKET}}; curated and believable; used for design reviews, the landing page demo and store screenshots.
+- demo: the product in month six with real users in {{MARKET}}; curated and believable; used for design reviews until real data exists, the landing page demo and store screenshots.
 - edge: every case in the torture set pasted below at least once, every lifecycle state, archived records.
 - scale: {{SCALE_N | 10000}} rows of the heaviest entity, plus one power user at 100x the usual volume.
-Add a dev-only states gallery at {{STATES_ROUTE}} that renders each primary component in every state (empty, one, many, overflow, loading, error, offline, permission denied), light and dark. Screenshot it and list what breaks.
+Add a dev-only states gallery at {{STATES_ROUTE}} for the states real data can't show: each primary component in every state (empty, one, many, overflow, loading, error, offline, permission denied), light and dark. Screenshot it and list what breaks; the touched screen itself is shot in the real app.
 ```
 
 Paste the torture set below the prompt so the `edge` profile covers all of it.
@@ -21,4 +21,4 @@ Paste the torture set below the prompt so the `edge` profile covers all of it.
 - [ ] Devanagari (it needs a taller line box), Arabic and Hebrew right to left (CSS logical properties such as `margin-inline-start`, mirrored icons), Chinese, Japanese and Korean line wrapping, mixed direction in one line; emoji built from joined sequences (families, flags, skin tones) cut with `Intl.Segmenter` so they are never split in half
 - [ ] 0, negative and huge numbers; Indian grouping (1,00,000) next to Western grouping (100,000); daylight-saving boundaries; a locale that differs from the time zone; missing, 1px-tall, 8000px-tall and broken media; `<script>` in names, zalgo text (letters stacked with combining marks), whitespace-only input, pasted rich text
 
-> **Rule:** A screen isn't designed until its screenshots have been reviewed on both the `demo` and `edge` profiles.
+> **Rule:** A screen isn't designed until its screenshots have been reviewed on your real data (the `demo` profile while there is none) and on the `edge` profile for the states real data lacks, labelled as invented. A rule checked on invented rows proves nothing about real ones.

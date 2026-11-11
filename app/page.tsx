@@ -6,7 +6,7 @@ const vscodeLink = `vscode:mcp/install?${encodeURIComponent(JSON.stringify({ nam
 const skillsZip = `${SITE_URL}/skills/offthemode-skills.zip`;
 
 const TOUCHES: Record<string, string> = {
-  offthemode: "The .offthemode/ folder, plus one line you approve so your tool loads it; if you say yes, your usual setup in ~/.offthemode/ME.md",
+  offthemode: "The .offthemode/ folder, plus one line you approve so your tool loads it; if you say yes, your usual setup in ~/.offthemode/ME.md and, in Claude Code, the stop check's hook in .claude/settings.local.json",
   "revisit-checklist": "The checklist",
   reassess: "Only its own report, if you say so",
   "revisit-comments": "Code comments only",
@@ -83,7 +83,7 @@ export default function Home() {
               Off the Mode makes Claude, Cursor or any AI coding tool plan first, build in the right order, and hold an
               elite bar: clean code, fast screens, nothing that looks like every other app. It lives outside your
               project. Your project gets the <span className="inline">.offthemode/</span> folder, plus one line you
-              approve so your tool loads it.
+              approve so your tool loads it and, in Claude Code, a stop check hook if you say yes.
             </p>
             <div className="actions">
               <a className="btn btn--solid" href="#add">Add it to your tool</a>
@@ -194,13 +194,13 @@ export default function Home() {
             <div className="promises">
               <div className="promise">
                 <h3>Never slows you down</h3>
-                <p>Your sessions stay free-form. Nothing forces the checklist on you; the revisits catch up when you ask, and your AI keeps where things stand saved as it works.</p>
+                <p>Your sessions stay free-form. Nothing forces the checklist on you; the revisits catch up when you ask, and your AI keeps where things stand saved as it works. The one exception is yours to turn on: in Claude Code, the stop check runs your own checks when your AI stops after changing files, and you wait while they run.</p>
               </div>
               <div className="promise">
                 <h3>One folder, plus one line</h3>
                 <p>
                   Everything in your project lives in <span className="inline">.offthemode/</span>, plus one line you approve so your tool
-                  loads it. If you say yes, your usual setup (where your code and hosting live) is kept in one small file in your home folder, so the next project only asks you to confirm. Your code only changes when you ask your AI to change it.
+                  loads it. In Claude Code, if you say yes, the stop check adds its hook to <span className="inline">.claude/settings.local.json</span>. If you say yes, your usual setup (where your code and hosting live) is kept in one small file in your home folder, so the next project only asks you to confirm. Your code only changes when you ask your AI to change it.
                 </p>
               </div>
               <div className="promise">

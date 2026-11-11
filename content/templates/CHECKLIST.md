@@ -14,7 +14,7 @@ Verify: early = can be proven on its own · on completion = only an end-to-end r
 
 ### F1 · {{?FRAGMENT_NAME}} · depends on: {{?none, or the F# and B# ids it needs}} · Verify: {{?early or on completion}}
 For the person: {{?what they can now do, in their words}}
-- [ ] F1.1 {{?capability}} · done when: {{?a test by name, a number against a key in RULES.md §Budgets, a named state you can screenshot, or an end-to-end run with real inputs}} · guide: {{?the RULES.md §Guides entry that applies, or none}} · evidence:
+- [ ] F1.1 {{?capability}} · done when: {{?a test by name, a number against a key in RULES.md §Budgets, a rule check's line (broke 0, judged N of N), a named state you can screenshot on real data, or an end-to-end run with real inputs}} · guide: {{?the RULES.md §Guides entry that applies, or none}} · evidence:
 - [ ] F1.2 {{?capability}} · done when: {{?...}} · guide: {{?...}} · evidence:
 - [ ] F1.Q Quality bars met for F1 · evidence:
 
@@ -30,6 +30,7 @@ For the person: {{?what they can now do, in their words}}
 Delete a bar only with a one-line reason. (UI), (server) and (native) bars go when the product has no UI, no server or no native app.
 Correctness
 - The core journey passes end to end with real inputs · end-to-end command
+- Each owner's rule in PRODUCT.md: broke 0, judged N of N; each screen check: wrong 0, checked R of R · rule checks and screen checks commands
 - Model-driven or data-driven core: the eval set passes and no case regressed · evals command
 - Every failure path returns a clear error and leaves data consistent; retries are safe
 Speed

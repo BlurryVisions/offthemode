@@ -19,10 +19,10 @@ One method (rules, plan, look and feel, backend, navigation, the core in fragmen
 - Not for: people who want a code library or a UI kit
 
 ## Refusals and tie-breakers
-- We will not block or slow a normal coding session, because the checklist is a map, not a gate.
+- We will not block or slow a normal coding session, because the checklist is a map, not a gate. The one exception is the stop check, in Claude Code and only on the owner's yes: at a stop after files changed it runs the project's own checks, as long as they take, and sends the AI back once when they fail (D-036).
 - We will not store or receive anyone's code, because trust is the product.
 - We will not lock anyone into one AI tool or one language.
-- We will not clutter the project: one .offthemode/ folder, plus one line the user approves so their tool loads it (decided 2026-09-30). A line in the project's own rule files changes only when the user approves a fix for a conflict or an out-of-date fact (D-008).
+- We will not clutter the project: one .offthemode/ folder, plus one line the user approves so their tool loads it (decided 2026-09-30) and, in Claude Code, the stop check's hook in .claude/settings.local.json if the user says yes (D-036). A line in the project's own rule files changes only when the user approves a fix for a conflict or an out-of-date fact (D-008).
 - We will not set size, speed or accessibility limits on what people build: how minimal or comprehensive a product is stays its builder's call (DECISIONS D-005, D-006).
 - Simple wording over complete wording; one source over convenient copies.
 

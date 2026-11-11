@@ -2,7 +2,7 @@
 
 Left alone, every AI coding tool builds the average. **Off the Mode** makes Claude, Cursor or any AI coding tool plan first, build in the right order, and hold an elite bar.
 
-It lives outside your project. Your project gets the `.offthemode/` folder, plus one line you approve so your tool loads it.
+It lives outside your project. Your project gets the `.offthemode/` folder, plus one line you approve so your tool loads it and, in Claude Code, a stop check hook if you say yes.
 
 **Website:** https://offthemode.vercel.app · **The method:** https://offthemode.vercel.app/method
 
@@ -21,7 +21,7 @@ Then, whenever you want:
 
 | Command | What it does | What it can change |
 |---|---|---|
-| `/offthemode` | Sets up the project, or tells you where it stands | The `.offthemode/` folder, plus one line you approve so your tool loads it; if you say yes, your usual setup in `~/.offthemode/ME.md` |
+| `/offthemode` | Sets up the project, or tells you where it stands | The `.offthemode/` folder, plus one line you approve so your tool loads it; if you say yes, your usual setup in `~/.offthemode/ME.md` and, in Claude Code, the stop check's hook in `.claude/settings.local.json` |
 | `/revisit-checklist [idea]` | Shows the checklist, or adds a new feature or idea to it | The checklist |
 | `/view-project` | Opens your project as a page in your browser | Nothing in your project: one temporary page |
 | `/revisit-state` | Saves where things stand, so a fresh session picks up from here; your AI also runs it on its own after changing files | Where things stand, and new decisions |
@@ -43,9 +43,10 @@ See it as a page: /view-project, or https://offthemode.vercel.app/view (open the
   GLOSSARY.md    a plain summary for people, and the words the code uses
   STATE.md       where things stand right now
   DECISIONS.md   what was decided, and why
+  stop-check.mjs runs your checks when your AI stops (written when Node is installed)
 ```
 
-When a guide calls for another document, it goes in `.offthemode/` too. Outside it, setup adds one line that makes your tool load the rules (in CLAUDE.md, AGENTS.md or your tool's rules file), and only after you approve it. If you say yes, it also keeps your usual setup in `~/.offthemode/ME.md`, in your home folder, outside every project. If a line in your own rule files is out of date or conflicts, it shows you the fix and changes it only after you approve that too.
+When a guide calls for another document, it goes in `.offthemode/` too. Outside it, setup adds one line that makes your tool load the rules (in CLAUDE.md, AGENTS.md or your tool's rules file), and only after you approve it. If you say yes, it also keeps your usual setup in `~/.offthemode/ME.md`, in your home folder, outside every project. In Claude Code, if you say yes, it adds the stop check's hook to `.claude/settings.local.json`: when your AI stops after changing files, it runs your project's checks and sends the AI back once if they fail. If a line in your own rule files is out of date or conflicts, it shows you the fix and changes it only after you approve that too.
 
 ## Privacy
 
