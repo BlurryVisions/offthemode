@@ -3,7 +3,7 @@ Last revisit: {{?DATE}} · Verified {{?V}}/{{?TOTAL}}
 
 A map, not a gate. Fragments are listed in build order and Foundation items are placed by phase: keep to that order when you can. When you work in another order, /revisit-checklist catches up and updates this file.
 Marks: [ ] todo · [~] in progress · [x] built, not proven · [v] verified, evidence cited · [-] dropped, reason kept
-Points: under an item, one indented line for each thing the owner said must be true, in their words: `  - date "their words" · check: how · what it showed, open, or replaced`. They are written before the work starts, and the save records what each check showed. A point handed to the owner stays open until they answer; one a newer point contradicts is marked replaced; a point goes only when the owner takes it back.
+Points: under an item, one indented line for each thing the owner said must be true, in their words: `  - date "their words" · check: how · what it showed, open, or replaced`. They are written before the work starts, and the save records what each check showed. A point handed to the owner stays open until they answer; one the owner gives up for a newer point is marked replaced; a point goes only when the owner takes it back.
 Verify: early = can be proven on its own · on completion = only an end-to-end run proves it
 
 ## Vision (owned by .offthemode/PRODUCT.md; do not edit here)

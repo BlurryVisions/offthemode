@@ -1,6 +1,6 @@
 ## Living Checklist
 
-> **Output:** `.offthemode/CHECKLIST.md`: the core concept split into fragments, each item with a provable done-when, kept true by one command, `revisit-checklist`.
+> **Output:** `.offthemode/CHECKLIST.md`: the core concept split into fragments, each item with a provable done-when, kept true by `revisit-checklist`, with your points kept in it by your AI and the save.
 
 Your core concept lives in PRODUCT.md §Core concept, written during P1. The checklist breaks it into **fragments**: the separate pieces of the core, finished one after another. Each fragment has a few items, and each item says how you will know it is done. The file is a map, not a gate: fragments are listed in build order (what others depend on first, then the one nearest the moment of value), and you can still work on anything in any order. Sessions stay free-form and nothing has to be ticked by hand while you work, because `revisit-checklist` catches up afterwards by reading what changed in git. One thing is kept as you work: each piece's points, what you said must be true, in your words. Your AI writes them under the piece's item before it changes anything else, each with how it will be checked. It answers them one by one when it says done, and the save (`revisit-state`) records what each check showed. A point only you can judge is handed to you with where to look, and stays open until you answer. So a correction is never lost.
 

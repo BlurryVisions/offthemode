@@ -29,11 +29,11 @@ This is real use, not a controlled test. The counts are small, they come from di
 
 An agent knows only its brief. In the project with the most complaints, 2 of 3 reviewers and more than half the builders got no run of 8 words from the message that started the work (43% and 42% across all five projects). In the three projects that use Off the Mode, 84 complaints were traced: 43 were built on a guess nobody checked, 21 dropped a point the owner had already made, and 2 were plain coding mistakes. A reviewer who is never told what was asked can only hold the code against itself.
 
-So every brief holds every point kept for its task in CHECKLIST.md, the ones from earlier messages too, word for word (RULES.md §Efficiency), each with its check. The scout's brief carries them, each builder's note passes them on, and a reviewer checks the result against the points first, on the real thing, then reads the code.
+So every brief holds every point that still stands under its task's item in CHECKLIST.md, the ones from earlier messages too, word for word (RULES.md §Efficiency), each with its check. The scout's brief carries them, each builder's note passes them on, and a reviewer checks the result against the points first, on the real thing, then reads the code.
 
 ### A model for each job
 
-Across all five projects, 98% of the workflow agents' tokens ran on one model, whatever the job. Reviewers took 41% of them and reading took 19%. Where your tool lets you pick, give searching, reading, sorting and checking against a list to a cheaper, faster model, and keep the strongest for design, the hard part of a build and, as a precaution, the fresh review (Model and effort per task, below).
+Across all five projects, 98% of the workflow agents' tokens ran on one model, whatever the job. Reviewers took 42% of them and reading took 19%. Where your tool lets you pick, give searching, reading, sorting and checking against a list to a cheaper, faster model, and keep the strongest for design, the hard part of a build and, as a precaution, the fresh review (Model and effort per task, below).
 
 One test stands behind the last part. Four models each reviewed the same 174-line script four times, with 8 defects planted that its tests are known to catch. Every model, the cheapest included, found the same 4 in every review; three were found by no review, and one once, by the strongest model. By the rule written before the test, that is no difference: on planted defects a cheaper model reviewed as well. The reviews also reported real defects nobody had planted, three kinds in all, judged by hand afterwards and outside that rule: each of the two strongest models reported one in every review, the cheapest in 1 of 4 and the other cheaper one in none. So the strongest keeps the fresh review as a precaution, not as a proven gain, and no reviewer replaces a check: the tests catch all 8. It is one file and one kind of defect.
 
@@ -57,7 +57,7 @@ Write a brief of at most 40 lines:
 - the contracts that must not break (types, API shapes, design tokens)
 - the checks that prove it works: {{?CHECK_CMD}}
 - open questions, written as hypotheses ("I think X, because Y")
-Then say how many agents work side by side and why. One is the default; work side by side only where the parts share no files. Then list the build's pieces, which run one after another: one finished result each (a page, a layer, a job), with the check that ends it; a small build is one piece. Add to the brief, beyond its 40 lines: every point under the task's item in .offthemode/CHECKLIST.md (or under its line in ## Asks outside the plan), the ones from earlier messages too, word for word, each with its check (none written yet: say so, and take them from the task's own words); and the guide lines the build needs, so builders don't open the guides again.
+Then say how many agents work side by side and why. One is the default; work side by side only where the parts share no files. Then list the build's pieces, which run one after another: one finished result each (a page, a layer, a job), with the check that ends it; a small build is one piece. Add to the brief, beyond its 40 lines: every point that still stands under the task's item in .offthemode/CHECKLIST.md (or under its line in ## Asks outside the plan), the ones from earlier messages too, word for word, each with its check (none written yet: say so, and take them from the task's own words); and the guide lines the build needs, so builders don't open the guides again.
 End with the reply format every agent uses: done or blocked; files changed; each point's check and what it showed; anything the brief got wrong. At most 10 lines besides the points.
 Every agent that follows starts its prompt with this brief, unchanged.
 ```
@@ -117,6 +117,6 @@ done
 
 ### Model and effort per task
 
-Vision questions, architecture, the data model, the threat model and nasty debugging get the strongest model and the highest reasoning effort your tool offers, with a plan before any code. Building from a settled plan gets the default model. Mechanical sweeps get the fastest one, as a batch run. Review always runs in a different session from the build.
+Vision questions, architecture, the data model, the threat model and nasty debugging get the strongest model and the highest reasoning effort your tool offers, with a plan before any code. Building from a settled plan gets the default model. Mechanical sweeps get the fastest one, as a batch run. Searching, reading, sorting and checking against a list get a cheaper, faster model. Review always runs in a different session from the build, and the fresh review keeps the strongest model, as a precaution.
 
 > **Trap:** Parallel agents editing the same files means merge hell. Split work by ownership, and land shared contracts (types, API schema, design tokens) on the main branch before fanning out.

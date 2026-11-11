@@ -24,4 +24,4 @@ Changelog: v4 references assigned by me, no recommendation (a generator grading 
 
 > **Pro move:** If your tool has saved commands or skills, point them at the file instead of copying the text, so it lives in one place. In Claude Code, a command file `.claude/commands/diverge.md` holding the line `@.offthemode/prompts/diverge.md` and then `Inputs: $ARGUMENTS` makes `/diverge` run the saved prompt with whatever you type after it. A skill can also carry scripts, and loads by itself when a task matches its description.
 
-> **Rule:** Every change to a saved prompt, and every new line in RULES.md, carries its reason. Lines without reasons pile up into contradictions, and the model tries to satisfy all of them at once. When you correct the same thing twice, it becomes one line in RULES.md with its why, not a reminder you keep retyping.
+> **Rule:** Every change to a saved prompt, and every new line in RULES.md, carries its reason. Lines without reasons pile up into contradictions, and the model tries to satisfy all of them at once. When you correct the way your AI works twice, it becomes one line in RULES.md with its why, not a reminder you keep retyping.

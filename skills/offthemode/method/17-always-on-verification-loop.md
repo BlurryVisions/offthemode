@@ -188,7 +188,7 @@ Before you tell me this is done, prove it.
 3. Critique the screenshots against .offthemode/DESIGN.md: grid, type scale, spacing tokens, exactly one primary action, anything that reads as a default template. Fix, then shoot again.
 4. Exercise the unhappy paths: empty, loading, error, offline, 10x content, the largest text size.
 5. If prompts, model ids, retrieval settings or the core contract changed, run the evals. A drop past the gate in RULES.md §Budgets blocks.
-6. Save where things stand with all of revisit-state's steps: each point's result and its item's mark in CHECKLIST.md, STATE.md, and only the decisions DECISIONS.md doesn't hold yet.
+6. Save where things stand with all of revisit-state's steps: each point's result and its item's mark in CHECKLIST.md (where the project keeps points), STATE.md, and only the decisions DECISIONS.md doesn't hold yet.
 7. Report by my points: each of this ask's with the check that ran and what it showed, or not checked and why; the kept ones in one line, checked again where the change could touch them. Then anything else verified, unverified or skipped. Name any CHECKLIST.md item this finishes, with its evidence.
 Never write "should work". Write "verified by X" or "unverified".
 ```
@@ -199,7 +199,7 @@ When the change touches the interface, a contract, a schema, sign-in, payments o
 
 ```prompt title="Fresh-Session Change Review"
 You are reviewing a change you did not write: {{WORK}}, the diff against {{BASE_REF | main}}. First read .offthemode/PRODUCT.md, RULES.md and DESIGN.md.
-- The owner's points: read them under the work's item in .offthemode/CHECKLIST.md, or under its line in ## Asks outside the plan, and check each one on the real thing before you read the diff. Say which hold, which don't and which you could not check.
+- The owner's points, if any are written: read them under the work's item in .offthemode/CHECKLIST.md, or under its line in ## Asks outside the plan, leaving out any marked replaced, and check each one on the real thing before you read the diff. Say which hold, which don't and which you could not check.
 - Screens: compare each new screenshot with the one from before the change, as a pair, and say which is better and why. Then judge the same pairs again with the order swapped. Count only verdicts that agree both ways.
 - Contracts, schemas, sign-in, payments or wide changes: list what breaks, what was assumed without proof, and what a person could do that the code does not expect. Point to the file and line.
 - Rule and screen checks: list what each imports from the app that decides the rule, what its N counts, and any route under a lab or gallery.

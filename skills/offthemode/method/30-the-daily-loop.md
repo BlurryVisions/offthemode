@@ -24,7 +24,7 @@ Running a command is the request, so none asks whether to start. Every command e
 | `offthemode` | Once per project, to set it up; later, any time you want the status |
 | `revisit-checklist` | To see what's next, or when a new feature or idea comes up, so it lands in the right place on the checklist |
 | `view-project` | Whenever you want the whole project at a glance, as a page in your browser |
-| `revisit-state` | Your AI runs it by itself after work changes files or settles a decision; type it before you start a fresh session, or whenever you want where things stand saved for sure |
+| `revisit-state` | Your AI runs it by itself after work changes files, settles a decision or closes one of your points; type it before you start a fresh session, or whenever you want where things stand saved for sure |
 | `reassess` | After every few pieces of work, before a milestone, or whenever the product feels like it is drifting from the core concept |
 | `revisit-comments` | Before a merge, or when comments feel stale |
 | `revisit-glossary` | After a milestone, or before you show the project to someone |
