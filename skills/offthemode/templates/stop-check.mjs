@@ -545,23 +545,24 @@ const WAITS = new Set(["Bash", "Edit", "Write", "MultiEdit", "NotebookEdit"]);
 /** The time of the AI's first tool use that could have changed a file since the files were last found as checked, by
  * its transcript: Infinity when there is none, 0 where the transcript can't say (none to read, a line that can't be
  * read, a tool use with no time). `since` is the last full run; `mark` the last stop that found no file changed, if
- * later. A tool that waits counts when the AI's next message came after the mark, since only then had it finished; any
- * other counts when used after the last full run. Only the AI's own lines count: Claude Code also writes copies of
- * them with no time (api-request-blob), and a subagent's lines belong to the tool that started it. */
+ * later. Only a tool used after the last full run counts, so one that ran that run itself (--now) isn't taken for a
+ * later change: a tool that waits when the AI's next message came after the mark, since only then had it finished; any
+ * other always. Only the AI's own lines count: Claude Code also writes copies of them with no time
+ * (api-request-blob), and a subagent's lines belong to the tool that started it. */
 async function firstWrite(transcript, since = 0, mark = since) {
   if (!transcript || !existsSync(transcript)) return 0;
   let first = Infinity, waiting = [], last, rest = "";
   const count = (t) => { first = Math.min(first, t || 0); };
   const look = (line) => {
-    if (!line.includes('"type":"assistant"')) return;
+    if (!line.includes('"type":"assistant"') && !line.includes('"tool_use"')) return; // a line cut short before its type still says "can't tell"
     const e = JSON.parse(line), at = Date.parse(e.timestamp), id = e.message?.id;
     if (e.type !== "assistant" || e.isSidechain) return;
     // The AI's next message: the tools of the one before have finished by now.
     if (id === undefined || id !== last) { if (!(at <= mark)) waiting.forEach(count); (waiting = []), (last = id); }
     for (const b of Array.isArray(e.message?.content) ? e.message.content : []) {
-      if (b?.type !== "tool_use" || READS.has(b.name)) continue;
+      if (b?.type !== "tool_use" || READS.has(b.name) || at <= since) continue;
       if (WAITS.has(b.name) && !b.input?.run_in_background) waiting.push(at);
-      else if (!(at <= since)) count(at);
+      else count(at);
     }
   };
   try { // split at \n only: readline also splits at U+2028 and U+2029, which a JSON line may hold
@@ -665,8 +666,9 @@ async function main() {
   const due = ctx.issues.length > 0 && !input.stop_hook_active && !asks && sent[session] !== numbers(ctx.issues);
   // A reply that claims nothing goes back only for a change its own tools could have made: one made after the first
   // tool that can change files and was at work since the files were last found as checked, at a full run or a later
-  // stop with none changed (a file's time can be 2 s coarse). Where its transcript can't say, it could.
-  const first = due && reply === "none" && top ? await firstWrite(input.transcript_path, lastFull ?? 0, Math.max(lastFull ?? 0, seenAt)) : 0, others = first === Infinity || (first > 0 && latest < first - 2000);
+  // stop with none changed (a file's time can be 2 s coarse). Where its transcript can't say, it could. A mark later
+  // than now (the clock moved back since), or with no full run before it, is no mark.
+  const first = due && reply === "none" && top ? await firstWrite(input.transcript_path, lastFull ?? 0, lastFull && seenAt <= Date.now() ? Math.max(lastFull, seenAt) : lastFull ?? 0) : 0, others = first === Infinity || (first > 0 && latest < first - 2000);
   const back = due && !others, said = back ? sendBack(results, ctx, at, reply === "claim" ? "" : since) : "";
   const outcome = !ctx.issues.length ? "" : back ? "Your AI was sent back once to fix this or tell you plainly what isn't done."
     : input.stop_hook_active ? "Your AI was already sent back once this turn, so it stops here."
@@ -680,6 +682,9 @@ async function main() {
   else if (!back) state.sentBack = theirs;
   else reached(said), (state.sentBack = { ...Object.fromEntries(Object.entries(theirs).slice(-4)), [session]: numbers(ctx.issues.filter((i) => !ctx.once.some(([s, k, l]) => l === i && s[k]))) });
   save(files, state);
+  // A light stop that couldn't read the files found none unchanged, so it is no mark: the state file's time goes back to
+  // just after the one it had, still the newer of the two.
+  if (light && fp === null && seenAt) try { utimesSync(newest(), new Date(seenAt + 1), new Date(seenAt + 1)); } catch { /* none */ }
   const out = { systemMessage: cap([owner, outcome].filter(Boolean).join("\n")) };
   if (back) out.hookSpecificOutput = { hookEventName: "Stop", additionalContext: said };
   emit(out);

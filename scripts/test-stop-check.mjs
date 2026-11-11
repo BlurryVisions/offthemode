@@ -1,7 +1,7 @@
 // Tests the stop check (content/templates/stop-check.mjs) the way Claude Code runs it: a Stop hook input on stdin, in
 // throwaway git projects whose RULES.md names small check scripts (scripts/stop-check-harness.mjs). What counts as a
 // change is in stop-check-git-cases.mjs. Prints only what failed, then one summary line.
-import { writeFileSync, readFileSync, existsSync, readdirSync, statSync, rmSync, realpathSync, mkdirSync, utimesSync, openSync, closeSync, chmodSync, renameSync } from "node:fs";
+import { writeFileSync, readFileSync, existsSync, readdirSync, statSync, rmSync, realpathSync, mkdirSync, utimesSync, openSync, closeSync, chmodSync, renameSync, symlinkSync } from "node:fs";
 import { join, relative } from "node:path";
 import { tmpdir } from "node:os";
 import { spawn, execFileSync } from "node:child_process";
@@ -241,6 +241,15 @@ async function othersChange() {
   writeFileSync(t, `${JSON.stringify({ type: "assistant", message: message("Bash", 0) })}\n`); // the AI's own tool use, with no time
   h = await answer();
   expect(h.back.includes("failed (exit 7)"), "...or when the AI's own tool use carries no time", show(h));
+  edit(dir, "fail.txt", "0");
+  await hook(dir, { transcript_path: t }); // a full run that passes
+  const done = Math.max(statSync(stateFile(dir)).mtimeMs, fullAt());
+  used(["Bash", done + 1], ["", done + 2]); // a harmless command and the AI's reply, in lines with no message id
+  await answer(); // a stop with no file changed marks the time
+  edit(dir, "fail.txt", "8"); // the owner's edit
+  h = await answer();
+  expect(!h.back && h.shown.includes("failed (exit 8)") && h.shown.includes("Nothing shows your AI made these changes"),
+    "...and where a transcript's lines carry no message id, each line is a message of its own: a command finished before a stop with no file changed isn't taken for the owner's later change", show(h));
 }
 
 // A stop where no file changed marks the time, by the state file's time alone: a tool the AI had finished with before
@@ -266,10 +275,10 @@ async function markedStops() {
   let at = await fresh();
   const kept = state(), before = saved();
   wrote(["Workflow", JSON.parse(state()).fullAt - 1000], ["Bash", at + 1], ["", at + 2]); // a workflow before the last full run; a harmless command, finished before the next stop
-  const quiet = await stop(), marked = saved(), same = state() === kept;
+  const quiet = await stop(), marked = saved(), same = state() === kept, after = Date.now();
   broken();
   let h = await stop();
-  expect(quiet.out === null && same && marked > before && !h.back && h.shown.includes(`failed (exit ${exit})`) && h.shown.includes("Nothing shows your AI made these changes"),
+  expect(quiet.out === null && same && marked > before && marked <= after && !h.back && h.shown.includes(`failed (exit ${exit})`) && h.shown.includes("Nothing shows your AI made these changes"),
     "a stop with no file changed marks the time and writes nothing else; a command the AI had finished before it isn't taken for the owner's later change", show(quiet) + show(h));
   at = await fresh();
   const others = [["Bash", at + 1], ["", at + 2, {}, { isSidechain: true }], ["", at + 3, {}, { type: "progress" }]]; // a long command, then a subagent's line and a line of another kind
@@ -294,6 +303,106 @@ async function markedStops() {
   broken();
   h = await stop();
   expect(busy.out === null && still === unmarked && h.back.includes(`failed (exit ${exit})`), "...and no mark is made while Claude Code lists a task as still running, so a command before that stop still counts", show(busy) + show(h));
+  // A mark later than now, as a clock moved back since leaves it, is no mark: the AI's own edit after it still goes back.
+  at = await fresh();
+  wrote(["", at + 1]);
+  await stop();
+  const end = Date.now();
+  utimesSync(stateFile(dir), new Date(end + 3600e3), new Date(end + 3600e3));
+  broken();
+  wrote(["", at + 1], ["Edit", end + 1], ["", end + 2]);
+  h = await stop();
+  expect(h.back.includes(`failed (exit ${exit})`), "...and a mark later than now, as a clock moved back leaves it, is no mark: the AI's own edit after it still goes back", show(h));
+  // With no full run yet, an earlier save is no mark either: here the one that says once that no check is named.
+  const bare = project("marked-no-run", { commands: "check `{{?CHECK_CMD}}`" });
+  await hook(bare, { last_assistant_message: ANSWER });
+  const told = statSync(stateFile(bare)).mtimeMs;
+  wrote(["Edit", told - 2000], ["", told - 1000]); // the AI's edit and its reply, before that stop
+  edit(bare, ".offthemode/RULES.md", readFileSync(join(bare, ".offthemode/RULES.md"), "utf8").replace("{{?CHECK_CMD}}", "node count.mjs && node fail.mjs")); // then the owner names a check
+  h = await hook(bare, { transcript_path: t, last_assistant_message: ANSWER });
+  expect(h.back.includes("failed (exit 1)"), "...nor is the time of a save made before any full run: the AI's edit before it still counts", show(h));
+  if (process.platform === "win32") return; // a link needs rights there
+  at = await fresh();
+  wrote(["Edit", at + 2], ["", at + 3]); // the AI's Edit, then its reply that stops for the owner
+  broken(), symlinkSync("/", join(dir, "out-link")); // the Edit's change, and a link out of the repository: the files can't be read
+  const blind = saved(), cp = await stop({ last_assistant_message: CHECKPOINT }), kept2 = saved();
+  rmSync(join(dir, "out-link")); // the owner removes the link; the AI's next answer used no tool
+  h = await stop();
+  expect(cp.shown.includes("At a stop for your review") && kept2 >= blind && kept2 - blind <= 1 && h.back.includes(`failed (exit ${exit})`),
+    "...and a stop that can't read the files is no mark, though it saves: the AI's Edit before it still counts", `moved ${kept2 - blind} ms ${show(cp)}${show(h)}`);
+}
+
+// The mark's guards, times set by hand: no mark while a task whose status doesn't say it ended is listed, or where the
+// files can't be read; a mark keeps the newer of the two state files the newer; a finished subagent still listed
+// doesn't stop the checks.
+async function markGuards() {
+  const dir = project("mark-guards", { commands: "check `node count.mjs && node fail.mjs`" }), spare = tempState(dir);
+  const ANSWER = "The parser lives in src/parse.js. It splits each line on commas and trims the parts.";
+  const saved = () => statSync(stateFile(dir)).mtimeMs, ago = (f, ms) => { const t = new Date(Date.now() - ms); utimesSync(f, t, t); return t.getTime(); };
+  const quiet = async (f, input = {}) => { const t = ago(f, 10000), h = await hook(dir, { last_assistant_message: ANSWER, ...input }); return [statSync(f).mtimeMs > t + 5000, h]; };
+  edit(dir, "fail.txt", "0"); await hook(dir);
+  const first = readFileSync(stateFile(dir), "utf8");
+  for (const [tasks, mark, what] of [[[{ id: "b", type: "shell" }], false, "no mark while a task with no status is listed"], [[{ id: "b", type: "shell", status: "pending" }], false, "...nor one that hasn't started"], [[{ id: "b", type: "shell", status: "completed" }], true, "...but a task that has ended doesn't stop the mark"]]) {
+    const [moved, h] = await quiet(stateFile(dir), { background_tasks: tasks });
+    expect(h.out === null && moved === mark, what, show(h));
+  }
+  if (process.platform !== "win32") { // a link out of the project: the fingerprint can't be read
+    symlinkSync("/", join(dir, "out-link"));
+    const [moved, h] = await quiet(stateFile(dir));
+    rmSync(join(dir, "out-link"));
+    expect(h.out === null && !moved, "no mark where the files can't be read, though the reply claims nothing", show(h));
+  }
+  try {
+    edit(dir, "fail.txt", "3"); await hook(dir);
+    writeFileSync(spare, readFileSync(stateFile(dir), "utf8")), writeFileSync(stateFile(dir), first); // the newer state in the temp folder, an older one in .git/
+    ago(stateFile(dir), 20000);
+    const [moved, h] = await quiet(spare), runs = ran(dir), after = await hook(dir, { last_assistant_message: ANSWER });
+    expect(moved && statSync(spare).mtimeMs > saved() && after.out === null && ran(dir) === runs, "a mark keeps the newer of the two state files the newer, so the stop after it runs nothing", show(h) + show(after));
+  } finally { rmSync(spare, { force: true }); }
+  edit(dir, "fail.txt", "4"); const runs = ran(dir);
+  const h = await hook(dir, { background_tasks: [{ id: "a", type: "subagent", status: "completed" }] });
+  expect(ran(dir) === runs + "x" && h.back.includes("failed (exit 4)"), "a claim after a change runs the checks though a finished subagent is still listed", show(h));
+}
+
+// The AI's own --now is a full run inside its command: the command started before that run and its next message came
+// after it. A tool used at or before the last full run doesn't count, mark or no mark, so someone else's change after
+// that run isn't sent back to the AI.
+async function ownNow() {
+  const dir = project("own-now", { commands: "check `node count.mjs && node fail.mjs`" }), t = join(BASE, "own-now.jsonl");
+  const ANSWER = "The parser lives in src/parse.js. It splits each line on commas and trims the parts.";
+  const saved = () => statSync(stateFile(dir)).mtimeMs, fullAt = () => JSON.parse(readFileSync(stateFile(dir), "utf8")).fullAt;
+  const line = (i, at, block) => `${JSON.stringify({ type: "assistant", timestamp: new Date(at).toISOString(), message: { id: `msg-${i}`, role: "assistant", content: [block] } })}\n`;
+  edit(dir, "fail.txt", "0");
+  await hook(dir, { transcript_path: t });
+  await now(dir); // the AI's Bash runs node .offthemode/stop-check.mjs --now: every check, and they pass
+  writeFileSync(t, line(0, fullAt() - 1000, { type: "tool_use", id: "tool-0", name: "Bash", input: { command: "node .offthemode/stop-check.mjs --now" } }) + line(1, Math.max(saved(), fullAt()) + 1000, { type: "text", text: "ok" }));
+  edit(dir, "fail.txt", "4"); // the owner's edit, after that run
+  const h = await hook(dir, { transcript_path: t, last_assistant_message: ANSWER });
+  expect(ran(dir) === "xxx" && !h.back && h.shown.includes("failed (exit 4)") && h.shown.includes("Nothing shows your AI made these changes"),
+    "the AI's own --now runs every check inside its command; someone else's change after that run isn't sent back to the AI", show(h));
+}
+
+// The AI's tool use in a line that can't be read: one Claude Code hasn't finished writing at the stop, or one a crash
+// left cut and Claude Code later sealed with a line end. Claude Code writes "type" after "message", so such a line can
+// hold the tool use without "type":"assistant". Where its transcript can't say, the AI's change is sent back.
+async function cutLines() {
+  const dir = project("cut-lines", { commands: "check `node count.mjs && node fail.mjs`" }), t = join(BASE, "cut-lines.jsonl");
+  const ANSWER = "The parser lives in src/parse.js. It splits each line on commas and trims the parts.";
+  // A line in Claude Code's own order: the message first, then its type and time.
+  const line = (at, content) => JSON.stringify({ parentUuid: null, isSidechain: false, message: { id: `msg-${at}`, role: "assistant", content }, type: "assistant", timestamp: new Date(at).toISOString() });
+  const words = (at) => line(at, [{ type: "text", text: "ok" }]), write = line(0, [{ type: "tool_use", id: "tool-1", name: "Write", input: { file_path: "fail.txt", content: "1" } }]);
+  const cut = write.slice(0, write.indexOf(',"type":"assistant"'));
+  let exit = 0;
+  for (const [after, what] of [[() => "", "a last line Claude Code hasn't finished writing"], [(at) => `\n${words(at + 5)}\n`, "...or one a crash left cut, sealed with a line end"]]) {
+    edit(dir, "fail.txt", "0");
+    await hook(dir, { transcript_path: t }); // a full run that passes
+    const at = Math.max(statSync(stateFile(dir)).mtimeMs, JSON.parse(readFileSync(stateFile(dir), "utf8")).fullAt);
+    edit(dir, "fail.txt", String(++exit)); // the AI's own change, through the Write whose line is cut
+    writeFileSync(t, `${words(at + 1)}\n${cut}${after(at)}`);
+    const h = await hook(dir, { transcript_path: t, last_assistant_message: ANSWER, session_id: `cut-${exit}` });
+    expect(h.back.includes(`failed (exit ${exit})`) && !h.shown.includes("Nothing shows your AI made these changes"),
+      `${what}, holding the AI's tool use before its "type": it can't be read, so the AI's change is sent back`, show(h));
+  }
 }
 
 // The AI's own chmod moves no file's write time, only its change time: it is the AI's change all the same. The owner's
@@ -1177,6 +1286,6 @@ async function unfoundDroppedLater() {
 }
 
 parts();
-await finish("test-stop-check", [failingCheck, passThenFail, filesDecide, changedByItself, othersChange, markedStops, ownChmod, subfolderTimes, namesWritten, firstCheckout, hiddenFromStatus, firstCheckpoint, editedDuringRun, rotatingOutput, editedPastFifty, twoSessions, unsureStop, worktreesInside, otherProject, cancelled, cutState, ruleChecks, rewordAfterSendBack, nowMarks, staleAtCheckpoint, screensAndShapes, hangingCheck, writesOnlyState, rewordTwice, sendBackOnce, readOnlyGit, dayShown,
+await finish("test-stop-check", [failingCheck, passThenFail, filesDecide, changedByItself, othersChange, markedStops, markGuards, ownNow, cutLines, ownChmod, subfolderTimes, namesWritten, firstCheckout, hiddenFromStatus, firstCheckpoint, editedDuringRun, rotatingOutput, editedPastFifty, twoSessions, unsureStop, worktreesInside, otherProject, cancelled, cutState, ruleChecks, rewordAfterSendBack, nowMarks, staleAtCheckpoint, screensAndShapes, hangingCheck, writesOnlyState, rewordTwice, sendBackOnce, readOnlyGit, dayShown,
   tidyStop, leftovers, stateGuards, saveFails, stateAfterInit, sandboxedNow, spareOfAnother, noProc, watcherFails, globalOverruled, chainAskedOnce, endsNearTime, cancelAfterEnd, cancelAfterTimeout, noPs,
   unfoundRuleDropped, rewordUndoneEarly, unfoundRewordUndone, branchSwitch, goneOnce, goneOnNewBranch, unfoundDroppedLater, ...gitCases]);
