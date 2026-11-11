@@ -194,7 +194,8 @@ for (const entry of templates["UPDATES.md"].split("\n").filter((l) => l.startsWi
   const lines = templates[file].split("\n");
   for (const m of entry.slice(entry.lastIndexOf(" · Now: ")).matchAll(NAMED)) {
     for (const [, name] of m[2].matchAll(/"([^"]+)"/g)) {
-      if (!lines.some((l) => (m[1] === "start" ? l.startsWith(name) : l.endsWith(name)))) fail(`UPDATES.md names a line of ${file} ${m[1]}ing "${name}", and the template has none; reword the name with the line`);
+      const found = lines.filter((l) => (m[1] === "start" ? l.startsWith(name) : l.endsWith(name))).length;
+      if (found !== 1) fail(`UPDATES.md names a line of ${file} ${m[1]}ing "${name}", and the template has ${found || "none"}; ${found ? "the name must find one line only" : "reword the name with the line"}`);
     }
   }
 }
