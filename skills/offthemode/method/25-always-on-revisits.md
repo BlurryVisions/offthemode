@@ -1,6 +1,6 @@
 ## Always-On · Revisits
 
-> **Output:** five commands that each touch only what they own: `revisit-checklist` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md`, `revisit-comments` edits code comments only, `revisit-glossary` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`, and `revisit-state` saves where things stand to `.offthemode/STATE.md` and new decisions to `.offthemode/DECISIONS.md`; plus `view-project`, which opens the folder as one page in your browser and writes nothing in the project.
+> **Output:** five commands that each touch only what they own: `revisit-checklist` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md`, `revisit-comments` edits code comments only, `revisit-glossary` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`, and `revisit-state` saves where things stand to `.offthemode/STATE.md`, new decisions to `.offthemode/DECISIONS.md` and each piece's points to `.offthemode/CHECKLIST.md`; plus `view-project`, which opens the folder as one page in your browser and writes nothing in the project.
 
 Off the Mode has seven commands. `offthemode` sets up a project or shows its status, and `view-project` shows it as a page. The other five are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else.
 
@@ -15,7 +15,7 @@ Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the
 | `revisit-comments [path]` | Makes code comments true, necessary and useful | Comments only, never code |
 | `revisit-glossary` | Keeps a plain-words summary of the project that anyone can understand | The "In plain words" part of `.offthemode/GLOSSARY.md` |
 | `view-project` | Opens your project as a page in your browser | Nothing in your project: one temporary page |
-| `revisit-state` | Saves where things stand, so a fresh session picks up from here | `.offthemode/STATE.md`, and new decisions in `.offthemode/DECISIONS.md` |
+| `revisit-state` | Saves where things stand, so a fresh session picks up from here | `.offthemode/STATE.md`, new decisions in `.offthemode/DECISIONS.md`, and each piece's points in `.offthemode/CHECKLIST.md` |
 
 `revisit-checklist` is covered in Living Checklist, and `revisit-state` in P0 · Constitution, under Memory across sessions. The others:
 

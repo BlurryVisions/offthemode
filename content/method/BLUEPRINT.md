@@ -168,7 +168,8 @@ Show the new path, the new totals and each cut's technical consequences. Once I 
 - Hold every change to RULES.md as it stands. Don't rewrite it as a side effect of another task.
 - The project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) stay where they are and win on project specifics: never move or merge them. A line that contradicts the code, another rule or an Off the Mode standard, or is out of date, is shown with its fix and changed only on the user's yes, recorded in DECISIONS.md. Besides those fixes, the only additions are the one auto-load line and, in Claude Code, the stop check's hook, each on the user's yes.
 - Before deciding anything, search DECISIONS.md, so a settled choice is not argued again.
-- A correction given once goes in STATE.md §Corrections seen once, with the date. Given a second time, propose one line for RULES.md §Project specifics with its reason, and add it on the user's yes.
+- A correction about what the product does or shows is a point: keep it the first time, in the user's words, under the piece's item in CHECKLIST.md, with its check (revisit-state's first step).
+- A correction about how the work is done, given once, goes in STATE.md §Corrections seen once, with the date. Given a second time, propose one line for RULES.md §Project specifics with its reason, and add it on the user's yes.
 - Keep STATE.md current without asking: once at the end of any reply that modifies project files or concludes a decision, after its last edit, follow revisit-state's steps (present tense, no history, never the same line twice) and append any new decision to DECISIONS.md. While an Off the Mode command runs, it touches only what the command names, and STATE.md catches up after it. An agent another session started leaves .offthemode/ alone. The user can also type revisit-state.
 - Open the whole guide to set up or redo the rules, wire the auto-load, or prune RULES.md.
 <!-- /offthemode:rules -->
@@ -201,14 +202,14 @@ Start from the RULES.md template (from get_template or the skill's templates/ fo
 | This project | One line on what it is and for whom; platforms; the stack pinned with versions, each with its reason in DECISIONS.md; the project's own rule files, listed as still in force | "Other rule files that stay in force: AGENTS.md." |
 | Project specifics | Rules only this project needs: the stack's known traps, data rules, security boundaries, the boundaries between parts. Kept apart from the Off the Mode standards and never repeating the project's own rule files. A line stays only if it is certain to apply, is not something an AI does anyway, and is costly if missed | "The core loop works offline and syncs later, because the person edits on the train." |
 | Shipping | How the project goes live: where the code lives, the branch that goes live, the host, whether a push deploys, the deploy command, the name commits use, and who it reaches (only you, or other people). Setup fills it from git and the host's config, asks only what is missing, and offers to keep your answers as your usual in `~/.offthemode/ME.md` (outside every project, never a password, token or key) so the next project only asks you to confirm | "Nothing waits for me. A reply that changed files ends with its work committed by file name, never a secret." |
-| How to work | How doubt is handled, what is asked and how, and the one-way doors that stay yours | "Ask to decide, never to start, because every needless stop teaches me to answer without reading." |
+| How to work | How your points are held and checked, how doubt is handled, what is asked and how, and the one-way doors that stay yours | "Ask to decide, never to start, because every needless stop teaches me to answer without reading." |
 | Guides | Each kind of work this project will see, mapped to the guide to open first | "Any screen or visual change: open the Visual Language guide." |
 | Product first | How every proposal ties back to the person and job in PRODUCT.md | "If a request contradicts a PRODUCT.md refusal, quote the line before acting." |
 | Depth | Where facts come from: specs, platform docs, the installed source, not tutorials or memory | "Before using a library API, open the installed version's types and cite file:line." |
 | Code | Standards with reasons, and bans paired with what to do instead | "Parse external input at the boundary, then trust the types: one place validates." |
 | Look and feel | Pointers to PRODUCT.md §Feeling and DESIGN.md, and the test for generic output | "If what you are about to make could sit on any other product unchanged, stop and say so." |
 | Safety | What must never happen, whatever the task: the day-one security rules, and a pointer to SECURITY.md once it is written (see P7 · Security Hardening) | "Authorization is checked on the server for every action, never only in the UI." |
-| Efficiency | Scripts over eyeballing, shared briefs, short results | "Anything measurable is measured by a script, not judged by eye." |
+| Efficiency | Scripts over eyeballing; agents only where they pay, each given your points and a model that fits its job | "Anything measurable is measured by a script, not judged by eye." |
 | Budgets | The numbers, in one json block the check scripts read. The template ships the file and function size limits and the screenshot sizes; a speed, contrast or touch-size key is added only when this product should hold one (Accessibility & Performance Budgets lists common keys) | `"max_file_lines": 400` |
 | Commands | The exact commands, ready to copy | "Fast check: `pnpm check` (types, lint, unit tests)." |
 | Done means verified | What must be true before anything is called done | "UI changes are looked at on phone, tablet and wide widths, light and dark." |
@@ -357,8 +358,11 @@ A correction you give once is a moment. A correction you give twice is a missing
 - **Second time:** it becomes one line in RULES.md §Project specifics, imperative and specific, with its reason, added on your yes. For example: "Before using a date API, open the installed version's types. Because: an API removed in the current major version cost three rounds to compile."
 - **Checkable:** once a machine can check the rule (with a lint rule, which is an automatic code check, a test or a script), add the check to §Commands and delete the prose line. The check is now the rule, and a check does not forget.
 
+A correction about the product itself is not a rule about how to work. It is a point about that piece: one thing you said must be true. It is kept the first time you give it, in your words, under the piece's item in CHECKLIST.md, and it gets a check that fails first wherever a machine can check it. The save does this by itself.
+
 | The correction was about | It goes in |
 |---|---|
+| What the product does or shows: the result is wrong | A point under the piece's item in CHECKLIST.md, with its check |
 | How code is written or work is done here | RULES.md §Project specifics |
 | Taste: the look, the tone, the feel | PRODUCT.md §Feeling or .offthemode/DESIGN.md |
 | A choice between options | DECISIONS.md |
@@ -699,7 +703,7 @@ Show the RISKS.md rows you would add, mark the ones needing a P2 spike, and list
 
 > **Output:** `.offthemode/CHECKLIST.md`: the core concept split into fragments, each item with a provable done-when, kept true by one command, `revisit-checklist`.
 
-Your core concept lives in PRODUCT.md §Core concept, written during P1. The checklist breaks it into **fragments**: the separate pieces of the core, finished one after another. Each fragment has a few items, and each item says how you will know it is done. The file is a map, not a gate: fragments are listed in build order (what others depend on first, then the one nearest the moment of value), and you can still work on anything in any order. Sessions stay free-form and nothing has to be ticked while you work, because `revisit-checklist` catches up afterwards by reading what changed in git.
+Your core concept lives in PRODUCT.md §Core concept, written during P1. The checklist breaks it into **fragments**: the separate pieces of the core, finished one after another. Each fragment has a few items, and each item says how you will know it is done. The file is a map, not a gate: fragments are listed in build order (what others depend on first, then the one nearest the moment of value), and you can still work on anything in any order. Sessions stay free-form and nothing has to be ticked while you work, because `revisit-checklist` catches up afterwards by reading what changed in git. One thing is kept as you work: each piece's points, what you said must be true, in your words, written under its item by the save (`revisit-state`) with how each is checked. Your AI reads them back before it builds and answers them one by one when it says done, so a correction is never lost.
 
 **One command, checklist only.** `revisit-checklist` builds the checklist the first time, when the file is missing or still the blank template. After that, run it on its own to see where you stand, or with a note (`revisit-checklist add CSV export to reports`) to change the list. Type `/revisit-checklist` with the skills pack, `/mcp__offthemode__revisit-checklist` through the link in Claude Code, or just say "revisit the checklist". It edits only .offthemode/CHECKLIST.md, never code or other docs. If a change also affects the vision or the architecture, it names the doc to update and leaves that to you.
 
@@ -2765,11 +2769,39 @@ Show me the list, then add the events to .offthemode/TRACKING.md and the Events 
 
 ## Always-On · Agent Orchestration
 
-> **Output:** one scout's brief that every other agent starts from, word for word; every build run as a relay of pieces cut at finished results, each handing a short note to the next; fresh reviewers at the end; separate sessions for research, building and review; short structured results; scripts for anything that can be measured; a model and effort choice for each task.
+> **Output:** agents only where they pay; your points in every agent's brief, word for word; one scout's brief that every other agent starts from, word for word; every build run as a relay of pieces cut at finished results, each handing a short note to the next; fresh reviewers at the end; separate sessions for research, building and review; short structured results; scripts for anything that can be measured; a model and effort choice for each task.
 
 The context window is the AI's working memory: everything it has read and said in the current session, read again on every reply. Long sessions pile up stale and contradictory information. A fresh session has none of it, and a fresh session reviewing code has no stake in defending it.
 
-> **Rule:** Don't cap how many agents run. Remove the repetition between them. Every agent starts with a blank memory, so it re-reads what you already know, and you pay for that reading again: thirteen agents, thirteen readings. One scout reads once, and everyone else starts from its brief. Then remove the repetition inside each agent, and inside the main session too: each re-reads everything it holds on every step, so it hands off finished work instead of carrying it.
+> **Rule:** Don't cap how many agents run. Use them where they pay, give each one your points, then remove the repetition between them. Every agent starts with a blank memory, so it re-reads what you already know, and you pay for that reading again: thirteen agents, thirteen readings. One scout reads once, and everyone else starts from its brief. Then remove the repetition inside each agent, and inside the main session too: each re-reads everything it holds on every step, so it hands off finished work instead of carrying it.
+
+### Split only where it pays
+
+More agents are not more right. Measured in one owner's five projects, July to November 2026, over 328 turns that changed something:
+
+| The work | Built by | Turns | The owner then said "wrong" | Median time and tokens |
+|---|---|---|---|---|
+| A fix to something the owner called wrong | the chat | 41 | 17 | 4 min, 2.5M |
+| | a workflow of agents | 16 | 6 | 25 min, 20M |
+| | one or two large agents | 11 | 5 | 24 min, 52M |
+| A new ask | the chat | 25 | 8 | 4 min, 2.6M |
+| | a workflow of agents | 21 | 5 | 21 min, 25M |
+
+This is real use, not a controlled test: the bigger asks went to workflows. Still, about 40 in 100 fixes came back wrong however they were built, and agents took five to six times as long. What decided the result was whether the work was built from the owner's words and checked on the real thing, not how many agents ran.
+
+- **Agents pay for** parts that share no files, wide reading whose raw results would otherwise sit in the main session, samples that must not see each other, and a fresh review of a risky change.
+- **The chat is better for** a fix to something you called wrong, and any change one chat can hold: it already has your words and the code in view.
+- **Never one agent for a whole build.** The dearest turns of all were single large agents. Cut a build at finished results (Hand off, don't carry).
+
+### Your points reach every agent
+
+An agent knows only its brief. In the project with the most complaints, 2 of 3 reviewers and more than half the builders were never given a word of the message that started the work (counted where that message had 8 words or more). So reviewers checked the code against itself. They found coding mistakes, and coding mistakes were 2 of the 84 complaints traced there: 43 were a guess nobody checked, 21 a point the owner had already made.
+
+So every brief holds the piece's points word for word (RULES.md §How to work), each with its check. A reviewer checks the result against the points first, on the real thing, then reads the code.
+
+### A model for each job
+
+In those projects 98% of the workflow agents' tokens ran on the session's own model, whatever the job. Reviewers took 41% of them and reading took 19%. Give searching, reading, sorting and checking against a list to a cheaper, faster model where your tool offers one. Keep the strongest for design, the hard part of a build and the review of a risky change. Not tested yet: whether a cheaper model reviews as well.
 
 ### Many agents, one reading
 
@@ -2883,7 +2915,7 @@ Changelog: v4 references assigned by me, no recommendation (a generator grading 
 
 ## Always-On · Revisits
 
-> **Output:** five commands that each touch only what they own: `revisit-checklist` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md`, `revisit-comments` edits code comments only, `revisit-glossary` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`, and `revisit-state` saves where things stand to `.offthemode/STATE.md` and new decisions to `.offthemode/DECISIONS.md`; plus `view-project`, which opens the folder as one page in your browser and writes nothing in the project.
+> **Output:** five commands that each touch only what they own: `revisit-checklist` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md`, `revisit-comments` edits code comments only, `revisit-glossary` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`, and `revisit-state` saves where things stand to `.offthemode/STATE.md`, new decisions to `.offthemode/DECISIONS.md` and each piece's points to `.offthemode/CHECKLIST.md`; plus `view-project`, which opens the folder as one page in your browser and writes nothing in the project.
 
 Off the Mode has seven commands. `offthemode` sets up a project or shows its status, and `view-project` shows it as a page. The other five are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else.
 
@@ -2898,7 +2930,7 @@ Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the
 | `revisit-comments [path]` | Makes code comments true, necessary and useful | Comments only, never code |
 | `revisit-glossary` | Keeps a plain-words summary of the project that anyone can understand | The "In plain words" part of `.offthemode/GLOSSARY.md` |
 | `view-project` | Opens your project as a page in your browser | Nothing in your project: one temporary page |
-| `revisit-state` | Saves where things stand, so a fresh session picks up from here | `.offthemode/STATE.md`, and new decisions in `.offthemode/DECISIONS.md` |
+| `revisit-state` | Saves where things stand, so a fresh session picks up from here | `.offthemode/STATE.md`, new decisions in `.offthemode/DECISIONS.md`, and each piece's points in `.offthemode/CHECKLIST.md` |
 
 `revisit-checklist` is covered in Living Checklist, and `revisit-state` in P0 · Constitution, under Memory across sessions. The others:
 

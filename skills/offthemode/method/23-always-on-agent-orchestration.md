@@ -1,10 +1,38 @@
 ## Always-On · Agent Orchestration
 
-> **Output:** one scout's brief that every other agent starts from, word for word; every build run as a relay of pieces cut at finished results, each handing a short note to the next; fresh reviewers at the end; separate sessions for research, building and review; short structured results; scripts for anything that can be measured; a model and effort choice for each task.
+> **Output:** agents only where they pay; your points in every agent's brief, word for word; one scout's brief that every other agent starts from, word for word; every build run as a relay of pieces cut at finished results, each handing a short note to the next; fresh reviewers at the end; separate sessions for research, building and review; short structured results; scripts for anything that can be measured; a model and effort choice for each task.
 
 The context window is the AI's working memory: everything it has read and said in the current session, read again on every reply. Long sessions pile up stale and contradictory information. A fresh session has none of it, and a fresh session reviewing code has no stake in defending it.
 
-> **Rule:** Don't cap how many agents run. Remove the repetition between them. Every agent starts with a blank memory, so it re-reads what you already know, and you pay for that reading again: thirteen agents, thirteen readings. One scout reads once, and everyone else starts from its brief. Then remove the repetition inside each agent, and inside the main session too: each re-reads everything it holds on every step, so it hands off finished work instead of carrying it.
+> **Rule:** Don't cap how many agents run. Use them where they pay, give each one your points, then remove the repetition between them. Every agent starts with a blank memory, so it re-reads what you already know, and you pay for that reading again: thirteen agents, thirteen readings. One scout reads once, and everyone else starts from its brief. Then remove the repetition inside each agent, and inside the main session too: each re-reads everything it holds on every step, so it hands off finished work instead of carrying it.
+
+### Split only where it pays
+
+More agents are not more right. Measured in one owner's five projects, July to November 2026, over 328 turns that changed something:
+
+| The work | Built by | Turns | The owner then said "wrong" | Median time and tokens |
+|---|---|---|---|---|
+| A fix to something the owner called wrong | the chat | 41 | 17 | 4 min, 2.5M |
+| | a workflow of agents | 16 | 6 | 25 min, 20M |
+| | one or two large agents | 11 | 5 | 24 min, 52M |
+| A new ask | the chat | 25 | 8 | 4 min, 2.6M |
+| | a workflow of agents | 21 | 5 | 21 min, 25M |
+
+This is real use, not a controlled test: the bigger asks went to workflows. Still, about 40 in 100 fixes came back wrong however they were built, and agents took five to six times as long. What decided the result was whether the work was built from the owner's words and checked on the real thing, not how many agents ran.
+
+- **Agents pay for** parts that share no files, wide reading whose raw results would otherwise sit in the main session, samples that must not see each other, and a fresh review of a risky change.
+- **The chat is better for** a fix to something you called wrong, and any change one chat can hold: it already has your words and the code in view.
+- **Never one agent for a whole build.** The dearest turns of all were single large agents. Cut a build at finished results (Hand off, don't carry).
+
+### Your points reach every agent
+
+An agent knows only its brief. In the project with the most complaints, 2 of 3 reviewers and more than half the builders were never given a word of the message that started the work (counted where that message had 8 words or more). So reviewers checked the code against itself. They found coding mistakes, and coding mistakes were 2 of the 84 complaints traced there: 43 were a guess nobody checked, 21 a point the owner had already made.
+
+So every brief holds the piece's points word for word (RULES.md §How to work), each with its check. A reviewer checks the result against the points first, on the real thing, then reads the code.
+
+### A model for each job
+
+In those projects 98% of the workflow agents' tokens ran on the session's own model, whatever the job. Reviewers took 41% of them and reading took 19%. Give searching, reading, sorting and checking against a list to a cheaper, faster model where your tool offers one. Keep the strongest for design, the hard part of a build and the review of a risky change. Not tested yet: whether a cheaper model reviews as well.
 
 ### Many agents, one reading
 
