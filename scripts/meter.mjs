@@ -1,0 +1,153 @@
+// Off the Mode · the meter, on trial in this repo (STATE.md Next 2, D-034c); setup doesn't install it.
+// At each stop it shows you one line: the tokens the chat and its agents read since the meter's last line, how
+// large the chat is now (every further step re-reads all of it), and whether agents are still at work. It changes
+// nothing: it never sends the AI back, runs no command and makes no network call. It reads only the token counts
+// Claude Code keeps beside each model call in the session's own files (the chat's, and its agents' in the folder
+// next to it), counted the way `npm run usage` counts them, and writes one small file of its own in the temp
+// folder: how far it has read. A turn you interrupt, or one that ends on an error, runs no hook, so the next line
+// carries that work too. So does a step Claude Code hadn't written to the file yet when the hook ran: its docs say
+// the file can lag, and `behind` in the meter's own file counts the stops where it did.
+// Run it yourself on any session, with nothing saved: node scripts/meter.mjs <session .jsonl>
+// Claude Code runs it at each stop once .claude/settings.local.json holds this block, added only on the owner's yes:
+// SETTINGS {"hooks":{"Stop":[{"hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.offthemode/meter.mjs"],"timeout":10}]}]}}
+import { openSync, readSync, closeSync, fstatSync, readFileSync, writeFileSync, renameSync, mkdirSync, readdirSync, realpathSync } from "node:fs";
+import { join, dirname, basename } from "node:path";
+import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
+
+const MARK = "Off the Mode's meter";
+// The same reading of a background task's status as the stop check's: these scripts are copied whole, so they share no file.
+const ENDED = /complete|done|fail|kill|stop|cancel|error/i;
+
+// One line of a session file. Claude Code repeats a call's counts on each line it writes for that call, so a call is
+// counted on its first line and known again by its id; only the main chat's own calls say how large the chat is.
+function count(line, got, seen) {
+  if (!line.includes('"usage"')) return;
+  let e;
+  try { e = JSON.parse(line.toString("utf8")); } catch { return; }
+  const m = e?.message, u = m?.usage;
+  if (e?.type !== "assistant" || !u) return;
+  const key = `${m.id}:${e.requestId}`;
+  if (seen.has(key) || key === got.key) {
+    if (got.last?.key === key) got.last.reason = m.stop_reason ?? got.last.reason;
+    return;
+  }
+  seen.add(key);
+  got.key = key;
+  const read = (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
+  got.tokens += read;
+  got.calls++;
+  if (!e.isSidechain) got.last = { key, size: read + (u.output_tokens ?? 0), reason: m.stop_reason ?? null };
+}
+
+/** The model calls a file gained after `from` (how far the last read got, and the last call it counted), up to `upto`
+ * bytes (the whole file when left out). A line still being written is left for the next read. `null`: unreadable. */
+export function gained(file, from, upto = Infinity) {
+  let fd;
+  try { fd = openSync(file, "r"); } catch { return null; }
+  try {
+    const size = Math.min(fstatSync(fd).size, upto), start = from?.offset ?? 0;
+    if (size < start) return { shrank: true };
+    const got = { offset: start, key: from?.key ?? null, tokens: 0, calls: 0, last: null }, seen = new Set();
+    const chunk = Buffer.allocUnsafe(Math.max(1, Math.min(1 << 20, size - start)));
+    let rest = null;
+    for (let at = start; at < size; ) {
+      const n = readSync(fd, chunk, 0, Math.min(chunk.length, size - at), at);
+      if (!n) break;
+      let i = 0;
+      for (let nl; (nl = chunk.indexOf(10, i)) !== -1 && nl < n; i = nl + 1) {
+        count(rest ? Buffer.concat([rest, chunk.subarray(i, nl)]) : chunk.subarray(i, nl), got, seen);
+        rest = null;
+        got.offset = at + nl + 1;
+      }
+      if (i < n) rest = Buffer.concat(rest ? [rest, chunk.subarray(i, n)] : [chunk.subarray(i, n)]);
+      at += n;
+    }
+    return got;
+  } finally {
+    closeSync(fd);
+  }
+}
+
+export function agentFiles(dir) {
+  let found;
+  try { found = readdirSync(dir, { withFileTypes: true }); } catch { return []; }
+  return found.flatMap((d) => (d.isDirectory() ? agentFiles(join(dir, d.name)) : d.name.startsWith("agent-") && d.name.endsWith(".jsonl") ? [join(dir, d.name)] : [])).sort();
+}
+
+/** What a session gained since `was`, the meter's own record of how far it had read. With no record of this chat,
+ * or a file shorter than the record says, everything so far is counted. `null`: the chat's file can't be read. */
+export function measure(transcript, was) {
+  const known = was?.v === 1 && was.files?.[transcript] ? was : null;
+  const files = {}, reply = { fresh: !known, chat: 0, steps: 0, agents: 0, agentN: 0, size: known?.size ?? 0 };
+  const main = gained(transcript, known?.files[transcript]);
+  if (!main) return null;
+  if (main.shrank) return measure(transcript, null);
+  files[transcript] = { offset: main.offset, key: main.key };
+  reply.chat = main.tokens;
+  reply.steps = main.calls;
+  if (main.last) reply.size = main.last.size;
+  for (const file of transcript.endsWith(".jsonl") ? agentFiles(join(transcript.slice(0, -".jsonl".length), "subagents")) : []) {
+    const got = gained(file, known?.files[file]);
+    if (!got) continue;
+    if (got.shrank) return measure(transcript, null);
+    files[file] = { offset: got.offset, key: got.key };
+    reply.agents += got.tokens;
+    if (got.calls) reply.agentN++;
+  }
+  const behind = !main.calls || main.last?.reason === "tool_use";
+  return { reply, state: { v: 1, files, size: reply.size, runs: (known?.runs ?? 0) + 1, behind: (known?.behind ?? 0) + (behind ? 1 : 0) } };
+}
+
+const n = (x) => (x >= 99.5e6 ? `${Math.round(x / 1e6)}M` : x >= 1e6 ? `${(x / 1e6).toFixed(1)}M` : x >= 1e3 ? `${Math.round(x / 1e3)}k` : String(x));
+const some = (count, word) => `${count} ${word}${count === 1 ? "" : "s"}`;
+
+export function line(reply, working = false) {
+  const parts = [reply.steps && `the chat ${n(reply.chat)} in ${some(reply.steps, "step")}`, reply.agentN && `${some(reply.agentN, "agent")} ${n(reply.agents)}`].filter(Boolean);
+  return `${MARK} · ${reply.fresh ? "this session so far" : "this reply"}: ${n(reply.chat + reply.agents)} tokens${parts.length ? ` (${parts.join(", ")})` : ""}` +
+    (reply.size ? ` · the chat is ${n(reply.size)} now, re-read at every further step` : "") +
+    (working ? " · agents are still working, so the next line carries the rest" : "");
+}
+
+const working = (tasks) => (Array.isArray(tasks) ? tasks : []).some((t) => /subagent|workflow|teammate/i.test(t?.type ?? "") && !ENDED.test(t?.status ?? ""));
+
+// The hook's input. A runner that never closes it isn't waited for past 3 s.
+function stdin() {
+  if (process.stdin.isTTY) return Promise.resolve(null);
+  return new Promise((ok) => {
+    let text = "";
+    const end = (v) => { clearTimeout(timer); process.stdin.destroy(); ok(v); };
+    const timer = setTimeout(() => end(null), 3000);
+    process.stdin.setEncoding("utf8").on("data", (d) => { text += d; }).on("error", () => end(null))
+      .on("end", () => { try { end(JSON.parse(text)); } catch { end(null); } });
+  });
+}
+
+const show = (text) => process.stdout.write(JSON.stringify({ systemMessage: text }));
+
+async function main() {
+  const [byHand] = process.argv.slice(2);
+  if (byHand) {
+    const m = measure(byHand, null);
+    if (!m) { console.error(`${MARK} can't read ${byHand}`); process.exitCode = 1; return; }
+    console.log(line(m.reply));
+    return;
+  }
+  const input = await stdin();
+  if (!input?.transcript_path || input.agent_id) return;
+  const record = join(tmpdir(), "offthemode-meter", `${String(input.session_id ?? basename(input.transcript_path, ".jsonl")).replace(/[^\w-]/g, "_")}.json`);
+  let was = null;
+  try { was = JSON.parse(readFileSync(record, "utf8")); } catch { /* no record yet: everything so far is counted */ }
+  const m = measure(input.transcript_path, was);
+  if (!m) return show(`${MARK} couldn't read this session's file, so the next line carries this reply.`);
+  try {
+    mkdirSync(dirname(record), { recursive: true });
+    writeFileSync(`${record}.${process.pid}`, JSON.stringify(m.state));
+    renameSync(`${record}.${process.pid}`, record);
+  } catch { /* the record can't be kept: the next line counts the session so far again, and says so */ }
+  if (m.reply.chat + m.reply.agents) show(line(m.reply, working(input.background_tasks)));
+}
+
+// Run as a script, also through a linked folder (a project path that is a link would otherwise switch it off in silence).
+const isMain = () => { try { return realpathSync(process.argv[1]) === fileURLToPath(import.meta.url); } catch { return false; } };
+if (isMain()) main().catch((e) => show(`${MARK} couldn't count this reply: ${e?.message ?? e}`));

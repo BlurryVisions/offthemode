@@ -25,6 +25,8 @@ jobs:
       - run: npx tsc --noEmit
       # The stop check (content/templates/stop-check.mjs) run as Claude Code runs it, in throwaway git projects.
       - run: npm run test:stop-check
+      # The meter (scripts/meter.mjs) on session files shaped the way Claude Code writes them, and run as a Stop hook.
+      - run: npm run test:meter
   # The stop check on Windows, where it runs through cmd.exe and ends a check with taskkill; ubuntu never runs those paths.
   stop-check-windows:
     runs-on: windows-latest
@@ -34,3 +36,5 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/test-stop-check.mjs
+      # The meter there too: where its record goes and how a folder opens differ on Windows.
+      - run: node scripts/test-meter.mjs
