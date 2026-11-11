@@ -13,7 +13,7 @@
     "dev": "node scripts/build-content.mjs && next dev",
     "build": "node scripts/build-content.mjs && next build",
     "start": "next start",
-    "check": "node scripts/build-content.mjs --check && tsc --noEmit && node scripts/test-stop-check.mjs",
+    "check": "node scripts/build-content.mjs --check && tsc --noEmit && node scripts/stop-check-if-changed.mjs",
     "test:mcp": "node scripts/test-mcp.mjs",
     "test:view": "node scripts/test-view.mjs",
     "test:view-project": "node scripts/test-view-project.mjs",
