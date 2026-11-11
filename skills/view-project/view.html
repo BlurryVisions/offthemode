@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rF8Zd3cHnGHHUhsCvyTbEq9MXzQ1Cx7744+2cbhyWBY='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-2BbBkXYYJbymaosr81pUzF9lyvXu4jdbRQqYpLhT7eg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The view: your project's checklist and plan on one page · Off the Mode</title>
@@ -611,7 +611,7 @@ const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "
 const SETUP = "/offthemode (the setup) adds it once you answer its questions";
 // The files the sheet draws, its zone for each, and the command that writes it.
 const FILES = [
-  { zone: "A", file: "CHECKLIST.md", title: "Checklist board", shows: "every fragment and item, its mark and its proof", writer: "/revisit-checklist builds it from PRODUCT.md" },
+  { zone: "A", file: "CHECKLIST.md", title: "Checklist board", shows: "every fragment and item, its mark and its proof", writer: "/revisit-checklist builds it from PRODUCT.md; your AI adds your points as it works" },
   { zone: "B", file: "STATE.md", title: "Where things stand", shows: "what is true now, the next steps, what is waiting", writer: "/offthemode (the setup) adds it once you answer its questions; your AI keeps it current and /revisit-state saves it" },
   { zone: "C", file: "PRODUCT.md", title: "The plan", shows: "who it is for, the core concept, what it refuses", writer: SETUP },
   { zone: "D", file: "DECISIONS.md", title: "Decisions", shows: "each decision, why, and what was turned down", writer: SETUP },

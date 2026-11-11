@@ -185,6 +185,24 @@ const cited = [...guideMap.matchAll(/\| ([a-z0-9-]+(?:, [a-z0-9-]+)*) \|$/gm)].f
 if (!cited.length) fail("RULES.md: §Guides map is missing or empty");
 for (const g of cited) if (!slugs.has(g)) fail(`RULES.md §Guides cites "${g}", which is not a method sheet`);
 
+// UPDATES.md tells an older project which current line replaces an old one, by how that line starts (or ends). A
+// reworded template line would leave such a name pointing at nothing, and the update would silently skip it.
+const NAMED = /\b(start|end)ing ("[^"]+"(?:(?:, | and )"[^"]+")*)/g;
+for (const entry of templates["UPDATES.md"].split("\n").filter((l) => l.startsWith("- ") && l.includes(" · Now: "))) {
+  const file = entry.slice(2).split(/[ ·]/)[0];
+  if (!templates[file]) fail(`UPDATES.md: an entry names "${file}", which is not a template`);
+  const lines = templates[file].split("\n");
+  for (const m of entry.slice(entry.lastIndexOf(" · Now: ")).matchAll(NAMED)) {
+    for (const [, name] of m[2].matchAll(/"([^"]+)"/g)) {
+      if (!lines.some((l) => (m[1] === "start" ? l.startsWith(name) : l.endsWith(name)))) fail(`UPDATES.md names a line of ${file} ${m[1]}ing "${name}", and the template has none; reword the name with the line`);
+    }
+  }
+}
+// The save skips its points step in a project whose RULES.md lacks this line (revisit-state, step 1), so it must exist.
+const POINTS_LINE = "- Build from my points";
+if (!templates["RULES.md"].split("\n").some((l) => l.startsWith(POINTS_LINE))) fail(`RULES.md: no line starts with "${POINTS_LINE}"; revisit-state and UPDATES.md find the points by it`);
+for (const c of commands.filter((c) => c.name === "revisit-state")) if (!c.body.includes(`"${POINTS_LINE}"`)) fail(`revisit-state: must name the line "${POINTS_LINE}", by which it tells a project set up before the points`);
+
 // ---------- the view (public/view/index.html) ----------
 // The page reads a project's .offthemode/ files in the browser and must send nothing anywhere (CHECKLIST F8.5).
 // So it loads no outside script: the parser is pasted into its one module script, and a meta CSP written here

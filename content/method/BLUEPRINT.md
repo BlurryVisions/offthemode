@@ -168,9 +168,9 @@ Show the new path, the new totals and each cut's technical consequences. Once I 
 - Hold every change to RULES.md as it stands. Don't rewrite it as a side effect of another task.
 - The project's own rule files (AGENTS.md, CLAUDE.md, .cursor/rules and the like) stay where they are and win on project specifics: never move or merge them. A line that contradicts the code, another rule or an Off the Mode standard, or is out of date, is shown with its fix and changed only on the user's yes, recorded in DECISIONS.md. Besides those fixes, the only additions are the one auto-load line and, in Claude Code, the stop check's hook, each on the user's yes.
 - Before deciding anything, search DECISIONS.md, so a settled choice is not argued again.
-- A correction about what the product does or shows is a point: write it the first time, in the user's words, under the piece's item in CHECKLIST.md, with its check, before any other change (RULES.md §How to work); the save records what the check showed.
+- A correction about what the product does or shows is a point: write it the first time, in the user's words, under the piece's item in CHECKLIST.md, with its check, before any other change (RULES.md §How to work); the save records what the check showed. Where RULES.md has no line starting "- Build from my points", the project was set up before the points: the correction goes in STATE.md §Corrections seen once like any other, until the offthemode command updates the project.
 - A correction about how the work is done, given once, goes in STATE.md §Corrections seen once, with the date. Given a second time, propose one line for RULES.md §Project specifics with its reason, and add it on the user's yes.
-- Keep STATE.md current without asking: once at the end of any reply that modifies project files or concludes a decision, after its last edit, follow revisit-state's steps (present tense, no history, never the same line twice) and append any new decision to DECISIONS.md. While an Off the Mode command runs, it touches only what the command names, and STATE.md catches up after it. An agent another session started leaves .offthemode/ alone. The user can also type revisit-state.
+- Keep STATE.md current without asking: once at the end of any reply that modifies project files, concludes a decision or gives a point its result, after its last edit, follow revisit-state's steps (present tense, no history, never the same line twice) and append any new decision to DECISIONS.md. While an Off the Mode command runs, it touches only what the command names, and STATE.md catches up after it. An agent another session started leaves .offthemode/ alone. The user can also type revisit-state.
 - Open the whole guide to set up or redo the rules, wire the auto-load, or prune RULES.md.
 <!-- /offthemode:rules -->
 
@@ -287,7 +287,7 @@ When you connect through the MCP link, the server also repeats the instruction t
 
 Your AI has no memory between sessions, so the project is its memory. Chat history is not storage. Start a fresh session between unrelated tasks (/clear in Claude Code), and let the files carry what matters.
 
-- STATE.md is rewritten, not added to: once at the end of any reply that changes files or settles a decision, after its last edit, your AI runs `revisit-state` by itself (after any other command has finished) and, when it changed something, says so in one line, and you can type it whenever you want, for example before a fresh session. Each thing has one line, so running it again never adds anything twice. The next session needs the present, not a diary.
+- STATE.md is rewritten, not added to: once at the end of any reply that changes files, settles a decision or closes one of your points, after its last edit, your AI runs `revisit-state` by itself (after any other command has finished) and, when it changed STATE.md or DECISIONS.md, says so in one line, and you can type it whenever you want, for example before a fresh session. Each thing has one line, so running it again never adds anything twice. The next session needs the present, not a diary.
 - DECISIONS.md is appended to, never rewritten. It is the record of why, so no later session argues a settled choice again or quietly reverses it.
 
 #### A STATE.md that works
@@ -494,14 +494,15 @@ Run it on every plan for a large or risky change, and on any set of changes that
 
 ```prompt title="Inventor Critic"
 You are the harshest credible reviewer in this change's domain: someone who helped design the core technology and has seen every misuse of it. You did not write this code and have no stake in it. Find what is wrong; do not approve. Review only; never edit.
-Read first: .offthemode/RULES.md; the expert profiles RULES.md §Guides names for the touched work; .offthemode/PRODUCT.md, and .offthemode/COMPLEXITY.md and .offthemode/SECURITY.md if they exist; then the plan or the changes: {{PLAN_FILE | git diff main...HEAD}}.
+Read first: .offthemode/RULES.md; the expert profiles RULES.md §Guides names for the touched work; .offthemode/PRODUCT.md, and .offthemode/COMPLEXITY.md and .offthemode/SECURITY.md if they exist; the owner's points for this work, if any are written: the dated lines under its item in .offthemode/CHECKLIST.md, or under its line in ## Asks outside the plan; then the plan or the changes: {{PLAN_FILE | git diff main...HEAD}}.
 Method:
 1. Restate in 3 lines what the change is for and for whom. If you can't, that is finding #1.
-2. Before reading closely, derive the minimal correct solution from the constraints (at most 10 lines of pseudocode). Any state, code or dependency beyond it needs a written justification, or it is a finding.
-3. Check every refuse-to-ship item in the loaded profiles.
-4. Failure paths: slow network, double submit, stale cache, empty and huge data, concurrent edits, offline, reduced motion, screen reader, unauthorized caller.
-5. Security: authorization on every data access, no client-side secrets, no personal data in logs or events. Product: one primary action per surface; no complexity pushed onto the user that a default or inference would absorb.
-6. Tests: do they assert behavior or mirror the implementation? Any weakened assertion, or snapshot updated without a spec change?
+2. Hold the work against each of the owner's points before you read closely: for changes, run each point's check on the real thing; for a plan, say where it meets the point. A point that fails or could not be checked is a finding, ahead of all others.
+3. Derive the minimal correct solution from the constraints (at most 10 lines of pseudocode). Any state, code or dependency beyond it needs a written justification, or it is a finding.
+4. Check every refuse-to-ship item in the loaded profiles.
+5. Failure paths: slow network, double submit, stale cache, empty and huge data, concurrent edits, offline, reduced motion, screen reader, unauthorized caller.
+6. Security: authorization on every data access, no client-side secrets, no personal data in logs or events. Product: one primary action per surface; no complexity pushed onto the user that a default or inference would absorb.
+7. Tests: do they assert behavior or mirror the implementation? Any weakened assertion, or snapshot updated without a spec change?
 Run the full check from RULES.md §Commands and include the last lines of its output.
 Output: Verdict SHIP / FIX / RETHINK with one line why. Table: severity (blocker | major | minor) | file:line | what an expert sees | fix; max 12 rows, blockers first, no style nits unless they hide a bug. Then one thing done well, so it survives the refactor.
 ```
@@ -703,7 +704,7 @@ Show the RISKS.md rows you would add, mark the ones needing a P2 spike, and list
 
 > **Output:** `.offthemode/CHECKLIST.md`: the core concept split into fragments, each item with a provable done-when, kept true by one command, `revisit-checklist`.
 
-Your core concept lives in PRODUCT.md §Core concept, written during P1. The checklist breaks it into **fragments**: the separate pieces of the core, finished one after another. Each fragment has a few items, and each item says how you will know it is done. The file is a map, not a gate: fragments are listed in build order (what others depend on first, then the one nearest the moment of value), and you can still work on anything in any order. Sessions stay free-form and nothing has to be ticked by hand while you work, because `revisit-checklist` catches up afterwards by reading what changed in git. One thing is kept as you work: each piece's points, what you said must be true, in your words. Your AI writes them under the piece's item before it changes anything else, each with how it will be checked. It answers them one by one when it says done, and the save (`revisit-state`) records what each check showed. So a correction is never lost.
+Your core concept lives in PRODUCT.md §Core concept, written during P1. The checklist breaks it into **fragments**: the separate pieces of the core, finished one after another. Each fragment has a few items, and each item says how you will know it is done. The file is a map, not a gate: fragments are listed in build order (what others depend on first, then the one nearest the moment of value), and you can still work on anything in any order. Sessions stay free-form and nothing has to be ticked by hand while you work, because `revisit-checklist` catches up afterwards by reading what changed in git. One thing is kept as you work: each piece's points, what you said must be true, in your words. Your AI writes them under the piece's item before it changes anything else, each with how it will be checked. It answers them one by one when it says done, and the save (`revisit-state`) records what each check showed. A point only you can judge is handed to you with where to look, and stays open until you answer. So a correction is never lost.
 
 **One command, checklist only.** `revisit-checklist` builds the checklist the first time, when the file is missing or still the blank template. After that, run it on its own to see where you stand, or with a note (`revisit-checklist add CSV export to reports`) to change the list. Type `/revisit-checklist` with the skills pack, `/mcp__offthemode__revisit-checklist` through the link in Claude Code, or just say "revisit the checklist". It edits only .offthemode/CHECKLIST.md, never code or other docs. If a change also affects the vision or the architecture, it names the doc to update and leaves that to you.
 
@@ -712,10 +713,10 @@ Your core concept lives in PRODUCT.md §Core concept, written during P1. The che
 | You run | It reports | Then |
 |---|---|---|
 | `revisit-checklist` with no checklist yet | The core concept split into fragments, in build order, one line each | Writes the file; anything already built is marked `[x]`, never `[v]` |
-| `revisit-checklist` | Commits since the last revisit mapped to items, the results of the cheap checks, each mark it would move with its evidence, and work that matches no item | Updates the marks, the header and the verified count |
+| `revisit-checklist` | Commits since the last revisit mapped to items, the results of the cheap checks, each mark it would move with its evidence, and work that matches no item | Updates the marks, the header and the verified count, and places each ask from outside the plan as an item, its points with it |
 | `revisit-checklist <idea or change>` | The fragment it belongs in (or a new one), the job in PRODUCT.md it serves, what it disturbs, and the exact diff to the list | Applies the diff and logs one line per change |
 
-> **Rule:** An item is marked verified only with evidence the command can cite: a passing test by name, a measured number, a rule check's line (broke 0, judged N of N), a screenshot, a commit. "Built" and "verified" are separate marks, because the gap between them is where AI tools claim done.
+> **Rule:** An item is marked verified only with evidence the command can cite: a passing test by name, a measured number, a rule check's line (broke 0, judged N of N), a screenshot, a commit; and only when every point under it that still stands shows a passed check. "Built" and "verified" are separate marks, because the gap between them is where AI tools claim done.
 
 **When a fragment can be verified depends on the product.** Some fragments can be proven on their own, early: a hard interaction, a speed limit, a platform constraint. Many can't. An AI data analyst only proves itself end to end: a real question goes in, correct SQL runs, the right answer comes out, and that needs the whole chain to exist. So each fragment says `Verify: early` or `Verify: on completion`. An on-completion fragment's done-when is an end-to-end run with real inputs (for a model-driven core, the eval set passing). Neither mode is better; the checklist just records which one each fragment is.
 
@@ -731,8 +732,10 @@ The file starts from the CHECKLIST.md template (from get_template or the skill's
 | Marks | `[ ]` todo · `[~]` in progress · `[x]` built, not proven · `[v]` verified, evidence cited · `[-]` dropped, reason kept |
 | Vision | Thesis, moment of value and core concept, read from PRODUCT.md and never edited here |
 | Fragments | F1, F2 and on: what each one does for the person, what it depends on, its Verify mode, its items (each with a provable done-when and the guide that applies), and a closing quality item (F1.Q) |
+| Points | Under an item, one dated line for each thing you said must be true, in your words, with its check and what the check showed: open, a result, or replaced by a newer point |
 | Foundation | Only what this product needs, each item placed by its phase: rules and memory in place first; host-ready (deploy target chosen, config checked at startup, forward-only migrations), and for a product with a UI the visual language locked and every screen and state existing, before the fragments that depend on them; the security audit and the launch checklist before launch |
 | Quality bars | The elite bar that every .Q item checks |
+| Asks outside the plan | Work that matched no item, each with its points, until `revisit-checklist` places it as an item |
 | Changes | One dated line per change to the list |
 
 A fragment in a filled checklist reads like this:
@@ -1806,7 +1809,7 @@ Zero additions to L1 beyond a palette hint; every command reachable without a ke
 - Never edit a test to make it pass. Tests, snapshots and exemptions change only when the spec changes.
 - Two failed attempts at the same fix: climb one rung of the ladder in When it keeps getting it wrong. Never a third try from the same context.
 - A change to prompts, model ids, retrieval or the core contract runs the evals.
-- Finish with the checks in RULES.md §Commands, and name the CHECKLIST.md item it closes; revisit-checklist records the mark and the evidence.
+- Finish with the checks in RULES.md §Commands, and name the CHECKLIST.md item it closes; revisit-checklist records the evidence and the verified mark.
 - Open the whole guide for a new vertical slice, a refactor checkpoint or a drift check.
 <!-- /offthemode:rules -->
 
@@ -1830,7 +1833,7 @@ Restate the slice in 5 lines: person, job, moment of value, the single primary a
 5. States: every column of the ROUTES.md state inventory, copy per .offthemode/VOICE.md.
 6. Tests: failing logic tests first, then one end-to-end happy path, one abuse path (wrong user, malformed input, replay), and an end-to-end test of the journey step.
 7. Entry points behind the flag, off in production.
-8. Verify: every check in RULES.md §Commands passes, the slice actually ran, and you looked at its screens at each of screenshot_sizes (RULES.md §Budgets). Name the CHECKLIST.md item it closes (revisit-checklist records the mark and the evidence) and tell me what you did.
+8. Verify: every check in RULES.md §Commands passes, the slice actually ran, and you looked at its screens at each of screenshot_sizes (RULES.md §Budgets). Name the CHECKLIST.md item it closes (revisit-checklist records the evidence and the verified mark) and tell me what you did.
 List every new visible action and why it can't be inferred or defaulted. Touch only the fence; if you need more, stop and explain.
 ```
 
@@ -1895,7 +1898,7 @@ git worktree remove ../myapp-b && git branch -D exp/cr-012-b
 | 4 | Rewrite STATE.md naming the dead end, then start a fresh session from it | Failed attempts left in context pull the next try toward them |
 | 5 | Docs for the installed version, a working example, the library source | Stubborn bugs are often version drift |
 | 6 | Ask for 3 structurally different approaches before any code | The bug may be in the approach, not the line |
-| 7 | Parallel attempts on separate branches, more reasoning effort, or the strongest model | Samples genuinely different solutions |
+| 7 | More reasoning effort, the strongest model, or parallel attempts on separate branches (your AI starts those only when you ask) | Samples genuinely different solutions |
 | 8 | Write the 20-line kernel yourself, or change the requirement | Some things are cheaper to solve than to specify |
 
 ```prompt title="Hypotheses Before Fixes"
@@ -2348,8 +2351,8 @@ Before you tell me this is done, prove it.
 3. Critique the screenshots against .offthemode/DESIGN.md: grid, type scale, spacing tokens, exactly one primary action, anything that reads as a default template. Fix, then shoot again.
 4. Exercise the unhappy paths: empty, loading, error, offline, 10x content, the largest text size.
 5. If prompts, model ids, retrieval settings or the core contract changed, run the evals. A drop past the gate in RULES.md §Budgets blocks.
-6. Save where things stand with revisit-state's steps: STATE.md, and only the decisions DECISIONS.md doesn't hold yet.
-7. Report by the piece's points: each one with the check that ran and what it showed, or not checked and why. Then anything else verified, unverified or skipped. Name any CHECKLIST.md item this finishes, with its evidence.
+6. Save where things stand with all of revisit-state's steps: each point's result and its item's mark in CHECKLIST.md, STATE.md, and only the decisions DECISIONS.md doesn't hold yet.
+7. Report by my points: each of this ask's with the check that ran and what it showed, or not checked and why; the kept ones in one line, checked again where the change could touch them. Then anything else verified, unverified or skipped. Name any CHECKLIST.md item this finishes, with its evidence.
 Never write "should work". Write "verified by X" or "unverified".
 ```
 
@@ -2358,8 +2361,8 @@ Never write "should work". Write "verified by X" or "unverified".
 When the change touches the interface, a contract, a schema, sign-in, payments or more than three files, ask a second, fresh AI session to review it, one with no memory of building it. The session that built the change has already convinced itself it works; a fresh one only sees what is there.
 
 ```prompt title="Fresh-Session Change Review"
-You are reviewing a change you did not write. Read .offthemode/PRODUCT.md, RULES.md and DESIGN.md, then the diff against {{BASE_REF | main}}.
-- The piece's points: read them under its item in .offthemode/CHECKLIST.md and check each one on the real thing before you read the diff. Say which hold, which don't and which you could not check.
+You are reviewing a change you did not write: {{WORK}}, the diff against {{BASE_REF | main}}. First read .offthemode/PRODUCT.md, RULES.md and DESIGN.md.
+- The owner's points: read them under the work's item in .offthemode/CHECKLIST.md, or under its line in ## Asks outside the plan, and check each one on the real thing before you read the diff. Say which hold, which don't and which you could not check.
 - Screens: compare each new screenshot with the one from before the change, as a pair, and say which is better and why. Then judge the same pairs again with the order swapped. Count only verdicts that agree both ways.
 - Contracts, schemas, sign-in, payments or wide changes: list what breaks, what was assumed without proof, and what a person could do that the code does not expect. Point to the file and line.
 - Rule and screen checks: list what each imports from the app that decides the rule, what its N counts, and any route under a lab or gallery.
@@ -2778,7 +2781,7 @@ The context window is the AI's working memory: everything it has read and said i
 
 ### Split where it pays
 
-More agents are not more right. Measured in one owner's five projects, July to November 2026: of 328 turns that changed something, these 119 followed a new ask or a "this is wrong".
+More agents are not more right. Measured in one owner's five projects, July to November 2026: of 320 turns that changed something and whose start could be read (328 in all), these 119 followed a new ask or a "this is wrong".
 
 | The work | Built by | Turns | The owner then said "wrong" | Median time and tokens |
 |---|---|---|---|---|
@@ -2792,20 +2795,20 @@ More agents are not more right. Measured in one owner's five projects, July to N
 This is real use, not a controlled test. The counts are small, they come from different projects, and the size of the work could not be measured: the turns given to agents may have been the harder ones. What the counts show: about 40 in 100 fixes were followed by another "this is wrong", whether the chat built them or agents did, and agents took about six times as long. For a new ask they show no clear difference in "wrong", at five times the time and ten times the tokens.
 
 - **Agents pay for** parts that share no files, wide reading whose raw results would otherwise sit in the main session, samples that must not see each other, and a fresh review of a risky change.
-- **A fix to something you called wrong is built in the chat.** It came back wrong no more often there and took a fraction of the time, and the chat already has your words and the code in view. Ask for agents on a fix and you get them.
-- **Never one agent for a whole build.** For fixes, one or two agents started by hand were the dearest way: a median 52M tokens against the chat's 2.5M, and wrong again 5 times in 11. Cut a build at finished results (Hand off, don't carry).
+- **A fix to something you called wrong is built in the chat.** It came back wrong about as often there (17 of 41 in the chat, 11 of 27 with agents) and took a fraction of the time, and the chat already has your words and the code in view. Ask for agents on a fix and you get them.
+- **A build that goes to agents never goes to one.** For fixes, one or two agents started by hand were the dearest way by median: 52M tokens against the chat's 2.5M (by mean a workflow cost more, 49M against 40M), and wrong again 5 times in 11. The counts don't say how much of a build each of those agents held. Cut a build at finished results (Hand off, don't carry).
 
 ### Your points reach every agent
 
 An agent knows only its brief. In the project with the most complaints, 2 of 3 reviewers and more than half the builders got no run of 8 words from the message that started the work (43% and 42% across all five projects). In the three projects that use Off the Mode, 84 complaints were traced: 43 were built on a guess nobody checked, 21 dropped a point the owner had already made, and 2 were plain coding mistakes. A reviewer who is never told what was asked can only hold the code against itself.
 
-So every brief holds the piece's points word for word (RULES.md §Efficiency), each with its check. The scout's brief carries them, each builder's note passes them on, and a reviewer checks the result against the points first, on the real thing, then reads the code.
+So every brief holds every point kept for its task in CHECKLIST.md, the ones from earlier messages too, word for word (RULES.md §Efficiency), each with its check. The scout's brief carries them, each builder's note passes them on, and a reviewer checks the result against the points first, on the real thing, then reads the code.
 
 ### A model for each job
 
-In those projects 98% of the workflow agents' tokens ran on one model, whatever the job. Reviewers took 41% of them and reading took 19%. Where your tool lets you pick, give searching, reading, sorting and checking against a list to a cheaper, faster model, and keep the strongest for design, the hard part of a build and the review of a risky change (Model and effort per task, below).
+Across all five projects, 98% of the workflow agents' tokens ran on one model, whatever the job. Reviewers took 41% of them and reading took 19%. Where your tool lets you pick, give searching, reading, sorting and checking against a list to a cheaper, faster model, and keep the strongest for design, the hard part of a build and, as a precaution, the fresh review (Model and effort per task, below).
 
-One test stands behind the last part. Four models each reviewed the same 174-line script four times, with 8 defects planted that its tests are known to catch. Every model, the cheapest included, found the same 4 in every review. Three were found by no review at all, and one once, by the strongest model. The two strongest models also reported real defects that had not been planted, 5 each in four reviews; the two cheaper ones reported 2 and none. So a stronger reviewer does see more, and no reviewer replaces a check: the tests catch all 8. It is one file and one kind of defect.
+One test stands behind the last part. Four models each reviewed the same 174-line script four times, with 8 defects planted that its tests are known to catch. Every model, the cheapest included, found the same 4 in every review; three were found by no review, and one once, by the strongest model. By the rule written before the test, that is no difference: on planted defects a cheaper model reviewed as well. The reviews also reported real defects nobody had planted, three kinds in all, judged by hand afterwards and outside that rule: each of the two strongest models reported one in every review, the cheapest in 1 of 4 and the other cheaper one in none. So the strongest keeps the fresh review as a precaution, not as a proven gain, and no reviewer replaces a check: the tests catch all 8. It is one file and one kind of defect.
 
 ### Many agents, one reading
 
@@ -2823,13 +2826,12 @@ Scout {{TASK}} before anyone builds it. Change nothing.
 Read only what the task touches: the files it changes, what they import, what imports them, the tests that cover them, and the matching lines in .offthemode/RULES.md and .offthemode/CHECKLIST.md. Not the whole repo.
 Write a brief of at most 40 lines:
 - the goal in one sentence
-- the piece's points from .offthemode/CHECKLIST.md, word for word, each with its check
 - each file, with one line on its role
 - the contracts that must not break (types, API shapes, design tokens)
 - the checks that prove it works: {{?CHECK_CMD}}
 - open questions, written as hypotheses ("I think X, because Y")
-Then say how many agents work side by side and why. One is the default; work side by side only where the parts share no files. Then list the build's pieces, which run one after another: one finished result each (a page, a layer, a job), with the check that ends it; a small build is one piece. Add to the brief, beyond its 40 lines, the guide lines the build needs, so builders don't open the guides again.
-End with the reply format every agent uses: done or blocked; files changed; check result; anything the brief got wrong. At most 10 lines.
+Then say how many agents work side by side and why. One is the default; work side by side only where the parts share no files. Then list the build's pieces, which run one after another: one finished result each (a page, a layer, a job), with the check that ends it; a small build is one piece. Add to the brief, beyond its 40 lines: every point under the task's item in .offthemode/CHECKLIST.md (or under its line in ## Asks outside the plan), the ones from earlier messages too, word for word, each with its check (none written yet: say so, and take them from the task's own words); and the guide lines the build needs, so builders don't open the guides again.
+End with the reply format every agent uses: done or blocked; files changed; each point's check and what it showed; anything the brief got wrong. At most 10 lines besides the points.
 Every agent that follows starts its prompt with this brief, unchanged.
 ```
 
@@ -2842,8 +2844,8 @@ The first version of this rule covered only "a long build", and whether a build 
 Not solved yet: asking has not reliably moved the main session (it worked at some natural ends and was ignored at others, even with the first message ready). Until a meter exists, a main session can still carry about half the reading, as it did in the measured week (853M of 1,717M). Whether the steps below keep relay pieces short is also untested. What changed: every builder now ends at a finished result, the brief carries the guides, the check shows only failures, each builder's cost is shown, reviews stay and a second round doesn't redo what the first already reviewed, and the main session is asked to hand off too.
 
 1. **Cut every build that goes to agents at finished results.** The scout returns the build as ordered pieces, each one finished result (a page, a layer, a job) with the check that ends it; a small build is one piece. A builder ends when its piece's check passes, even if the request holds more: the rest goes to a fresh builder with the note, so a request that grows is cut while it is built, not only at the start. Never cut by a step count, and never in the middle of a piece, such as mid-debug. Results too small to be worth a new builder go together in one piece (see the Trap).
-2. **One builder per piece, in order, the same way each time.** The pieces run one after another in one copy of the project, with the same model, effort and tools, so the shared start stays cached. Each prompt is the brief word for word, then the last piece's note, then this piece. The brief already holds the guide lines the build needs, which counts as opening those guides.
-3. **The note says where to start.** The builder ends with a short note in a fixed shape: the commit; the exact lines the next piece starts from (file, line range and why each matters); the decisions made (the unstated ones too: names, conventions, approaches tried and dropped); dead ends, one line each; known traps, copied from note to note; open issues; and the check with its result. Only the last note goes forward, with the traps and the piece's points it carries; the code and git hold the rest. In the measured relay, line ranges alone didn't stop whole-file reading, so measure what each new builder reads to get going.
+2. **One builder per piece, in order, the same way each time.** The pieces run one after another in one copy of the project, with the same model, effort and tools where they can, so the shared start stays cached; a hard piece may take the strongest model and pay for its start in full. Each prompt is the brief word for word, then the last piece's note, then this piece. The brief already holds the guide lines the build needs, which counts as opening those guides.
+3. **The note says where to start.** The builder ends with a short note in a fixed shape: the commit; the exact lines the next piece starts from (file, line range and why each matters); the decisions made (the unstated ones too: names, conventions, approaches tried and dropped); dead ends, one line each; known traps, copied from note to note; open issues; and the check with its result. Only the last note goes forward, with the traps and the owner's points it carries; the code and git hold the rest. In the measured relay, line ranges alone didn't stop whole-file reading, so measure what each new builder reads to get going.
 4. **The check ends the piece, and shows only failures.** A passing check says so in one line. A failing one shows each failure in full and nothing else, because every line of output is read again on every later step. The builder fixes failures itself while it still holds the context, until the check passes. After repeated failures it ends as blocked, with the failure in its note.
 5. **One line of cost after each builder.** The run records each builder's steps and the token count your tool reports. The line stops nothing: it helps cut the next piece (a piece that ran long may have held two results, or spent its start finding its way in) and shows where the reading went.
 6. **Fresh reviewers at the end, then only what changed.** A build that touches a contract, a schema, login or more than 3 files ends with reviewers who didn't build it; a quick look from the main session is not a review. A second round starts from the lines changed since the first and the list of findings already fixed or shown wrong, so those don't come back, and it doesn't review the unchanged code again.
@@ -2924,7 +2926,7 @@ Changelog: v4 references assigned by me, no recommendation (a generator grading 
 
 > **Output:** five commands that each touch only what they own: `revisit-checklist` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md`, `revisit-comments` edits code comments only, `revisit-glossary` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`, and `revisit-state` saves where things stand to `.offthemode/STATE.md`, new decisions to `.offthemode/DECISIONS.md` and each piece's points to `.offthemode/CHECKLIST.md`; plus `view-project`, which opens the folder as one page in your browser and writes nothing in the project.
 
-Off the Mode has seven commands. `offthemode` sets up a project or shows its status, and `view-project` shows it as a page. The other five are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else. One file has two writers: each piece's points are written under its item in `.offthemode/CHECKLIST.md` as the work starts and closed, with the item's mark, by `revisit-state`, and `revisit-checklist` owns the rest of that file, the verified mark included.
+Off the Mode has seven commands. `offthemode` sets up a project or shows its status, and `view-project` shows it as a page. The other five are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else. One file has more than one writer. Your AI writes each piece's points under its item in `.offthemode/CHECKLIST.md` as the work starts and marks the item in progress. `revisit-state` closes the points, marks the item built once every point has passed, keeps the header's verified count true and keeps the section for asks outside the plan. `revisit-checklist` owns the rest of that file and is the only one that marks an item verified.
 
 Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the link in Claude Code) or just say them: "reassess the project".
 
@@ -3276,10 +3278,10 @@ Normal sessions stay free-form. You say what you want in plain words; the files 
 1. **Open a session.** Your AI loads `.offthemode/RULES.md` and `.offthemode/STATE.md`, so it knows the standards and where things stand. If its first answer doesn't know, see How to add it.
 2. **Say what you want.** One concern at a time: a feature, a fix, a screen.
 3. **It opens the guide.** RULES.md §Guides maps each kind of work to a guide; your AI opens the matching one before planning, once per session. For a change inside what exists, the guide's working rules are enough.
-4. **It asks to decide, never to start.** It says what it understood, what it will change and what it isn't sure of, as hypotheses ("I think X, because Y"), and settles each one in the code or docs, or in one numbered round of questions: only what you alone can settle, each with why and its pick. Meanwhile it builds what no answer changes, and your reply, in any words, starts the rest. One-way doors (lost data, money, messages to other people, a first publish) need your yes.
+4. **It asks to decide, never to start.** It says what it understood, what it will change and what it isn't sure of, as hypotheses ("I think X, because Y"), and settles each one in the code or docs, or in one numbered round of questions: only what you alone can settle, each with why and its pick. Meanwhile it builds what no answer changes, and your reply, in any words, starts the rest. One-way doors (lost data, money, messages to other people, a first publish) need your yes. Before it changes anything else, it writes your points, what you said must be true, under the work's checklist item, each with how it will be checked.
 5. **It builds in build order.** CHECKLIST.md lists the fragments in the order they depend on each other, core first, and your AI follows that order, held to RULES.md. You can still ask for anything at any time; revisit-checklist catches up.
-6. **It verifies before it says done.** The checks pass, the thing actually ran, and screens were looked at on phone, tablet and wide widths.
-7. **It records the work.** STATE.md is updated with where things stand, decisions go to DECISIONS.md, your AI names the checklist item the work closes (revisit-checklist records the mark and the evidence), and a correction you had to make twice becomes a proposed line in RULES.md §Project specifics, added on your yes.
+6. **It verifies before it says done.** The checks pass, the thing actually ran, and screens were looked at on phone, tablet and wide widths. It says done point by point, with the check that ran and what it showed; a point only you can judge is handed to you with where to look.
+7. **It records the work.** Each point gets its result, STATE.md is updated with where things stand, decisions go to DECISIONS.md, your AI names the checklist item the work closes (revisit-checklist records the evidence and the verified mark), and a correction about how to work that you had to make twice becomes a proposed line in RULES.md §Project specifics, added on your yes.
 8. **Review in a fresh session** when the change matters: a second AI session asked to review, with no memory of building it.
 
 > **Why:** A fresh session with an up-to-date STATE.md picks up where the last one stopped, with none of the stale context. So when a piece of work ends, run `revisit-state` and start a fresh session, rather than waiting for the window to run out.

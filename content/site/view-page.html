@@ -463,7 +463,7 @@ const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "
 const SETUP = "/offthemode (the setup) adds it once you answer its questions";
 // The files the sheet draws, its zone for each, and the command that writes it.
 const FILES = [
-  { zone: "A", file: "CHECKLIST.md", title: "Checklist board", shows: "every fragment and item, its mark and its proof", writer: "/revisit-checklist builds it from PRODUCT.md" },
+  { zone: "A", file: "CHECKLIST.md", title: "Checklist board", shows: "every fragment and item, its mark and its proof", writer: "/revisit-checklist builds it from PRODUCT.md; your AI adds your points as it works" },
   { zone: "B", file: "STATE.md", title: "Where things stand", shows: "what is true now, the next steps, what is waiting", writer: "/offthemode (the setup) adds it once you answer its questions; your AI keeps it current and /revisit-state saves it" },
   { zone: "C", file: "PRODUCT.md", title: "The plan", shows: "who it is for, the core concept, what it refuses", writer: SETUP },
   { zone: "D", file: "DECISIONS.md", title: "Decisions", shows: "each decision, why, and what was turned down", writer: SETUP },
