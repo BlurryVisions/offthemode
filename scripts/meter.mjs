@@ -10,7 +10,7 @@
 // Run it yourself on any session, with nothing saved: node scripts/meter.mjs <session .jsonl>
 // Claude Code runs it at each stop once .claude/settings.local.json holds this block, added only on the owner's yes:
 // SETTINGS {"hooks":{"Stop":[{"hooks":[{"type":"command","command":"node","args":["${CLAUDE_PROJECT_DIR}/.offthemode/meter.mjs"],"timeout":10}]}]}}
-import { openSync, readSync, closeSync, fstatSync, readFileSync, writeFileSync, renameSync, mkdirSync, readdirSync, realpathSync } from "node:fs";
+import { openSync, readSync, closeSync, fstatSync, readFileSync, writeFileSync, renameSync, mkdirSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { join, dirname, basename } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -44,7 +44,10 @@ function count(line, got, seen) {
  * bytes (the whole file when left out). A line still being written is left for the next read. `null`: unreadable. */
 export function gained(file, from, upto = Infinity) {
   let fd;
-  try { fd = openSync(file, "r"); } catch { return null; }
+  try {
+    if (!statSync(file).isFile()) return null; // a folder opens as an empty file on Windows, and a pipe would never end
+    fd = openSync(file, "r");
+  } catch { return null; }
   try {
     const size = Math.min(fstatSync(fd).size, upto), start = from?.offset ?? 0;
     if (size < start) return { shrank: true };
@@ -75,10 +78,12 @@ export function agentFiles(dir) {
   return found.flatMap((d) => (d.isDirectory() ? agentFiles(join(dir, d.name)) : d.name.startsWith("agent-") && d.name.endsWith(".jsonl") ? [join(dir, d.name)] : [])).sort();
 }
 
-/** What a session gained since `was`, the meter's own record of how far it had read. With no record of this chat,
- * or a file shorter than the record says, everything so far is counted. `null`: the chat's file can't be read. */
+const sound = (was) => was?.v === 1 && was.files !== null && typeof was.files === "object" && Object.values(was.files).every((f) => Number.isInteger(f?.offset) && f.offset >= 0);
+
+/** What a session gained since `was`, the meter's own record of how far it had read. With no sound record of this
+ * chat, or a file shorter than the record says, everything so far is counted. `null`: the chat's file can't be read. */
 export function measure(transcript, was) {
-  const known = was?.v === 1 && was.files?.[transcript] ? was : null;
+  const known = sound(was) && was.files[transcript] ? was : null;
   const files = {}, reply = { fresh: !known, chat: 0, steps: 0, agents: 0, agentN: 0, size: known?.size ?? 0 };
   const main = gained(transcript, known?.files[transcript]);
   if (!main) return null;
@@ -134,7 +139,7 @@ async function main() {
     return;
   }
   const input = await stdin();
-  if (!input?.transcript_path || input.agent_id) return;
+  if (typeof input?.transcript_path !== "string" || input.agent_id) return;
   const record = join(tmpdir(), "offthemode-meter", `${String(input.session_id ?? basename(input.transcript_path, ".jsonl")).replace(/[^\w-]/g, "_")}.json`);
   let was = null;
   try { was = JSON.parse(readFileSync(record, "utf8")); } catch { /* no record yet: everything so far is counted */ }

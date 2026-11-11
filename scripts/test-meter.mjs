@@ -119,6 +119,8 @@ async function startsOver() {
   expect(agent.reply.fresh && agent.reply.agents === 25, "so is a session whose agent file got shorter", show(agent.reply));
   expect(measure(s.file, { ...agent.state, v: 2 }).reply.fresh, "a record of another kind is not trusted");
   expect(measure(s.file, { v: 1, files: { [join(BASE, "other.jsonl")]: { offset: 5, key: null } } }).reply.fresh, "nor a record that doesn't know this chat");
+  const odd = [{ v: 1, files: { [s.file]: { offset: "x", key: null } } }, { v: 1, files: { [s.file]: { offset: -5, key: null } } }, { v: 1, files: { [s.file]: { offset: 0, key: null }, [a]: null } }, { v: 1, files: null }, { v: 1, files: "text" }];
+  expect(odd.every((was) => { const m = measure(s.file, was); return m.reply.fresh && m.reply.chat === 15 && m.reply.agents === 25; }), "nor one whose places aren't whole numbers from zero up: it never stops the count", show(odd.map((was) => { try { return measure(s.file, was).reply; } catch (e) { return String(e); } })));
 }
 
 async function countsBehind() {
@@ -170,12 +172,12 @@ async function staysQuiet() {
   put(s.file, call(100, { reason: "end_turn" }));
   const agent = await run({ transcript_path: s.file, session_id: "s2", agent_id: "a1" }, tmp);
   expect(agent.code === 0 && agent.out === null && !existsSync(join(tmp, "offthemode-meter")), "an agent's own stop shows nothing and records nothing", show(agent));
-  const results = await Promise.all(["not json", "{}", "", "null", "[]"].map((text) => run(text, tmp)));
+  const results = await Promise.all(["not json", "{}", "", "null", "[]", '{"transcript_path":123}', '{"transcript_path":{"a":1},"session_id":"s9"}'].map((text) => run(text, tmp)));
   expect(results.every((r) => r.code === 0 && r.out === null), "input that isn't a stop's shows nothing and fails nothing", show(results.map((r) => [r.code, r.stdout, r.stderr])));
   const missing = await run({ transcript_path: join(BASE, "meter", "gone.jsonl"), session_id: "s3" }, tmp);
   expect(missing.code === 0 && missing.only === "systemMessage" && missing.said === "Off the Mode's meter couldn't read this session's file, so the next line carries this reply.", "a session file that can't be read is said, in one line", show(missing));
   const folder = await run({ transcript_path: join(BASE, "meter", "quiet"), session_id: "s4" }, tmp);
-  expect(folder.code === 0 && folder.only === "systemMessage" && folder.said.startsWith("Off the Mode's meter couldn't "), "a failure while reading is said in one line too, and fails nothing", show(folder));
+  expect(folder.code === 0 && folder.only === "systemMessage" && folder.said === missing.said, "so is a folder where the file should be, on every system", show(folder));
 }
 
 async function stillWorking() {
