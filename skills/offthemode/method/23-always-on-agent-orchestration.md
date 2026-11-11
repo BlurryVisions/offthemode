@@ -1,40 +1,45 @@
 ## Always-On · Agent Orchestration
 
-> **Output:** agents only where they pay; your points in every agent's brief, word for word; one scout's brief that every other agent starts from, word for word; every build run as a relay of pieces cut at finished results, each handing a short note to the next; fresh reviewers at the end; separate sessions for research, building and review; short structured results; scripts for anything that can be measured; a model and effort choice for each task.
+> **Output:** agents only where they pay; your points in every agent's brief, word for word; one scout's brief that every other agent starts from, word for word; every build that goes to agents run as a relay of pieces cut at finished results, each handing a short note to the next; fresh reviewers at the end; separate sessions for research, building and review; short structured results; scripts for anything that can be measured; a model and effort choice for each task.
 
 The context window is the AI's working memory: everything it has read and said in the current session, read again on every reply. Long sessions pile up stale and contradictory information. A fresh session has none of it, and a fresh session reviewing code has no stake in defending it.
 
 > **Rule:** Don't cap how many agents run. Use them where they pay, give each one your points, then remove the repetition between them. Every agent starts with a blank memory, so it re-reads what you already know, and you pay for that reading again: thirteen agents, thirteen readings. One scout reads once, and everyone else starts from its brief. Then remove the repetition inside each agent, and inside the main session too: each re-reads everything it holds on every step, so it hands off finished work instead of carrying it.
 
-### Split only where it pays
+### Split where it pays
 
-More agents are not more right. Measured in one owner's five projects, July to November 2026, over 328 turns that changed something:
+More agents are not more right. Measured in one owner's five projects, July to November 2026: of 328 turns that changed something, these 119 followed a new ask or a "this is wrong".
 
 | The work | Built by | Turns | The owner then said "wrong" | Median time and tokens |
 |---|---|---|---|---|
 | A fix to something the owner called wrong | the chat | 41 | 17 | 4 min, 2.5M |
 | | a workflow of agents | 16 | 6 | 25 min, 20M |
-| | one or two large agents | 11 | 5 | 24 min, 52M |
+| | one or two agents started by hand | 11 | 5 | 24 min, 52M |
 | A new ask | the chat | 25 | 8 | 4 min, 2.6M |
 | | a workflow of agents | 21 | 5 | 21 min, 25M |
+| | one or two agents started by hand | 5 | 3 | 33 min, 34M |
 
-This is real use, not a controlled test: the bigger asks went to workflows. Still, about 40 in 100 fixes came back wrong however they were built, and agents took five to six times as long. What decided the result was whether the work was built from the owner's words and checked on the real thing, not how many agents ran.
+This is real use, not a controlled test. The counts are small, they come from different projects, and the size of the work could not be measured: the turns given to agents may have been the harder ones. What the counts show: about 40 in 100 fixes were followed by another "this is wrong", whether the chat built them or agents did, and agents took about six times as long. For a new ask they show no clear difference in "wrong", at five times the time and ten times the tokens.
 
 - **Agents pay for** parts that share no files, wide reading whose raw results would otherwise sit in the main session, samples that must not see each other, and a fresh review of a risky change.
-- **The chat is better for** a fix to something you called wrong, and any change one chat can hold: it already has your words and the code in view.
-- **Never one agent for a whole build.** The dearest turns of all were single large agents. Cut a build at finished results (Hand off, don't carry).
+- **A fix to something you called wrong is built in the chat.** It came back wrong no more often there and took a fraction of the time, and the chat already has your words and the code in view. Ask for agents on a fix and you get them.
+- **Never one agent for a whole build.** For fixes, one or two agents started by hand were the dearest way: a median 52M tokens against the chat's 2.5M, and wrong again 5 times in 11. Cut a build at finished results (Hand off, don't carry).
 
 ### Your points reach every agent
 
-An agent knows only its brief. In the project with the most complaints, 2 of 3 reviewers and more than half the builders were never given a word of the message that started the work (counted where that message had 8 words or more). So reviewers checked the code against itself. They found coding mistakes, and coding mistakes were 2 of the 84 complaints traced there: 43 were a guess nobody checked, 21 a point the owner had already made.
+An agent knows only its brief. In the project with the most complaints, 2 of 3 reviewers and more than half the builders got no run of 8 words from the message that started the work (43% and 42% across all five projects). In the three projects that use Off the Mode, 84 complaints were traced: 43 were built on a guess nobody checked, 21 dropped a point the owner had already made, and 2 were plain coding mistakes. A reviewer who is never told what was asked can only hold the code against itself.
 
-So every brief holds the piece's points word for word (RULES.md §How to work), each with its check. A reviewer checks the result against the points first, on the real thing, then reads the code.
+So every brief holds the piece's points word for word (RULES.md §Efficiency), each with its check. The scout's brief carries them, each builder's note passes them on, and a reviewer checks the result against the points first, on the real thing, then reads the code.
 
 ### A model for each job
 
-In those projects 98% of the workflow agents' tokens ran on the session's own model, whatever the job. Reviewers took 41% of them and reading took 19%. Give searching, reading, sorting and checking against a list to a cheaper, faster model where your tool offers one. Keep the strongest for design, the hard part of a build and the review of a risky change. Not tested yet: whether a cheaper model reviews as well.
+In those projects 98% of the workflow agents' tokens ran on one model, whatever the job. Reviewers took 41% of them and reading took 19%. Where your tool lets you pick, give searching, reading, sorting and checking against a list to a cheaper, faster model, and keep the strongest for design, the hard part of a build and the review of a risky change (Model and effort per task, below).
+
+One test stands behind the last part. Four models each reviewed the same 174-line script four times, with 8 defects planted that its tests are known to catch. Every model, the cheapest included, found the same 4 in every review. Three were found by no review at all, and one once, by the strongest model. The two strongest models also reported real defects that had not been planted, 5 each in four reviews; the two cheaper ones reported 2 and none. So a stronger reviewer does see more, and no reviewer replaces a check: the tests catch all 8. It is one file and one kind of defect.
 
 ### Many agents, one reading
+
+These steps cut what agents read twice. They stood in RULES.md in October and November 2026, and builders ran long all the same (Hand off, don't carry, below). So they live here, for work that does go to agents.
 
 1. **One scout reads first.** It finds the files the task really touches and what they depend on (not the whole repo), writes a short brief, and decides how many agents the work needs. A four-file job rarely needs more than one.
 2. **Every agent's prompt starts with that brief, word for word.** Most providers keep a prompt cache: they store the start of a recent prompt and charge a fraction of the normal input price to read it again, as little as a tenth with some. The cache matches only an exact copy, so one changed word near the top means paying in full.
@@ -48,6 +53,7 @@ Scout {{TASK}} before anyone builds it. Change nothing.
 Read only what the task touches: the files it changes, what they import, what imports them, the tests that cover them, and the matching lines in .offthemode/RULES.md and .offthemode/CHECKLIST.md. Not the whole repo.
 Write a brief of at most 40 lines:
 - the goal in one sentence
+- the piece's points from .offthemode/CHECKLIST.md, word for word, each with its check
 - each file, with one line on its role
 - the contracts that must not break (types, API shapes, design tokens)
 - the checks that prove it works: {{?CHECK_CMD}}
@@ -65,9 +71,9 @@ The first version of this rule covered only "a long build", and whether a build 
 
 Not solved yet: asking has not reliably moved the main session (it worked at some natural ends and was ignored at others, even with the first message ready). Until a meter exists, a main session can still carry about half the reading, as it did in the measured week (853M of 1,717M). Whether the steps below keep relay pieces short is also untested. What changed: every builder now ends at a finished result, the brief carries the guides, the check shows only failures, each builder's cost is shown, reviews stay and a second round doesn't redo what the first already reviewed, and the main session is asked to hand off too.
 
-1. **Cut every build at finished results.** The scout returns the build as ordered pieces, each one finished result (a page, a layer, a job) with the check that ends it; a small build is one piece. A builder ends when its piece's check passes, even if the request holds more: the rest goes to a fresh builder with the note, so a request that grows is cut while it is built, not only at the start. Never cut by a step count, and never in the middle of a piece, such as mid-debug. Results too small to be worth a new builder go together in one piece (see the Trap).
+1. **Cut every build that goes to agents at finished results.** The scout returns the build as ordered pieces, each one finished result (a page, a layer, a job) with the check that ends it; a small build is one piece. A builder ends when its piece's check passes, even if the request holds more: the rest goes to a fresh builder with the note, so a request that grows is cut while it is built, not only at the start. Never cut by a step count, and never in the middle of a piece, such as mid-debug. Results too small to be worth a new builder go together in one piece (see the Trap).
 2. **One builder per piece, in order, the same way each time.** The pieces run one after another in one copy of the project, with the same model, effort and tools, so the shared start stays cached. Each prompt is the brief word for word, then the last piece's note, then this piece. The brief already holds the guide lines the build needs, which counts as opening those guides.
-3. **The note says where to start.** The builder ends with a short note in a fixed shape: the commit; the exact lines the next piece starts from (file, line range and why each matters); the decisions made (the unstated ones too: names, conventions, approaches tried and dropped); dead ends, one line each; known traps, copied from note to note; open issues; and the check with its result. Only the last note goes forward, with the traps it carries; the code and git hold the rest. In the measured relay, line ranges alone didn't stop whole-file reading, so measure what each new builder reads to get going.
+3. **The note says where to start.** The builder ends with a short note in a fixed shape: the commit; the exact lines the next piece starts from (file, line range and why each matters); the decisions made (the unstated ones too: names, conventions, approaches tried and dropped); dead ends, one line each; known traps, copied from note to note; open issues; and the check with its result. Only the last note goes forward, with the traps and the piece's points it carries; the code and git hold the rest. In the measured relay, line ranges alone didn't stop whole-file reading, so measure what each new builder reads to get going.
 4. **The check ends the piece, and shows only failures.** A passing check says so in one line. A failing one shows each failure in full and nothing else, because every line of output is read again on every later step. The builder fixes failures itself while it still holds the context, until the check passes. After repeated failures it ends as blocked, with the failure in its note.
 5. **One line of cost after each builder.** The run records each builder's steps and the token count your tool reports. The line stops nothing: it helps cut the next piece (a piece that ran long may have held two results, or spent its start finding its way in) and shows where the reading went.
 6. **Fresh reviewers at the end, then only what changed.** A build that touches a contract, a schema, login or more than 3 files ends with reviewers who didn't build it; a quick look from the main session is not a review. A second round starts from the lines changed since the first and the list of findings already fixed or shown wrong, so those don't come back, and it doesn't review the unchanged code again.
@@ -83,7 +89,7 @@ Not solved yet: asking has not reliably moved the main session (it worked at som
 |---|---|---|
 | Research agent | You need conclusions from a lot of reading | An agent or a separate session reads; the main session gets the summary |
 | Builder and reviewer | Any change worth checking | A second, fresh AI session asked to review, with no memory of building it |
-| Relay builders | Any build | One builder per finished result, in order, each starting from the brief and the last piece's note (Hand off, don't carry) |
+| Relay builders | A build split across agents | One builder per finished result, in order, each starting from the brief and the last piece's note (Hand off, don't carry) |
 | Isolated builders | Samples that must not see each other (the three directions in P3, bake-offs) | One fresh session per sample, each in its own copy of the project |
 | Parallel features | Two or three features that share no files | One session each, in separate copies, after shared contracts have landed |
 | Batch run | One mechanical change across many files | Your tool's command-line mode in a loop, one file per run, each run logged |

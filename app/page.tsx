@@ -12,7 +12,7 @@ const TOUCHES: Record<string, string> = {
   "revisit-comments": "Code comments only",
   "revisit-glossary": "The plain-words summary",
   "view-project": "Nothing in your project: one temporary page",
-  "revisit-state": "Where things stand, and new decisions",
+  "revisit-state": "Where things stand, each piece's points and new decisions",
 };
 const WHAT: Record<string, string> = {
   offthemode: "Sets up your project, new or existing, or tells you where it stands",

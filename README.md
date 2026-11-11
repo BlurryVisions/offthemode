@@ -24,7 +24,7 @@ Then, whenever you want:
 | `/offthemode` | Sets up the project, or tells you where it stands | The `.offthemode/` folder, plus one line you approve so your tool loads it; if you say yes, your usual setup in `~/.offthemode/ME.md` and, in Claude Code, the stop check's hook in `.claude/settings.local.json` |
 | `/revisit-checklist [idea]` | Shows the checklist, or adds a new feature or idea to it | The checklist |
 | `/view-project` | Opens your project as a page in your browser | Nothing in your project: one temporary page |
-| `/revisit-state` | Saves where things stand, so a fresh session picks up from here; your AI also runs it on its own after changing files | Where things stand, and new decisions |
+| `/revisit-state` | Saves where things stand, so a fresh session picks up from here; your AI also runs it on its own after changing files | Where things stand, each piece's points, and new decisions |
 | `/reassess` | Checks what's built against your core concept | Only its own report, if you say so |
 | `/revisit-comments [path]` | Cleans up code comments | Comments only |
 | `/revisit-glossary` | Refreshes a plain-words summary anyone can understand | The summary |

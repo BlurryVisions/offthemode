@@ -54,5 +54,7 @@ Safety
 - (server) Authorization checked on the server for every action
 - Input validated at every boundary; no secret in the repo, the bundle or the logs
 
+## Asks outside the plan (the save keeps a piece here with its points; /revisit-checklist places it as an item)
+
 ## Changes
 - {{?DATE}} · created from {{?PLAN_SOURCE}}
