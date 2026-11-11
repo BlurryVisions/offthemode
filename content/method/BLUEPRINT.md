@@ -287,7 +287,7 @@ When you connect through the MCP link, the server also repeats the instruction t
 
 Your AI has no memory between sessions, so the project is its memory. Chat history is not storage. Start a fresh session between unrelated tasks (/clear in Claude Code), and let the files carry what matters.
 
-- STATE.md is rewritten, not added to: once at the end of any reply that changes files, settles a decision or closes one of your points, after its last edit, your AI runs `revisit-state` by itself (after any other command has finished) and, when it changed STATE.md or DECISIONS.md, says so in one line, and you can type it whenever you want, for example before a fresh session. Each thing has one line, so running it again never adds anything twice. The next session needs the present, not a diary.
+- STATE.md is rewritten, not added to: once at the end of any reply that changes files, settles a decision or gives one of your points its result, after its last edit, your AI runs `revisit-state` by itself (after any other command has finished) and, when it changed STATE.md or DECISIONS.md, says so in one line, and you can type it whenever you want, for example before a fresh session. Each thing has one line, so running it again never adds anything twice. The next session needs the present, not a diary.
 - DECISIONS.md is appended to, never rewritten. It is the record of why, so no later session argues a settled choice again or quietly reverses it.
 
 #### A STATE.md that works
@@ -346,7 +346,7 @@ Reply with:
 Then follow RULES.md §How to work: with no questions, read back and start in this reply; otherwise build what no answer changes now, and my reply starts the rest. Nothing is built on a hypothesis until it is confirmed.
 ```
 
-Your AI runs `revisit-state` by itself after a reply that changes files, settles a decision or closes one of your points; run it yourself before you start a fresh session to be sure. It saves where things stand, so the next session starts where this one stopped. In a tool where the commands aren't set up, paste it:
+Your AI runs `revisit-state` by itself after a reply that changes files, settles a decision or gives one of your points its result; run it yourself before you start a fresh session to be sure. It saves where things stand, so the next session starts where this one stopped. In a tool where the commands aren't set up, paste it:
 
 <!-- offthemode:command revisit-state -->
 
@@ -494,7 +494,7 @@ Run it on every plan for a large or risky change, and on any set of changes that
 
 ```prompt title="Inventor Critic"
 You are the harshest credible reviewer in this change's domain: someone who helped design the core technology and has seen every misuse of it. You did not write this code and have no stake in it. Find what is wrong; do not approve. Review only; never edit.
-Read first: .offthemode/RULES.md; the expert profiles RULES.md §Guides names for the touched work; .offthemode/PRODUCT.md, and .offthemode/COMPLEXITY.md and .offthemode/SECURITY.md if they exist; the owner's points for {{WORK}}, if any are written: the dated lines under its item in .offthemode/CHECKLIST.md, or under its line in ## Asks outside the plan, leaving out any marked replaced; then the plan or the changes: {{PLAN_FILE | git diff main...HEAD}}.
+Read first: .offthemode/RULES.md; the expert profiles RULES.md §Guides names for the touched work; .offthemode/PRODUCT.md, and .offthemode/COMPLEXITY.md and .offthemode/SECURITY.md if they exist; the owner's points for {{WORK | the work in the plan or the changes below}}, if any are written: the dated lines under its item in .offthemode/CHECKLIST.md, or under its line in ## Asks outside the plan, leaving out any marked replaced; then the plan or the changes: {{PLAN_FILE | git diff main...HEAD}}.
 Method:
 1. Restate in 3 lines what the change is for and for whom. If you can't, that is finding #1.
 2. Hold the work against each of the owner's points before you read closely: for changes, run each point's check on the real thing; for a plan, say where it meets the point. A point that fails is a finding, ahead of all others; one you could not check is listed apart, with why, and one only the owner can judge with where they should look.
@@ -2926,7 +2926,7 @@ Changelog: v4 references assigned by me, no recommendation (a generator grading 
 
 > **Output:** five commands that each touch only what they own: `revisit-checklist` updates `.offthemode/CHECKLIST.md`, `reassess` writes a report and saves it to `.offthemode/REASSESS.md`, `revisit-comments` edits code comments only, `revisit-glossary` refreshes the plain-words summary at the top of `.offthemode/GLOSSARY.md`, and `revisit-state` saves where things stand to `.offthemode/STATE.md`, new decisions to `.offthemode/DECISIONS.md` and each piece's points to `.offthemode/CHECKLIST.md`; plus `view-project`, which opens the folder as one page in your browser and writes nothing in the project.
 
-Off the Mode has seven commands. `offthemode` sets up a project or shows its status, and `view-project` shows it as a page. The other five are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else. One file has more than one writer. Your AI marks an item in progress as the work on it starts and writes your points under it in `.offthemode/CHECKLIST.md`. `revisit-state` closes the points, keeps the item in progress while it is not built or a point that still stands is open, marks it built once it is and every one of them has passed, keeps the header's verified count true and keeps the section for asks outside the plan. `revisit-checklist` owns the rest of that file and is the only one that marks an item verified.
+Off the Mode has seven commands. `offthemode` sets up a project or shows its status, and `view-project` shows it as a page. The other five are revisits: each has one job and touches only what that job owns, so you can run any of them in the middle of a normal session without it spilling into anything else. One file has more than one writer. Your AI writes your points under an item in `.offthemode/CHECKLIST.md` as the work starts and marks that item in progress. `revisit-state` closes the points, keeps the item in progress while it is not built whole or a point that still stands is open, marks it built once it is built whole and every one of them has passed, keeps the header's verified count true and keeps the section for asks outside the plan. `revisit-checklist` owns the rest of that file and is the only one that marks an item verified.
 
 Type them (`/reassess` with the skills, `/mcp__offthemode__reassess` through the link in Claude Code) or just say them: "reassess the project".
 
@@ -3295,7 +3295,7 @@ Running a command is the request, so none asks whether to start. Every command e
 | `offthemode` | Once per project, to set it up; later, any time you want the status |
 | `revisit-checklist` | To see what's next, or when a new feature or idea comes up, so it lands in the right place on the checklist |
 | `view-project` | Whenever you want the whole project at a glance, as a page in your browser |
-| `revisit-state` | Your AI runs it by itself after work changes files, settles a decision or closes one of your points; type it before you start a fresh session, or whenever you want where things stand saved for sure |
+| `revisit-state` | Your AI runs it by itself after work changes files, settles a decision or gives one of your points its result; type it before you start a fresh session, or whenever you want where things stand saved for sure |
 | `reassess` | After every few pieces of work, before a milestone, or whenever the product feels like it is drifting from the core concept |
 | `revisit-comments` | Before a merge, or when comments feel stale |
 | `revisit-glossary` | After a milestone, or before you show the project to someone |
